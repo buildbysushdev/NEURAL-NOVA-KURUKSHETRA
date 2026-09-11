@@ -56,6 +56,8 @@ import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SimulateButton } from "@/components/simulation/SimulateButton";
 import { MesmerizingSimulationModal } from "@/components/authority/MesmerizingSimulationModal";
+import { FeatureInfoTooltip } from "@/components/ui/FeatureInfoTooltip";
+import { TacticalWorkflowSimulator } from "@/components/authority/TacticalWorkflowSimulator";
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
@@ -169,11 +171,11 @@ export default function AuthorityDashboardPage() {
   const [simulating, setSimulating] = useState<boolean>(false);
   const [simulationModalOpen, setSimulationModalOpen] = useState<boolean>(false);
 
-  // Tactical Right Column Tab Selector (Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
+  // Tactical Right Column Tab Selector (Simulator, Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
   const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
   const [activeRightTab, setActiveRightTab] = useState<
-    "copilot" | "alerts" | "orchestration" | "checklist" | "zone" | "audit" | "dispatch"
-  >("copilot");
+    "simulator" | "copilot" | "alerts" | "orchestration" | "checklist" | "zone" | "audit" | "dispatch"
+  >("simulator");
 
   const tacticalZones: TacticalZone[] = React.useMemo(() => {
     return incidents.map((inc) => ({
@@ -420,32 +422,66 @@ export default function AuthorityDashboardPage() {
     <div className="space-y-6 text-slate-100 font-ibm-sans pb-24 relative">
       
       {/* 8. Page Header — Clean Command Glass */}
+      {/* 8. Page Header — Clean Command Glass */}
       <PageHeader
         eyebrow="Operational Console — State Disaster Management Authority"
         title="Tactical Disaster Command"
         description="Real-time GIS telemetry, autonomous Sentinel triage, and Strategist AI resource distribution"
         actions={
           <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSimulationModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all active:scale-95 border border-red-400/40"
-            >
-              <Cpu className="w-4 h-4 animate-pulse" />
-              <span>Simulate Crisis Wave (Live Swarm)</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setActiveRightTab("simulator")}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 border border-amber-400/50"
+              >
+                <Cpu className="w-4 h-4 animate-pulse text-slate-950" />
+                <span>Workflow Simulator &amp; Controls</span>
+              </button>
+              <FeatureInfoTooltip
+                title="Tactical Workflow Simulator"
+                description="Opens the multi-agent disaster workflow simulator with live 5-stage orchestration, threat controls, and end-result metrics."
+                useCase="Simulate flood, chemical fire, and blackout scenarios with immediate before/after response times."
+                techNote="Real-time multi-agent deterministic coordination."
+                theme="dark"
+              />
+            </div>
 
-            <button
-              onClick={fetchIncidents}
-              disabled={loadingIncidents}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition shadow-sm self-start sm:self-auto"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingIncidents ? "animate-spin text-white" : ""}`} />
-              <span>Re-sync Grid</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSimulationModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all active:scale-95 border border-red-400/40"
+              >
+                <AlertTriangle className="w-4 h-4 animate-pulse" />
+                <span>Crisis Wave Swarm</span>
+              </button>
+              <FeatureInfoTooltip
+                title="Crisis Wave Swarm Injection"
+                description="Injects a batch of multi-zone disaster reports into the GIS map to test system scalability under sudden surge loads."
+                useCase="Simulate widespread earthquake aftershocks or cyclonic landfall across multiple districts."
+                theme="dark"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={fetchIncidents}
+                disabled={loadingIncidents}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition shadow-sm self-start sm:self-auto"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingIncidents ? "animate-spin text-white" : ""}`} />
+                <span>Re-sync Grid</span>
+              </button>
+              <FeatureInfoTooltip
+                title="Re-sync Telemetry Grid"
+                description="Forces an immediate reconciliation of active incident coordinates with Supabase database and local peer buffers."
+                useCase="Use after network reconnection to sync field squad status."
+                theme="dark"
+              />
+            </div>
           </div>
         }
         statusIndicator="live"
@@ -475,6 +511,14 @@ export default function AuthorityDashboardPage() {
           icon={Activity}
           trend="+2 in last hour"
           color="blue"
+          infoTooltip={
+            <FeatureInfoTooltip
+              title="Total Incident Telemetry"
+              description="Aggregated count of all active citizen and sensor hazard reports across active monitoring sectors."
+              useCase="Monitor disaster escalation rate and spatial density."
+              theme="dark"
+            />
+          }
         />
         <StatCard 
           label="Resources Available"
@@ -482,6 +526,14 @@ export default function AuthorityDashboardPage() {
           subtitle="Units across 4 regional hubs"
           icon={Package}
           color="emerald"
+          infoTooltip={
+            <FeatureInfoTooltip
+              title="Regional Resource Inventory"
+              description="Real-time stock of rescue boats, food kits, water purification units, and medical trauma supplies in forward depots."
+              useCase="Ensures responding agencies do not dispatch exhausted supply lines."
+              theme="dark"
+            />
+          }
         />
         <StatCard 
           label="Active Rescue Teams"
@@ -489,6 +541,14 @@ export default function AuthorityDashboardPage() {
           subtitle="Field squads on duty"
           icon={Users}
           color="violet"
+          infoTooltip={
+            <FeatureInfoTooltip
+              title="Active Tactical Squads"
+              description="Number of deployed NDRF, SDRF, and civil defense rescue squads currently operating in disaster zones."
+              useCase="Track deployed field personnel and squad availability for re-tasking."
+              theme="dark"
+            />
+          }
         />
         <StatCard 
           label="AI Critical Alerts"
@@ -496,6 +556,14 @@ export default function AuthorityDashboardPage() {
           subtitle="Priority score ≥ 7"
           icon={AlertTriangle}
           color="red"
+          infoTooltip={
+            <FeatureInfoTooltip
+              title="Sentinel AI Critical Threats"
+              description="Hazards triaged with severity score ≥ 7 representing life-safety risks requiring immediate tactical intervention."
+              useCase="Top-priority queues requiring immediate authority ratification."
+              theme="dark"
+            />
+          }
         />
       </div>
 
@@ -510,11 +578,17 @@ export default function AuthorityDashboardPage() {
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden backdrop-blur-md">
             {/* Map Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-400" />
                 <h3 className="text-sm font-semibold text-slate-200">
                   Regional Incident Telemetry (Crisp Esri Tactical Canvas)
                 </h3>
+                <FeatureInfoTooltip
+                  title="Tactical GIS Incident Canvas"
+                  description="High-precision geographic information canvas overlaying NASA FIRMS thermal anomaly points, USGS seismic readings, and verified citizen SOS points."
+                  useCase="Pinpoints high-tide flood lines, chemical plumes, and safe evacuation corridors."
+                  theme="dark"
+                />
               </div>
               
               {/* Legend Dots */}
@@ -539,8 +613,21 @@ export default function AuthorityDashboardPage() {
 
         {/* Right Column: 40% (5 Cols) Live AI Copilot, Emergency Alerts & Workflow Tabs */}
         <div id="audit-section" className="lg:col-span-5 space-y-4">
-          {/* Command Console 7-Way Tab Header */}
+          {/* Command Console 8-Way Tab Header */}
           <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-3 text-xs font-medium overflow-x-auto scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("simulator")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "simulator"
+                  ? "bg-amber-500/20 border border-amber-500/50 text-amber-300 shadow-sm font-semibold ring-1 ring-amber-400/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>Workflow Simulator</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveRightTab("copilot")}
@@ -551,7 +638,7 @@ export default function AuthorityDashboardPage() {
               }`}
             >
               <Brain className="w-3.5 h-3.5 text-cyan-400" />
-              <span>AI Copilot (Live)</span>
+              <span>AI Copilot</span>
             </button>
 
             <button
@@ -637,7 +724,9 @@ export default function AuthorityDashboardPage() {
           </div>
 
           {/* Right Column Content Panel */}
-          {activeRightTab === "copilot" ? (
+          {activeRightTab === "simulator" ? (
+            <TacticalWorkflowSimulator />
+          ) : activeRightTab === "copilot" ? (
             <AICopilotPanel />
           ) : activeRightTab === "alerts" ? (
             <EmergencyAlertsTab />
@@ -646,7 +735,7 @@ export default function AuthorityDashboardPage() {
           ) : activeRightTab === "zone" ? (
             <ZoneDetailPanel
               zone={selectedZone}
-              onClose={() => setActiveRightTab("copilot")}
+              onClose={() => setActiveRightTab("simulator")}
               onDispatchSquad={(z) => {
                 toast.success("Emergency Response Squad Dispatched", {
                   description: `Tactical unit en route to ${z.name || z.type}.`,
@@ -671,9 +760,17 @@ export default function AuthorityDashboardPage() {
       {/* Bottom: Resource Inventory Table in Glass Container */}
       <div id="inventory-section" className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-md">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold text-slate-200">
-            Regional Logistics &amp; Relief Stock Inventory
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-200">
+              Regional Logistics &amp; Relief Stock Inventory
+            </h3>
+            <FeatureInfoTooltip
+              title="Regional Relief Stock Logistics"
+              description="Live audit of medical supplies, drinking water tankers, and tactical rescue equipment across forward staging bases."
+              useCase="Ensure field squads have sufficient life-support items before launching amphibious rescue missions."
+              theme="dark"
+            />
+          </div>
           <p className="text-xs text-slate-400 mt-0.5">
             Real-time supply tracking across designated Forward Relief Depots.
           </p>

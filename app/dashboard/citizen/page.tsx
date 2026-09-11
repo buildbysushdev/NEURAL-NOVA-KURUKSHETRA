@@ -40,6 +40,7 @@ import {
   Waves,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { FeatureInfoTooltip } from "@/components/ui/FeatureInfoTooltip";
 
 interface ShelterInfo {
   id: string;
@@ -189,26 +190,47 @@ export default function CitizenDashboardPage() {
                 <span className="text-xs font-bold text-slate-900 font-mono">
                   NDMA CITIZEN SAFETY APP
                 </span>
+                <FeatureInfoTooltip
+                  title="National Disaster Management Portal"
+                  description="Official digital life-safety interface for civil protection, offline incident reporting, and evacuation routing."
+                  useCase="Provides civilians with verified disaster telemetry, safe shelter havens, and emergency SOS dispatch."
+                  techNote="Built on offline PWA service worker with IndexedDB local cache."
+                />
                 <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live Grid
                 </span>
               </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1 font-mono mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-red-500" />
-                <span>Marina Waterfront Sector B // Chennai (13.0544°N, 80.2818°E)</span>
-              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-xs text-slate-500 flex items-center gap-1 font-mono">
+                  <MapPin className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                  <span>Marina Waterfront Sector B (13.0544°N, 80.2818°E)</span>
+                </p>
+                <FeatureInfoTooltip
+                  title="Citizen Sector Location Fix"
+                  description="High-precision GNSS coordinates linking your physical location to Chennai Central coastal storm surge flood grids."
+                  useCase="Used by NDRF boats and air-drop helicopters to route evacuation crafts directly to you."
+                  techNote="WGS-84 GNSS precision within ±2.8m."
+                />
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <a
-              href="tel:112"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20 transition"
-            >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>SOS Dial: 112</span>
-            </a>
+            <div className="flex items-center gap-1.5">
+              <a
+                href="tel:112"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20 transition"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>SOS Dial: 112</span>
+              </a>
+              <FeatureInfoTooltip
+                title="112 National Emergency Helpline"
+                description="Unified toll-free national emergency response line connecting police, fire, ambulance, and disaster rescue."
+                useCase="Immediate voice dispatch when cellular voice networks are functional."
+              />
+            </div>
           </div>
         </div>
 
@@ -226,124 +248,193 @@ export default function CitizenDashboardPage() {
           advisoryText="High-tide sea surge at 2.4m. Coastal roadways experiencing rapid inundation. Safe shelter: Central Relief Station Alpha (800m inland via Anna Salai corridor)."
         />
 
-        {/* App-Style Main Quick Navigation Buttons (6 Big Tactile Tabs) */}
+        {/* App-Style Main Quick Navigation Buttons (6 Big Tactile Tabs with Info Badges) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab("safety")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
-              activeTab === "safety"
-                ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <Shield className={`w-5 h-5 ${activeTab === "safety" ? "text-cyan-400" : "text-blue-600"}`} />
-              {isMarkedSafe && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-            </div>
-            <div>
-              <div className="text-xs font-bold">Safety Status</div>
-              <div className={`text-[10px] ${activeTab === "safety" ? "text-slate-400" : "text-slate-500"}`}>
-                {isMarkedSafe ? "Verified Safe" : "Threat Monitoring"}
+          
+          {/* TAB 1: SAFETY STATUS */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveTab("safety")}
+              className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+                activeTab === "safety"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md ring-1 ring-slate-800"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <Shield className={`w-5 h-5 ${activeTab === "safety" ? "text-cyan-400" : "text-blue-600"}`} />
+                {isMarkedSafe && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
               </div>
+              <div>
+                <div className="text-xs font-bold">Safety Status</div>
+                <div className={`text-[10px] ${activeTab === "safety" ? "text-slate-400" : "text-slate-500"}`}>
+                  {isMarkedSafe ? "Verified Safe" : "Threat Monitoring"}
+                </div>
+              </div>
+            </button>
+            <div className="absolute top-2 right-2">
+              <FeatureInfoTooltip
+                title="Safety Status & Civil Check-In"
+                description="Monitors real-time environmental sensors and lets you mark your status as 'SAFE' or 'NEED RESCUE' in the central civil defense registry."
+                useCase="Check in to inform disaster command that your family is secure or request immediate rescue boats."
+                theme={activeTab === "safety" ? "dark" : "light"}
+              />
             </div>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("shelters")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
-              activeTab === "shelters"
-                ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            <Navigation className={`w-5 h-5 ${activeTab === "shelters" ? "text-cyan-400" : "text-emerald-600"}`} />
-            <div>
-              <div className="text-xs font-bold">Safe Shelters</div>
-              <div className={`text-[10px] ${activeTab === "shelters" ? "text-slate-400" : "text-slate-500"}`}>
-                3 Havens (800m away)
+          {/* TAB 2: SAFE SHELTERS */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveTab("shelters")}
+              className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+                activeTab === "shelters"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md ring-1 ring-slate-800"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <Navigation className={`w-5 h-5 ${activeTab === "shelters" ? "text-cyan-400" : "text-emerald-600"}`} />
+              <div>
+                <div className="text-xs font-bold">Safe Shelters</div>
+                <div className={`text-[10px] ${activeTab === "shelters" ? "text-slate-400" : "text-slate-500"}`}>
+                  3 Havens (800m away)
+                </div>
               </div>
+            </button>
+            <div className="absolute top-2 right-2">
+              <FeatureInfoTooltip
+                title="Designated Safe Havens & GIS Map"
+                description="Lists official cyclone and flood relief centers with live occupancy capacity, food stocks, medical teams, and dry evacuation routes."
+                useCase="Locate the nearest high-ground refuge when water rises above ground level."
+                theme={activeTab === "shelters" ? "dark" : "light"}
+              />
             </div>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("report")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
-              activeTab === "report"
-                ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            <FileText className={`w-5 h-5 ${activeTab === "report" ? "text-cyan-400" : "text-amber-600"}`} />
-            <div>
-              <div className="text-xs font-bold">Report Incident</div>
-              <div className={`text-[10px] ${activeTab === "report" ? "text-slate-400" : "text-slate-500"}`}>
-                1-Tap SOS Triage
+          {/* TAB 3: REPORT INCIDENT */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveTab("report")}
+              className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+                activeTab === "report"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md ring-1 ring-slate-800"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <FileText className={`w-5 h-5 ${activeTab === "report" ? "text-cyan-400" : "text-amber-600"}`} />
+              <div>
+                <div className="text-xs font-bold">Report Incident</div>
+                <div className={`text-[10px] ${activeTab === "report" ? "text-slate-400" : "text-slate-500"}`}>
+                  1-Tap SOS Triage
+                </div>
               </div>
+            </button>
+            <div className="absolute top-2 right-2">
+              <FeatureInfoTooltip
+                title="1-Tap Emergency SOS Reporting"
+                description="Submits an incident report with GPS coordinates and situation details. Automatically triaged by Sentinel AI in <300ms."
+                useCase="Report trapped civilians, electrical fires, or breached embankments."
+                theme={activeTab === "report" ? "dark" : "light"}
+              />
             </div>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("helplines")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
-              activeTab === "helplines"
-                ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            <Phone className={`w-5 h-5 ${activeTab === "helplines" ? "text-cyan-400" : "text-red-600"}`} />
-            <div>
-              <div className="text-xs font-bold">Helplines</div>
-              <div className={`text-[10px] ${activeTab === "helplines" ? "text-slate-400" : "text-slate-500"}`}>
-                112 / 108 / 1070
+          {/* TAB 4: HELPLINES */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveTab("helplines")}
+              className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+                activeTab === "helplines"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md ring-1 ring-slate-800"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <Phone className={`w-5 h-5 ${activeTab === "helplines" ? "text-cyan-400" : "text-red-600"}`} />
+              <div>
+                <div className="text-xs font-bold">Helplines</div>
+                <div className={`text-[10px] ${activeTab === "helplines" ? "text-slate-400" : "text-slate-500"}`}>
+                  112 / 108 / 1070
+                </div>
               </div>
+            </button>
+            <div className="absolute top-2 right-2">
+              <FeatureInfoTooltip
+                title="Civil Emergency Helplines Speed Dial"
+                description="1-tap dialing directory for National Emergency (112), Ambulance (108), State Disaster Control (1070), and City Flood Control (1913)."
+                useCase="Quick voice contact with emergency dispatchers during phone connectivity."
+                theme={activeTab === "helplines" ? "dark" : "light"}
+              />
             </div>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("relief")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
-              activeTab === "relief"
-                ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            <Package className={`w-5 h-5 ${activeTab === "relief" ? "text-cyan-400" : "text-purple-600"}`} />
-            <div>
-              <div className="text-xs font-bold">Relief Supplies</div>
-              <div className={`text-[10px] ${activeTab === "relief" ? "text-slate-400" : "text-slate-500"}`}>
-                3,000 Food Kits
+          {/* TAB 5: RELIEF SUPPLIES */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveTab("relief")}
+              className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+                activeTab === "relief"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md ring-1 ring-slate-800"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <Package className={`w-5 h-5 ${activeTab === "relief" ? "text-cyan-400" : "text-purple-600"}`} />
+              <div>
+                <div className="text-xs font-bold">Relief Supplies</div>
+                <div className={`text-[10px] ${activeTab === "relief" ? "text-slate-400" : "text-slate-500"}`}>
+                  3,000 Food Kits
+                </div>
               </div>
+            </button>
+            <div className="absolute top-2 right-2">
+              <FeatureInfoTooltip
+                title="Relief Supplies & Water Distribution"
+                description="Real-time tracking of potable drinking water tankers, dry ration packages, and first aid supply points."
+                useCase="Check open distribution hours and inventory before heading out to collect supplies."
+                theme={activeTab === "relief" ? "dark" : "light"}
+              />
             </div>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("walkie")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
-              activeTab === "walkie"
-                ? "bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-bold"
-                : "bg-white text-slate-800 border-amber-300/60 hover:border-amber-400"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <Radio className={`w-5 h-5 ${activeTab === "walkie" ? "text-slate-950 animate-pulse" : "text-amber-500"}`} />
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-              </span>
-            </div>
-            <div>
-              <div className="text-xs font-bold">Mesh Radio</div>
-              <div className={`text-[10px] ${activeTab === "walkie" ? "text-slate-900 font-semibold" : "text-amber-600"}`}>
-                CH 7 • PTT Voice
+          {/* TAB 6: MESH RADIO */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveTab("walkie")}
+              className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+                activeTab === "walkie"
+                  ? "bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-bold ring-1 ring-amber-400"
+                  : "bg-white text-slate-800 border-amber-300/60 hover:border-amber-400"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <Radio className={`w-5 h-5 ${activeTab === "walkie" ? "text-slate-950 animate-pulse" : "text-amber-500"}`} />
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
               </div>
+              <div>
+                <div className="text-xs font-bold">Mesh Radio</div>
+                <div className={`text-[10px] ${activeTab === "walkie" ? "text-slate-900 font-semibold" : "text-amber-600"}`}>
+                  CH 7 • PTT Voice
+                </div>
+              </div>
+            </button>
+            <div className="absolute top-2 right-2">
+              <FeatureInfoTooltip
+                title="Offline Tactical Mesh Radio & AI"
+                description="Direct peer-to-peer radio frequency communication operating without cellular towers or internet. Includes local on-device AI natural language parser."
+                useCase="Transmit urgent voice cries to nearby rescue squads during complete telecom blackouts."
+                techNote="Simulated 462.7125 MHz narrow-band FM with 84-byte LoRa packet compression."
+                theme={activeTab === "walkie" ? "dark" : "light"}
+              />
             </div>
-          </button>
+          </div>
+
         </div>
 
         {/* TAB 1: SAFETY STATUS HUB */}
@@ -371,6 +462,11 @@ export default function CitizenDashboardPage() {
                       <span className="text-sm font-bold text-slate-900">
                         {isMarkedSafe ? "Safety Confirmed" : "Citizen Safety Status: Unconfirmed"}
                       </span>
+                      <FeatureInfoTooltip
+                        title="Civilian Safety Status Record"
+                        description="Synchronizes your GPS presence with the Central Civil Defense Registry, confirming to authorities that your household is not in immediate peril."
+                        useCase="Marking safe reduces search-and-rescue congestion, allowing emergency teams to focus on trapped civilians."
+                      />
                       <span
                         className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                           isMarkedSafe
@@ -390,39 +486,80 @@ export default function CitizenDashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleToggleSafe}
-                    className={`px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5 ${
-                      isMarkedSafe
-                        ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
-                    }`}
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{isMarkedSafe ? "Change Status" : "Mark Myself Safe"}</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={handleToggleSafe}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5 ${
+                        isMarkedSafe
+                          ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                      }`}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isMarkedSafe ? "Change Status" : "Mark Myself Safe"}</span>
+                    </button>
+                    <FeatureInfoTooltip
+                      title="Toggle Civilian Safe Status"
+                      description="Click to alternate between 'VERIFIED SAFE' and 'NEED RESCUE'. Immediately alerts SDMA Command."
+                      useCase="Click as soon as you reach elevated dry ground or when water subsides."
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Environmental Sensor Summary */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5 pt-4 border-t border-slate-100 text-xs">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                  <span className="text-[10px] text-slate-500 block">Surge Water Level</span>
+                
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 relative">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-slate-500 block">Surge Water Level</span>
+                    <FeatureInfoTooltip
+                      title="Coastal Surge Depth Sensor"
+                      description="Automated ultrasonic water gauge sensor installed at Marina seawall measuring real-time flood inundation."
+                      useCase="Indicates ground floor submersion threat and tidal escalation rate."
+                      techNote="Sampling every 60 seconds with telemetry rate +18cm/h."
+                    />
+                  </div>
                   <span className="text-sm font-bold text-red-600 font-mono">2.4m (+18cm/h)</span>
                 </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                  <span className="text-[10px] text-slate-500 block">Nearest Shelter</span>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 relative">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-slate-500 block">Nearest Shelter</span>
+                    <FeatureInfoTooltip
+                      title="Closest Designated Haven"
+                      description="Computes shortest Euclidean and elevated walking path to Central Relief Station Alpha."
+                      useCase="Directs citizens to the nearest safe refuge with dry floors and provisions."
+                    />
+                  </div>
                   <span className="text-sm font-bold text-blue-600 font-mono">0.8 km (Alpha)</span>
                 </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                  <span className="text-[10px] text-slate-500 block">Coastal Wind</span>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 relative">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-slate-500 block">Coastal Wind</span>
+                    <FeatureInfoTooltip
+                      title="Anemometer Wind Telemetry"
+                      description="Live coastal wind vector readings indicating cyclone eye approach and projectile hazard velocity."
+                      useCase="Warns citizens to stay clear of tin roofs, glass facades, and unstable hoardings."
+                    />
+                  </div>
                   <span className="text-sm font-bold text-slate-800 font-mono">42 km/h SSE</span>
                 </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                  <span className="text-[10px] text-slate-500 block">Medical Post</span>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 relative">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-slate-500 block">Medical Post</span>
+                    <FeatureInfoTooltip
+                      title="NDRF Emergency Medical Station"
+                      description="Indicates on-site triage capabilities (trauma paramedics, oxygen cylinders, antivenom, clean dressing)."
+                      useCase="Identifies medical care for casualties evacuated from flood waters."
+                    />
+                  </div>
                   <span className="text-sm font-bold text-emerald-600 font-mono">NDRF Active</span>
                 </div>
+
               </div>
             </div>
 
@@ -434,6 +571,11 @@ export default function CitizenDashboardPage() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 font-mono">
                     NDMA Physical Telemetry &amp; Evacuation Corridor
                   </h3>
+                  <FeatureInfoTooltip
+                    title="Analyst Agent Physical Model"
+                    description="Groq LLaMA 3 Analyst agent predicts 4-hour flood inundation expansion based on coastal topography and drainage blockages."
+                    useCase="Displays elevated dry avenues to prevent civilians from entering submerged underpasses."
+                  />
                 </div>
                 <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
                   Analyst Agent Verified
@@ -453,6 +595,11 @@ export default function CitizenDashboardPage() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 font-mono">
                     Offline Tactical Mesh Comms · Push-To-Talk Radio
                   </h3>
+                  <FeatureInfoTooltip
+                    title="Tactical Walkie-Talkie Channel 7"
+                    description="Push-to-talk audio interface broadcasting across local Wi-Fi and Bluetooth mesh relays when cellular towers are down."
+                    useCase="Speak directly to local NDRF boat operators navigating your street."
+                  />
                 </div>
                 <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                   AI Sector Band: CH 7
@@ -481,7 +628,14 @@ export default function CitizenDashboardPage() {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-900">{s.name}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-900">{s.name}</span>
+                        <FeatureInfoTooltip
+                          title={s.name}
+                          description={`Official emergency shelter with capacity for ${s.capacity} individuals. Equipped with backup diesel generators, potable water, and emergency food rations.`}
+                          useCase="Primary designated safe refuge for Sector B residents during cyclonic sea surges."
+                        />
+                      </div>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200">
                         {s.distanceKm} km away
                       </span>
@@ -505,8 +659,13 @@ export default function CitizenDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 text-[11px] text-emerald-800 bg-emerald-50 p-2 rounded-lg leading-relaxed">
-                    👉 <strong>Route:</strong> {s.safeRoute}
+                  <div className="pt-2 border-t border-slate-100 text-[11px] text-emerald-800 bg-emerald-50 p-2 rounded-lg leading-relaxed flex items-center justify-between">
+                    <span>👉 <strong>Route:</strong> {s.safeRoute}</span>
+                    <FeatureInfoTooltip
+                      title="Safe Evacuation Route"
+                      description="Elevated navigation vector verified clear of stormwater overflows, fallen high-voltage cables, and open culverts."
+                      useCase="Follow this specific route rather than main coastal roads to avoid drowning risks."
+                    />
                   </div>
                 </div>
               ))}
@@ -520,6 +679,11 @@ export default function CitizenDashboardPage() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-mono">
                     Official Evacuation Corridors &amp; Safe Havens
                   </h3>
+                  <FeatureInfoTooltip
+                    title="Evacuation GIS Map"
+                    description="Real-time map illustrating designated green refuge zones, red hazard perimeters, and navigable elevated road arteries."
+                    useCase="Visualize whether your current location is inside the flood inundation zone."
+                  />
                 </div>
                 <span className="text-[10px] font-mono text-slate-500">
                   Green: Safe Havens · Red: Hazard Perimeter
@@ -536,13 +700,22 @@ export default function CitizenDashboardPage() {
         {/* TAB 3: 1-TAP INCIDENT / SOS REPORTING */}
         {activeTab === "report" && (
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-slate-900">
-                Submit SOS / Emergency Hazard Report
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Your report is immediately ingested by Groq LLaMA 3 Sentinel Agent within 300ms for priority rescue dispatch.
-              </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Submit SOS / Emergency Hazard Report
+                  </h3>
+                  <FeatureInfoTooltip
+                    title="Citizen Incident Dispatch Gateway"
+                    description="Allows any citizen to report emergencies with instant Sentinel AI verification and automatic forwarding to both the Authority War Room and Rescue Squad Alpha."
+                    useCase="Report trapped neighbors, rising water, fire, or injured casualties."
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Your report is immediately ingested by Groq LLaMA 3 Sentinel Agent within 300ms for priority rescue dispatch.
+                </p>
+              </div>
             </div>
             <ReportForm onIncidentReported={(r) => setRecentReports((prev) => [r, ...prev])} />
           </div>
@@ -552,18 +725,26 @@ export default function CitizenDashboardPage() {
         {activeTab === "helplines" && (
           <div className="space-y-3">
             <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-900 mb-1">
-                Civil Emergency Directory — 1-Tap Speed Dial
-              </h3>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Civil Emergency Directory — 1-Tap Speed Dial
+                  </h3>
+                  <FeatureInfoTooltip
+                    title="Emergency Speed Dial Directory"
+                    description="One-tap direct calling lines for national, state, police, medical, fire, and corporation disaster control."
+                    useCase="Tap to call whenever voice networks are active."
+                  />
+                </div>
+              </div>
               <p className="text-xs text-slate-500 mb-4">
                 In severe emergencies, dial directly from your device. All lines operate 24x7 with priority emergency routing.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {EMERGENCY_HELPLINES.map((h, i) => (
-                  <a
+                  <div
                     key={i}
-                    href={`tel:${h.number}`}
                     className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300 transition flex items-center justify-between group"
                   >
                     <div>
@@ -574,14 +755,23 @@ export default function CitizenDashboardPage() {
                         <span className="text-xs font-semibold text-slate-800">
                           {h.label}
                         </span>
+                        <FeatureInfoTooltip
+                          title={h.label}
+                          description={`${h.desc}. Direct connection to 24x7 state dispatch console.`}
+                          useCase={`Call ${h.number} for emergency response related to ${h.label.toLowerCase()}.`}
+                        />
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5">{h.desc}</p>
                     </div>
 
-                    <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition shadow-sm">
+                    <a
+                      href={`tel:${h.number}`}
+                      className="w-9 h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition shadow-sm"
+                      title={`Call ${h.number}`}
+                    >
                       <PhoneCall className="w-4 h-4" />
-                    </div>
-                  </a>
+                    </a>
+                  </div>
                 ))}
               </div>
             </div>
@@ -592,9 +782,16 @@ export default function CitizenDashboardPage() {
         {activeTab === "relief" && (
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
-                Relief Supplies &amp; Potable Water Distribution Points
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Relief Supplies &amp; Potable Water Distribution Points
+                </h3>
+                <FeatureInfoTooltip
+                  title="Forward Relief Stock Depots"
+                  description="Displays verified civil food kits, water purification tankers, and paramedic first aid packages available for pickup."
+                  useCase="Collect survival rations for your family during prolonged post-storm inundation."
+                />
+              </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Managed by Tamil Nadu Civil Supplies Corporation &amp; Red Cross volunteers.
               </p>
@@ -602,9 +799,16 @@ export default function CitizenDashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
-                <div className="flex items-center gap-2 font-bold text-slate-900 mb-1">
-                  <Package className="w-4 h-4 text-purple-600" />
-                  <span>3,000 Food Ration Kits</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <Package className="w-4 h-4 text-purple-600" />
+                    <span>3,000 Food Ration Kits</span>
+                  </div>
+                  <FeatureInfoTooltip
+                    title="3,000 Food Ration Kits"
+                    description="Dry provisions package packed in waterproof sealed tubs: 5kg rice, lentils, biscuits, glucose, milk powder, matches, and candles."
+                    useCase="Nutritional life support for families displaced by waterlogging."
+                  />
                 </div>
                 <p className="text-[11px] text-slate-500 mb-2">
                   Contains dry provisions, biscuits, glucose, milk powder, and matches.
@@ -615,9 +819,16 @@ export default function CitizenDashboardPage() {
               </div>
 
               <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
-                <div className="flex items-center gap-2 font-bold text-slate-900 mb-1">
-                  <Droplets className="w-4 h-4 text-cyan-600" />
-                  <span>Potable Drinking Water</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <Droplets className="w-4 h-4 text-cyan-600" />
+                    <span>Potable Drinking Water</span>
+                  </div>
+                  <FeatureInfoTooltip
+                    title="Potable Drinking Water Tankers"
+                    description="Reverse osmosis 10,000L tanker dispensing safe drinking water into clean canisters to prevent cholera and waterborne illness."
+                    useCase="Critical when municipal tap water is contaminated by flood sewage."
+                  />
                 </div>
                 <p className="text-[11px] text-slate-500 mb-2">
                   Reverse osmosis tanker dispensing 20L canisters per family.
@@ -628,9 +839,16 @@ export default function CitizenDashboardPage() {
               </div>
 
               <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
-                <div className="flex items-center gap-2 font-bold text-slate-900 mb-1">
-                  <HeartPulse className="w-4 h-4 text-red-600" />
-                  <span>Paramedic First Aid</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <HeartPulse className="w-4 h-4 text-red-600" />
+                    <span>Paramedic First Aid</span>
+                  </div>
+                  <FeatureInfoTooltip
+                    title="Paramedic Trauma & Aid Post"
+                    description="Trained medical corps providing tetanus toxoid, sterile sutures, ORS packets, insulin storage, and water purification chlorine tablets."
+                    useCase="Emergency triage for wound infections, animal bites, or dehydration."
+                  />
                 </div>
                 <p className="text-[11px] text-slate-500 mb-2">
                   Tetanus shots, clean bandages, water purification tablets, insulin backup.
@@ -647,26 +865,59 @@ export default function CitizenDashboardPage() {
         {activeTab === "walkie" && (
           <div className="space-y-4">
             <div className="rounded-3xl bg-slate-950 p-5 text-white border border-amber-500/30 shadow-xl">
-              <div className="flex items-center gap-2.5 text-amber-400 mb-2">
-                <Radio className="w-5 h-5 animate-pulse" />
-                <h3 className="text-sm font-bold uppercase tracking-wider font-mono">
-                  Sentinel AI Dynamic Sector Radio Coordination
-                </h3>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2.5 text-amber-400">
+                  <Radio className="w-5 h-5 animate-pulse" />
+                  <h3 className="text-sm font-bold uppercase tracking-wider font-mono">
+                    Sentinel AI Dynamic Sector Radio Coordination
+                  </h3>
+                </div>
+                <FeatureInfoTooltip
+                  title="Dynamic Sector Radio Coordination"
+                  description="Groq Sentinel AI dynamically maps RF spectrum channels across districts to prevent signal collision between citizen SOS alerts and tactical rescue units."
+                  useCase="Keep this channel open for live audio announcements from civil defense rescue boats."
+                  techNote="Simulated 462.7125 MHz (FRS Channel 7) with CTCSS 67.0 Hz tone squelch."
+                  theme="dark"
+                />
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
                 When telecommunication towers fail during coastal surge events, Kurukshetra automatically activates peer-to-peer audio mesh broadcasting. Sentinel AI allocates non-interfering channels per district so citizens can broadcast voice alerts directly to local NDRF rescue squads.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-xs">
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Channel Frequency</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 block uppercase font-mono">Channel Frequency</span>
+                    <FeatureInfoTooltip
+                      title="Carrier Frequency"
+                      description="Operating radio frequency assigned to Marina Waterfront Sector B."
+                      useCase="Tune field walkie-talkies to 462.7125 MHz to join the local net."
+                      theme="dark"
+                    />
+                  </div>
                   <span className="text-amber-400 font-bold font-mono">462.7125 MHz (CH 7)</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Channel Bandwidth</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 block uppercase font-mono">Channel Bandwidth</span>
+                    <FeatureInfoTooltip
+                      title="Channel Bandwidth"
+                      description="12.5 kHz narrow band modulation maximizing spectral efficiency and battery life."
+                      useCase="Standard civil FM voice transmission standard."
+                      theme="dark"
+                    />
+                  </div>
                   <span className="text-emerald-400 font-bold font-mono">12.5 kHz Narrow</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 col-span-2 sm:col-span-1">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Squelch CTCSS Tone</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 block uppercase font-mono">Squelch CTCSS Tone</span>
+                    <FeatureInfoTooltip
+                      title="Continuous Tone-Coded Squelch"
+                      description="67.0 Hz sub-audible tone filtering out cross-channel interference from commercial radios."
+                      useCase="Prevents static and false triggers on citizen receivers."
+                      theme="dark"
+                    />
+                  </div>
                   <span className="text-blue-400 font-bold font-mono">67.0 Hz Tone Squ.</span>
                 </div>
               </div>

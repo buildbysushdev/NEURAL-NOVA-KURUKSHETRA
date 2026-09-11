@@ -11,6 +11,7 @@ export interface StatCardProps {
   color: "blue" | "emerald" | "violet" | "red" | "amber";
   trend?: { direction: "up" | "down"; value: string } | string;
   onClick?: () => void;
+  infoTooltip?: React.ReactNode;
 }
 
 const colorMap = {
@@ -59,6 +60,7 @@ export function StatCard({
   color,
   trend,
   onClick,
+  infoTooltip,
 }: StatCardProps) {
   const c = colorMap[color] || colorMap.blue;
 
@@ -91,9 +93,12 @@ export function StatCard({
       <div className="relative p-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono">
-            {label}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono">
+              {label}
+            </p>
+            {infoTooltip}
+          </div>
           <div
             className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center transition-transform group-hover:scale-105`}
           >
