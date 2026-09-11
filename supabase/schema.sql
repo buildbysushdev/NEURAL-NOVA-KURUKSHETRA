@@ -62,6 +62,51 @@ CREATE INDEX IF NOT EXISTS idx_incidents_created_at ON public.incidents(created_
 COMMENT ON TABLE public.incidents IS 'Real-time disaster incident feed triaged by Groq AI and optimized by Gemini.';
 
 -- -------------------------------------------------------------------------
+-- 2b. TABLE / VIEW: zones
+-- Real-time emergency zones mapped to geographical sectors for command console.
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.zones (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    severity TEXT NOT NULL DEFAULT 'HIGH' CHECK (severity IN ('CRITICAL', 'HIGH', 'MODERATE', 'LOW')),
+    severity_score INT NOT NULL DEFAULT 5 CHECK (severity_score >= 0 AND severity_score <= 10),
+    type TEXT NOT NULL,
+    description TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
+    needed_resources TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE OR REPLACE VIEW public.zones_view AS
+SELECT 
+    id,
+    type AS name,
+    location_lat AS latitude,
+    location_lng AS longitude,
+    CASE 
+        WHEN severity_score >= 8 THEN 'CRITICAL'
+        WHEN severity_score >= 6 THEN 'HIGH'
+        WHEN severity_score >= 4 THEN 'MODERATE'
+        ELSE 'LOW'
+    END AS severity,
+    severity_score,
+    type,
+    description,
+    status,
+    needed_resources,
+    created_at
+FROM public.incidents;
+
+ALTER TABLE public.zones ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "zones_select_all" ON public.zones;
+CREATE POLICY "zones_select_all" ON public.zones FOR SELECT USING (true);
+DROP POLICY IF EXISTS "zones_insert_all" ON public.zones;
+CREATE POLICY "zones_insert_all" ON public.zones FOR INSERT WITH CHECK (true);
+
+
+-- -------------------------------------------------------------------------
 -- 3. TABLE: resources
 -- Supply inventory (water, food, medical, tent) stored in relief hubs.
 -- assigned_to_incident_id links a deployed asset to an active emergency.

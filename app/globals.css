@@ -115,9 +115,62 @@ samp {
   color: #F6F4EF !important;
   border: 1px solid #222933 !important;
   border-radius: 2px !important;
-  box-shadow: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
 }
 
 .leaflet-popup-tip {
   background: #181E26 !important;
+  border: 1px solid #222933 !important;
 }
+
+/* Command Console Tooltip */
+.leaflet-tooltip {
+  background: #181E26 !important;
+  color: #F6F4EF !important;
+  border: 1px solid #222933 !important;
+  border-radius: 2px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  font-family: var(--font-ibm-sans), sans-serif !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-tooltip-top:before {
+  border-top-color: #181E26 !important;
+}
+.leaflet-tooltip-bottom:before {
+  border-bottom-color: #181E26 !important;
+}
+.leaflet-tooltip-left:before {
+  border-left-color: #181E26 !important;
+}
+.leaflet-tooltip-right:before {
+  border-right-color: #181E26 !important;
+}
+
+/* Radar ping keyframe animation */
+@keyframes tacticalPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-tactical-pulse {
+  animation: tacticalPulse 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+

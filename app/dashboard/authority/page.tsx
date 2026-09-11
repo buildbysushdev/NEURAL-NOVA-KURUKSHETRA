@@ -40,34 +40,42 @@ import {
   Boxes,
   Cpu,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Layers,
+  Terminal
 } from "lucide-react";
+import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
+import type { TacticalZone } from "@/components/authority/TacticalIndiaMap";
 
-// Client-only dynamic Leaflet Map with shape-matching skeleton loading
-const LeafletMapInner = dynamic(() => import("@/components/LeafletMapInner"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[460px] w-full border border-[#222933] bg-[#12161C] rounded-sm p-6 flex flex-col justify-between">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-48 bg-[#222933]" />
-        <div className="flex gap-2">
-          <Skeleton className="h-5 w-16 bg-[#222933]" />
-          <Skeleton className="h-5 w-16 bg-[#222933]" />
+// Dynamic client-only Tactical India Command Map
+const TacticalIndiaMap = dynamic(
+  () => import("@/components/authority/TacticalIndiaMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[520px] w-full border border-[#222933] bg-[#12161C] rounded-sm p-6 flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-52 bg-[#222933]" />
+          <div className="flex gap-2">
+            <Skeleton className="h-5 w-16 bg-[#222933]" />
+            <Skeleton className="h-5 w-16 bg-[#222933]" />
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center space-y-2 text-center">
+          <Loader2 className="h-7 w-7 text-[#8A99AD] animate-spin" strokeWidth={1.75} />
+          <p className="text-xs font-mono uppercase tracking-wider text-[#8A99AD]">
+            Synchronizing NASA FIRMS &amp; USGS Satellite Telemetry...
+          </p>
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t border-[#222933]">
+          <Skeleton className="h-3 w-36 bg-[#222933]" />
+          <Skeleton className="h-3 w-28 bg-[#222933]" />
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center space-y-2 text-center">
-        <Loader2 className="h-6 w-6 text-[#8A99AD] animate-spin" strokeWidth={1.75} />
-        <p className="text-xs font-mono uppercase tracking-wider text-[#8A99AD]">
-          Synchronizing GIS Satellite Telemetry...
-        </p>
-      </div>
-      <div className="flex items-center justify-between pt-2 border-t border-[#222933]">
-        <Skeleton className="h-3 w-32 bg-[#222933]" />
-        <Skeleton className="h-3 w-24 bg-[#222933]" />
-      </div>
-    </div>
-  ),
-});
+    ),
+  }
+);
+
 
 const INITIAL_MASTER_INCIDENTS: IncidentReport[] = [
   {
@@ -129,6 +137,35 @@ export default function AuthorityDashboardPage() {
   const [loadingIncidents, setLoadingIncidents] = useState<boolean>(false);
   const [incidentError, setIncidentError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState<boolean>(false);
+
+  // Tactical Zone selection state for the right-hand detail inspector panel
+  const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
+  const [activeRightTab, setActiveRightTab] = useState<"audit" | "zone">("audit");
+
+  const tacticalZones: TacticalZone[] = React.useMemo(() => {
+    return incidents.map((inc) => ({
+      id: inc.id,
+      name: (inc as any).zone || inc.type,
+      zone: (inc as any).zone,
+      type: inc.type,
+      description: inc.description,
+      latitude: inc.location_lat ?? inc.latitude ?? 13.0827,
+      longitude: inc.location_lng ?? inc.longitude ?? 80.2707,
+      location_lat: inc.location_lat ?? inc.latitude ?? 13.0827,
+      location_lng: inc.location_lng ?? inc.longitude ?? 80.2707,
+      severity: inc.severity || "HIGH",
+      severity_score: inc.severity_score,
+      status: "open",
+      needed_resources: inc.needed_resources,
+      created_at: inc.created_at,
+    }));
+  }, [incidents]);
+
+  const handleSelectZone = (zone: TacticalZone) => {
+    setSelectedZone(zone);
+    setActiveRightTab("zone");
+  };
+
 
   // Fetch incidents from Supabase
   const fetchIncidents = async () => {
@@ -401,46 +438,69 @@ export default function AuthorityDashboardPage() {
 
       {/* MIDDLE ROW: 60% Map + 40% Audit Log Terminal & Notifications */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: 60% (7 Cols on desktop) Interactive Map & Notification Stream */}
+        {/* Left Column: 60% (7 Cols on desktop) Live India Command Map & Notification Stream */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="border border-[#222933] bg-[#181E26] rounded-sm flex flex-col">
-            <div className="flex items-center justify-between p-3.5 border-b border-[#222933]">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
-                <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-[#F6F4EF]">
-                  REGIONAL INCIDENT TELEMETRY MAP
-                </h3>
-              </div>
-              <div className="flex items-center gap-3 font-ibm-mono text-[10px] text-[#8A99AD]">
-                <span className="flex items-center gap-1">
-                  <span className="dot-critical" /> Critical
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="dot-watch" /> Watch
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="dot-safe" /> Safe
-                </span>
-              </div>
-            </div>
-
-            <div className="h-[460px] w-full relative">
-              <LeafletMapInner
-                incidents={incidents as any}
-                center={[13.0827, 80.2707]}
-              />
-            </div>
-          </div>
+          <TacticalIndiaMap
+            initialZones={tacticalZones}
+            onSelectZone={handleSelectZone}
+            selectedZoneId={selectedZone?.id}
+          />
 
           {/* Dispatched Broadcast Feed */}
           <DispatchedNotificationFeed />
         </div>
 
-        {/* Right Column: 40% (5 Cols on desktop) Monospace AI Audit Log Terminal */}
-        <div className="lg:col-span-5">
-          <AuditLog />
+        {/* Right Column: 40% (5 Cols on desktop) Dual Tab: Monospace AI Audit Log & Zone Inspector */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Top Tab Bar for Right Column */}
+          <div className="flex items-center gap-1 border-b border-[#222933] pb-2 font-ibm-mono text-[11px]">
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("audit")}
+              className={`px-3 py-1.5 rounded-sm transition flex items-center gap-1.5 ${
+                activeRightTab === "audit"
+                  ? "bg-[#222933] text-[#F6F4EF] font-bold shadow-sm"
+                  : "text-[#8A99AD] hover:text-[#F6F4EF]"
+              }`}
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              <span>AI AUDIT TERMINAL</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("zone")}
+              className={`px-3 py-1.5 rounded-sm transition flex items-center gap-1.5 ${
+                activeRightTab === "zone"
+                  ? "bg-[#222933] text-[#F6F4EF] font-bold shadow-sm"
+                  : "text-[#8A99AD] hover:text-[#F6F4EF]"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>ZONE INSPECTOR</span>
+              {selectedZone && (
+                <span className="w-2 h-2 rounded-full bg-[#791F1F] inline-block ml-0.5 animate-pulse" />
+              )}
+            </button>
+          </div>
+
+          {/* Tab Content Display */}
+          {activeRightTab === "zone" ? (
+            <ZoneDetailPanel
+              zone={selectedZone}
+              onClose={() => setActiveRightTab("audit")}
+              onDispatchSquad={(z) => {
+                toast.success("Emergency Response Squad Dispatched", {
+                  description: `Tactical unit en route to ${z.name || z.type}.`,
+                });
+              }}
+            />
+          ) : (
+            <AuditLog />
+          )}
         </div>
       </div>
+
 
       {/* BOTTOM ROW: Resource Inventory Table */}
       <div id="inventory-section">
