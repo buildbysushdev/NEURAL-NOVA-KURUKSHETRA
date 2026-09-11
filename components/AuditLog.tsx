@@ -3,370 +3,348 @@
 /**
  * ==============================================================================
  * KURUKSHETRA PS20 - AGENTIC DISASTER RELIEF
- * Component: AuditLog.tsx (AI Agent Audit Log & Manual Authority Override)
+ * Component: AuditLog.tsx
  * ==============================================================================
  * 
- * Features:
- * 1. Scrolling log panel fetching from 'audit_logs' table in Supabase.
- * 2. Supabase Realtime: Subscribes to 'INSERT' events on audit_logs so when
- *    Backend AI agents execute, entries appear dynamically.
- * 3. Shows entries: "AI Agent allocated 50 Tents to Zone A", confidence score, etc.
- * 4. Manual Override: Authority commanders can click "Approve" or "Reject"
- *    to override or confirm AI agent resource allocations.
+ * Command Glass Design:
+ * - Timeline-style multi-agent audit trace with Commander governance
+ * - Filter tabs: All, Allocation, Triage, Reroute, Evacuation
+ * - Colored left-border accents for event types
+ * - Live stream pulse indicator & JSON payload viewer
+ * - Manual Commander Override & Confirmation triggers
  */
 
 import React, { useState, useEffect } from "react";
 import { supabase, isConfigured } from "@/lib/supabaseClient";
 import { subscribeToAuditLogs } from "@/lib/realtimeSubscriptions";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
-  Bot,
-  CheckCircle2,
-  XCircle,
+  Terminal,
+  Package,
+  CheckCircle,
+  AlertTriangle,
+  RotateCcw,
   Clock,
-  Radio,
+  Check,
+  X,
+  Shield,
+  Loader2,
   RefreshCw,
-  Cpu
 } from "lucide-react";
 
 export interface AuditLogEntry {
   id: string;
   action: string;
-  category?: "ALLOCATION" | "TRIAGE" | "REROUTE" | "EVACUATION" | string;
-  agent_name: "Sentinel Agent" | "Strategist Agent" | "Authority" | string;
+  category?: "allocation" | "triage" | "reroute" | "evacuation" | "approval" | string;
+  agent_name: string;
   details?: string;
   details_json?: Record<string, any>;
   confidence_score?: number;
-  status?: "pending_review" | "approved" | "rejected" | "overridden" | string;
+  status?: "pending" | "approved" | "rejected" | "overridden" | "dispatched" | "escalated" | string;
   timestamp: string;
   affected_zone?: string;
-  target_id?: string;
 }
 
-// Initial realistic AI audit log records correlating with the backend contract
-const DEMO_AUDIT_LOGS: AuditLogEntry[] = [
+const INITIAL_LOGS: AuditLogEntry[] = [
   {
-    id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-    action: "Strategist Agent allocated Resource res-01 to Incident inc-01",
-    category: "ALLOCATION",
-    agent_name: "Strategist Agent",
-    details: "Allocated 500 units of drinking water to Zone A - North Harbor.",
+    id: "log-001",
+    action: "Allocation Generated",
+    category: "allocation",
+    agent_name: "gemini-1.5-flash",
+    details: "Allocated 4 rescue boats to Marina Waterfront Relief Depot.",
     details_json: {
-      event: "RESOURCE_ALLOCATION",
-      resource_type: "water",
-      quantity: 500,
-      zone: "Zone A - North Harbor"
+      resource: "rescue_boats",
+      quantity: 4,
+      depot: "Marina Waterfront Relief Depot (Zone B)",
+      eta_minutes: 12,
     },
     confidence_score: 98.4,
-    status: "pending_review",
-    timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-    affected_zone: "Zone A - North Harbor"
+    status: "overridden",
+    timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+    affected_zone: "Zone B - Marina Waterfront",
   },
   {
-    id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
-    action: "Sentinel Agent classified Marina Surge as Priority 8 Critical",
-    category: "TRIAGE",
-    agent_name: "Sentinel Agent",
-    details: "Water level sensor telemetry breached 2.1m. Rerouted Alpha Rescue Team with specialized aquatic gear.",
+    id: "log-002",
+    action: "Allocation Approved",
+    category: "approval",
+    agent_name: "State Disaster Authority Commander",
+    details: "Commander ratified tactical dispatch to port sector.",
     details_json: {
-      event: "SEVERITY_ASSESSMENT",
-      severity_score: 8,
-      needed_resources: ["boats", "water"]
-    },
-    confidence_score: 99.2,
-    status: "approved",
-    timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    affected_zone: "Zone B - Marina Waterfront"
-  },
-  {
-    id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6f",
-    action: "Authority approved 120 Trauma Packs dispatch to Central Metro Corridor",
-    category: "ALLOCATION",
-    agent_name: "Authority",
-    details: "Commander ratified emergency burn trauma packs for hospital perimeter.",
-    details_json: {
-      event: "MANUAL_APPROVAL",
-      officer: "State Disaster Management Authority",
-      status: "approved"
+      status: "dispatched",
+      team: "NDRF Bravo Alpha Strike Unit",
+      resources_ratified: 4,
     },
     confidence_score: 100.0,
-    status: "approved",
-    timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    affected_zone: "Zone C - Central Metro"
-  }
+    status: "dispatched",
+    timestamp: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
+    affected_zone: "Zone A - North Harbor",
+  },
+  {
+    id: "log-003",
+    action: "Severity Reassessed",
+    category: "triage",
+    agent_name: "groq-llama3-sentinel",
+    details: "Water level sensor telemetry breached 2.1m. Escalated to Critical Priority.",
+    details_json: {
+      zone: "Zone-C",
+      prev_score: 5,
+      new_score: 8,
+      reason: "Water level rising 2cm/hr",
+    },
+    confidence_score: 99.2,
+    status: "escalated",
+    timestamp: new Date(Date.now() - 14 * 60 * 1000).toISOString(),
+    affected_zone: "Zone C - Central Metro",
+  },
+  {
+    id: "log-004",
+    action: "Logistics Corridor Reroute",
+    category: "reroute",
+    agent_name: "gemini-1.5-flash",
+    details: "Evacuation route blocked by debris; dynamic alternate pathway configured.",
+    details_json: {
+      original_corridor: "Anna Salai Express",
+      rerouted_corridor: "Inner Ring Expressway",
+      transit_delta_minutes: 4,
+    },
+    confidence_score: 96.5,
+    status: "dispatched",
+    timestamp: new Date(Date.now() - 28 * 60 * 1000).toISOString(),
+    affected_zone: "Zone D - Industrial South",
+  },
 ];
 
 export default function AuditLog() {
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [filterCategory, setFilterCategory] = useState<string>("ALL");
-  const [realtimeConnected, setRealtimeConnected] = useState<boolean>(false);
+  const [logs, setLogs] = useState<AuditLogEntry[]>(INITIAL_LOGS);
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // Fetch initial audit logs from /api/audit-log
-  useEffect(() => {
-    async function loadLogs() {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/audit-log");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.logs && data.logs.length > 0) {
-            setLogs(data.logs);
-            setLoading(false);
-            return;
-          }
-        }
-        setLogs(DEMO_AUDIT_LOGS);
-      } catch (err) {
-        console.warn("Using demo audit logs fallback:", err);
-        setLogs(DEMO_AUDIT_LOGS);
-      } finally {
-        setLoading(false);
+  // Fetch initial audit logs from Supabase if connected
+  const fetchAuditLogs = async () => {
+    if (!isConfigured || !supabase) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .order("timestamp", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mapped: AuditLogEntry[] = data.map((d: any) => {
+          const act = d.action || "AI Operation Logged";
+          let cat = "allocation";
+          if (act.toLowerCase().includes("triage") || act.toLowerCase().includes("severity")) cat = "triage";
+          else if (act.toLowerCase().includes("approv") || act.toLowerCase().includes("ratif")) cat = "approval";
+          else if (act.toLowerCase().includes("reroute")) cat = "reroute";
+          else if (act.toLowerCase().includes("evacuat")) cat = "evacuation";
+
+          return {
+            id: d.id?.toString(),
+            action: act,
+            category: cat,
+            agent_name: d.agent_name || "Autonomous Agent",
+            details: typeof d.details_json === "string" ? d.details_json : JSON.stringify(d.details_json),
+            details_json: d.details_json || {},
+            confidence_score: d.details_json?.confidence || 98.0,
+            status: d.details_json?.status || "dispatched",
+            timestamp: d.timestamp || new Date().toISOString(),
+            affected_zone: d.details_json?.zone || "Sector Active",
+          };
+        });
+        setLogs(mapped);
       }
+    } catch (err) {
+      // Fallback silently to in-memory trace
+    } finally {
+      setLoading(false);
     }
-    loadLogs();
-  }, []);
+  };
 
-  // Supabase Realtime Subscription via lib/realtimeSubscriptions.ts
   useEffect(() => {
-    const unsubscribe = subscribeToAuditLogs((payload) => {
-      const newRow = payload.new;
-      const entry: AuditLogEntry = {
-        id: newRow.id?.toString() || `aud-${Date.now()}`,
-        action: newRow.action || "AI Agent allocated resources",
-        category: newRow.category || "ALLOCATION",
-        agent_name: newRow.agent_name || "Backend AI Agent",
-        details: newRow.details || newRow.reasoning || "Automated optimization.",
-        confidence_score: newRow.confidence_score || 95.5,
-        status: newRow.status || "pending_review",
-        timestamp: newRow.created_at || new Date().toISOString(),
-        affected_zone: newRow.affected_zone || "Active Zone"
-      };
+    fetchAuditLogs();
 
-      setLogs((prev) => [entry, ...prev]);
-      toast.info(`🤖 AI Decision: ${entry.action}`, {
-        description: entry.details,
-        duration: 5000
-      });
+    // Supabase Realtime Listener
+    const unsubscribe = subscribeToAuditLogs((payload) => {
+      const newItem = payload.new;
+      if (newItem) {
+        const act = newItem.action || "Realtime Event";
+        let cat = "allocation";
+        if (act.toLowerCase().includes("triage")) cat = "triage";
+        else if (act.toLowerCase().includes("approv")) cat = "approval";
+        else if (act.toLowerCase().includes("reroute")) cat = "reroute";
+
+        const newEntry: AuditLogEntry = {
+          id: newItem.id?.toString() || `log-${Date.now()}`,
+          action: act,
+          category: cat,
+          agent_name: newItem.agent_name || "Autonomous Agent",
+          details_json: newItem.details_json || {},
+          status: "dispatched",
+          timestamp: newItem.timestamp || new Date().toISOString(),
+        };
+
+        setLogs((prev) => [newEntry, ...prev]);
+        toast.info(`AI Audit: ${newEntry.action}`);
+      }
     });
 
-    setRealtimeConnected(isConfigured);
     return () => {
       unsubscribe();
     };
   }, []);
 
-  // Manual Authority Override: Approve
-  const handleApprove = async (logId: string) => {
-    try {
-      const res = await fetch("/api/audit-log", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: logId, status: "approved" })
-      });
-
-      setLogs((prev) =>
-        prev.map((l) => (l.id === logId ? { ...l, status: "approved" } : l))
-      );
-      toast.success("AI Allocation Approved", {
-        description: `Authority Commander verified mission #${logId.slice(-6)}.`
-      });
-    } catch (err) {
-      console.error("Approve error:", err);
-      toast.error("Failed to approve allocation");
-    }
-  };
-
-  // Manual Authority Override: Reject
-  const handleReject = async (logId: string) => {
-    try {
-      const res = await fetch("/api/audit-log", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: logId, status: "rejected" })
-      });
-
-      setLogs((prev) =>
-        prev.map((l) => (l.id === logId ? { ...l, status: "rejected" } : l))
-      );
-      toast.error("AI Allocation Overridden / Rejected", {
-        description: `Action cancelled by Authority Commander.`
-      });
-    } catch (err) {
-      console.error("Reject error:", err);
-      toast.error("Failed to reject allocation");
-    }
-  };
-
-  // Filtered entries
-  const filtered = logs.filter((item) => {
-    if (filterCategory === "ALL") return true;
-    return item.category === filterCategory;
+  // Filter items
+  const filteredLogs = logs.filter((l) => {
+    if (activeFilter === "All") return true;
+    return l.category?.toLowerCase() === activeFilter.toLowerCase();
   });
 
+  const typeStyles: Record<string, { border: string; icon: any; iconColor: string }> = {
+    allocation: { border: "border-l-blue-500", icon: Package, iconColor: "text-blue-400" },
+    approval: { border: "border-l-emerald-500", icon: CheckCircle, iconColor: "text-emerald-400" },
+    triage: { border: "border-l-amber-500", icon: AlertTriangle, iconColor: "text-amber-400" },
+    reroute: { border: "border-l-violet-500", icon: RotateCcw, iconColor: "text-violet-400" },
+    evacuation: { border: "border-l-cyan-500", icon: Shield, iconColor: "text-cyan-400" },
+  };
+
+  const statusStyles: Record<string, string> = {
+    overridden: "bg-amber-500/15 text-amber-400 border border-amber-500/20",
+    dispatched: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20",
+    escalated: "bg-red-500/15 text-red-400 border border-red-500/20",
+    pending: "bg-slate-500/15 text-slate-400 border border-slate-500/20",
+    approved: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20",
+  };
+
+  const handleActionOverride = (id: string, newStatus: "approved" | "overridden") => {
+    setLogs((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+    );
+    toast.success(
+      newStatus === "approved"
+        ? "Allocation Confirmed by Commander"
+        : "Allocation Overridden by Commander"
+    );
+  };
+
   return (
-    <Card className="border border-[#222933] bg-[#181E26] text-[#F6F4EF] rounded-sm flex flex-col h-full font-ibm-sans shadow-none">
-      <CardHeader className="p-4 border-b border-[#222933]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
-            <div>
-              <CardTitle className="text-xs font-bold uppercase tracking-wider font-mono text-[#F6F4EF]">
-                AI AGENT AUDIT LOG TERMINAL
-              </CardTitle>
-              <CardDescription className="text-xs text-[#8A99AD]">
-                Autonomous multi-agent trace with Commander governance.
-              </CardDescription>
-            </div>
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] flex flex-col h-full backdrop-blur-md overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+            <Terminal className="w-4 h-4 text-cyan-400" />
           </div>
-
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase bg-[#12161C] border border-[#222933] text-[#3B6D11]">
-              <span className="dot-safe" />
-              LIVE STREAM
-            </span>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-200">AI Agent Audit Log</h3>
+            <p className="text-[11px] text-slate-400">
+              Multi-agent trace with Commander governance
+            </p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="text-[11px] font-mono text-cyan-400">Live Stream</span>
+        </div>
+      </div>
 
-        {/* Category Filter Pills */}
-        <div className="flex items-center gap-1 mt-3 pt-2 border-t border-[#222933] overflow-x-auto">
-          {["ALL", "ALLOCATION", "TRIAGE", "REROUTE", "EVACUATION"].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat)}
-              className={`px-2.5 py-1 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors ${
-                filterCategory === cat
-                  ? "bg-[#F6F4EF] text-[#12161C] font-bold"
-                  : "bg-[#12161C] text-[#8A99AD] hover:text-[#F6F4EF] border border-[#222933]"
-              }`}
+      {/* Filter Tabs */}
+      <div className="flex gap-1 px-5 py-3 border-b border-white/[0.06] overflow-x-auto">
+        {["All", "Allocation", "Triage", "Reroute", "Evacuation"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveFilter(tab)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              activeFilter === tab
+                ? "bg-white/[0.08] text-slate-200 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Log Entries List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[460px]">
+        {filteredLogs.map((entry) => {
+          const s = typeStyles[entry.category || "allocation"] || typeStyles.allocation;
+          const statusStyle =
+            statusStyles[entry.status || "dispatched"] || statusStyles.dispatched;
+          const Icon = s.icon;
+
+          const formattedTime = new Date(entry.timestamp).toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          });
+
+          return (
+            <div
+              key={entry.id}
+              className={`border-l-2 ${s.border} pl-4 py-3 rounded-r-xl bg-white/[0.02] hover:bg-white/[0.04] transition group`}
             >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </CardHeader>
+              {/* Title row */}
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className={`w-3.5 h-3.5 ${s.iconColor}`} />
+                <span className="text-xs font-semibold text-slate-200">
+                  {entry.action}
+                </span>
+                <span
+                  className={`ml-auto px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${statusStyle}`}
+                >
+                  {entry.status || "dispatched"}
+                </span>
+              </div>
 
-      {/* Scrolling Audit List */}
-      <CardContent className="p-0 flex-1 overflow-y-auto max-h-[520px] divide-y divide-[#222933]">
-        {loading ? (
-          <div className="divide-y divide-[#222933]">
-            {Array.from({ length: 4 }).map((_, idx) => (
-              <div key={idx} className="p-4 space-y-2 bg-[#181E26]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-sm bg-[#222933]" />
-                    <Skeleton className="h-4 w-52 bg-[#222933]" />
-                  </div>
-                  <Skeleton className="h-6 w-24 rounded-sm bg-[#222933]" />
+              {/* JSON Payload View */}
+              {entry.details_json && Object.keys(entry.details_json).length > 0 ? (
+                <pre className="text-[11px] font-mono text-slate-300 bg-black/30 rounded-lg p-2.5 overflow-x-auto mb-2 border border-white/[0.04]">
+                  {JSON.stringify(entry.details_json, null, 2)}
+                </pre>
+              ) : entry.details ? (
+                <p className="text-xs text-slate-400 mb-2 leading-relaxed bg-black/20 p-2 rounded-lg">
+                  {entry.details}
+                </p>
+              ) : null}
+
+              {/* Agent + Time footer & Actions */}
+              <div className="flex items-center justify-between gap-2 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">Agent:</span>
+                  <span className="font-mono text-slate-300 px-1.5 py-0.5 rounded bg-white/[0.04]">
+                    {entry.agent_name}
+                  </span>
                 </div>
-                <Skeleton className="h-3 w-full bg-[#222933]/60" />
-                <div className="flex items-center gap-3 pt-1">
-                  <Skeleton className="h-3 w-28 bg-[#222933]" />
-                  <Skeleton className="h-3 w-20 bg-[#222933]" />
+
+                <div className="flex items-center gap-3">
+                  {/* Manual Commander Override buttons if pending */}
+                  {entry.status === "pending" || entry.status === "overridden" ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleActionOverride(entry.id, "approved")}
+                        className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1"
+                        title="Approve AI Decision"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>Ratify</span>
+                      </button>
+                    </div>
+                  ) : null}
+
+                  <span className="text-slate-400 font-mono flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {formattedTime}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center p-12 text-[#8A99AD] text-xs font-mono">
-            No autonomous audit logs recorded for category {filterCategory}.
-          </div>
-        ) : (
-          filtered.map((log) => {
-            const isPending = log.status === "pending_review";
-            const isApproved = log.status === "approved";
-            const stripClass = isPending
-              ? "border-l-4 border-l-[#854F0B]"
-              : isApproved
-              ? "border-l-4 border-l-[#3B6D11]"
-              : "border-l-4 border-l-[#791F1F]";
-
-            return (
-              <div
-                key={log.id}
-                className={`p-4 transition-colors hover:bg-[#12161C]/50 flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-[#181E26] ${stripClass}`}
-              >
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-[#F6F4EF] flex items-center gap-1">
-                      <Cpu className="w-3.5 h-3.5 text-[#8A99AD]" strokeWidth={1.75} />
-                      {log.action}
-                    </span>
-
-                    <span className="font-ibm-mono text-[10px] uppercase px-1.5 py-0.5 rounded-sm bg-[#12161C] text-[#8A99AD] border border-[#222933]">
-                      {log.category}
-                    </span>
-
-                    {log.confidence_score && (
-                      <span className="font-ibm-mono text-[10px] px-1.5 py-0.5 rounded-sm bg-[#12161C] text-[#3B6D11] border border-[#222933]">
-                        {log.confidence_score.toFixed(1)}% CONFIDENCE
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-xs text-[#8A99AD] leading-relaxed">
-                    {log.details || (log.details_json ? JSON.stringify(log.details_json) : "Autonomous agent operation logged.")}
-                  </p>
-
-                  <div className="flex items-center gap-3 text-[11px] font-ibm-mono text-[#8A99AD] pt-1">
-                    <span>AGENT: <strong className="text-[#F6F4EF]">{log.agent_name}</strong></span>
-                    {log.affected_zone && (
-                      <>
-                        <span>•</span>
-                        <span>ZONE: <strong className="text-[#F6F4EF]">{log.affected_zone}</strong></span>
-                      </>
-                    )}
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" strokeWidth={1.75} />
-                      {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} UTC
-                    </span>
-                  </div>
-                </div>
-
-                {/* Status and Manual Authority Override Buttons */}
-                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-2 sm:pt-0">
-                  {isPending ? (
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleReject(log.id)}
-                        className="h-7 text-[10px] px-2"
-                        title="Reject AI Allocation"
-                      >
-                        Reject Allocation
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => handleApprove(log.id)}
-                        className="h-7 text-[10px] px-2.5"
-                        title="Approve AI Allocation"
-                      >
-                        Approve Allocation
-                      </Button>
-                    </div>
-                  ) : isApproved ? (
-                    <div className="inline-flex items-center gap-1 font-ibm-mono text-[10px] text-[#3B6D11] bg-[#12161C] border border-[#222933] px-2 py-0.5 rounded-sm">
-                      <CheckCircle2 className="w-3 h-3" strokeWidth={1.75} />
-                      <span>APPROVED</span>
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1 font-ibm-mono text-[10px] text-[#791F1F] bg-[#12161C] border border-[#222933] px-2 py-0.5 rounded-sm">
-                      <XCircle className="w-3 h-3" strokeWidth={1.75} />
-                      <span>OVERRIDDEN</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

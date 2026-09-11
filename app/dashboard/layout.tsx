@@ -168,7 +168,24 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${isCitizen ? "bg-[#F6F4EF] text-[#1A1A1A] font-public-sans" : "bg-[#12161C] text-[#F6F4EF] font-ibm-sans"}`}>
+    <div
+      className={`min-h-screen flex flex-col relative ${
+        isCitizen
+          ? "bg-[#F6F4EF] text-[#1A1A1A] font-public-sans"
+          : "bg-[#0B0F19] bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#0F172A] text-slate-100 font-ibm-sans"
+      }`}
+    >
+      {/* Subtle background dot-grid texture overlay */}
+      {!isCitizen && (
+        <div
+          className="fixed inset-0 opacity-[0.02] pointer-events-none z-0"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+      )}
+
       {/* Topbar */}
       <AppTopbar
         userRole={userRole}
@@ -179,7 +196,7 @@ export default function DashboardLayout({
       />
 
       {/* Main Container: Sidebar + Content */}
-      <div className="flex flex-1 relative overflow-hidden">
+      <div className="flex flex-1 relative overflow-hidden z-10">
         {/* Desktop Sidebar */}
         <AppSidebar
           userRole={userRole}
@@ -197,16 +214,18 @@ export default function DashboardLayout({
           description="Emergency Response Switchboard"
         >
           <div className="flex flex-col gap-3 p-1">
-            <p className="text-[11px] font-mono uppercase text-[#8A99AD]">Active Role: {userRole}</p>
+            <p className="text-[11px] font-mono uppercase text-slate-400">
+              Active Role: {userRole}
+            </p>
             <div className="flex flex-col gap-2">
               {(["citizen", "rescue", "authority"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => handleRoleSwitch(r)}
-                  className={`px-3 py-2 rounded-sm text-xs text-left capitalize font-semibold border transition-colors ${
+                  className={`px-3 py-2 rounded-xl text-xs text-left capitalize font-semibold border transition-colors ${
                     userRole === r
-                      ? "bg-[#F6F4EF] text-[#12161C] border-[#F6F4EF]"
-                      : "bg-[#181E26] text-[#8A99AD] border-[#222933] hover:text-[#F6F4EF] hover:bg-[#12161C]"
+                      ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                      : "bg-white/[0.03] text-slate-400 border-white/[0.06] hover:text-slate-200 hover:bg-white/[0.06]"
                   }`}
                 >
                   {r} Dashboard
@@ -215,7 +234,7 @@ export default function DashboardLayout({
             </div>
             <button
               onClick={handleLogout}
-              className="mt-6 px-3 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider text-[#F6F4EF] bg-[#791F1F] hover:bg-[#922626] border border-[#791F1F] transition-colors"
+              className="mt-6 px-3 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider text-white bg-red-600 hover:bg-red-500 border border-red-500/30 transition-colors shadow-lg shadow-red-500/20"
             >
               Sign Out
             </button>
@@ -229,7 +248,7 @@ export default function DashboardLayout({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
           className={`flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 ${
-            isCitizen ? "bg-[#F6F4EF]" : "bg-[#12161C]"
+            isCitizen ? "bg-[#F6F4EF]" : "bg-transparent"
           }`}
         >
           <div className="max-w-7xl mx-auto space-y-6">
@@ -242,3 +261,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+

@@ -3,30 +3,20 @@
 /**
  * ==============================================================================
  * KURUKSHETRA PS20 - AGENTIC DISASTER RELIEF
- * Component: ZoneDetailPanel.tsx
+ * Component: ZoneDetailPanel.tsx (Command Glass Overhaul)
  * ==============================================================================
- * 
- * Strict Institutional Design System:
- * - Base: #181E26, Border: #222933, Text: #F6F4EF
- * - Severity Strips: #791F1F (Critical), #854F0B (Watch), #3B6D11 (Safe)
- * - Typography: IBM Plex Sans (UI) & IBM Plex Mono (Coordinates, IDs, Timestamps)
  */
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  AlertTriangle,
   CheckCircle2,
   X,
   MapPin,
   Clock,
   Boxes,
-  ShieldCheck,
-  Radio,
   Truck,
   Cpu,
+  Layers,
   ArrowUpRight,
 } from "lucide-react";
 import type { TacticalZone } from "./TacticalIndiaMap";
@@ -44,15 +34,15 @@ export default function ZoneDetailPanel({
 }: ZoneDetailPanelProps) {
   if (!zone) {
     return (
-      <div className="border border-[#222933] bg-[#181E26] rounded-sm p-6 text-center space-y-3">
-        <div className="w-10 h-10 rounded-full bg-[#141920] border border-[#222933] flex items-center justify-center mx-auto text-[#8A99AD]">
-          <MapPin className="w-5 h-5" strokeWidth={1.75} />
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md p-8 text-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto text-slate-400">
+          <MapPin className="w-6 h-6" />
         </div>
-        <h4 className="font-mono text-xs uppercase font-bold text-[#F6F4EF] tracking-wider">
+        <h4 className="text-sm font-semibold text-slate-200">
           No Incident Zone Selected
         </h4>
-        <p className="text-xs text-[#8A99AD] max-w-[260px] mx-auto leading-relaxed">
-          Select any marker on the India Tactical Map or click &quot;View details&quot; in a popup to inspect real-time AI triage and logistics.
+        <p className="text-xs text-slate-400 max-w-[280px] mx-auto leading-relaxed">
+          Click on any marker on the live India map or select &quot;View details&quot; in a popup to inspect real-time AI triage and autonomous allocation.
         </p>
       </div>
     );
@@ -62,75 +52,72 @@ export default function ZoneDetailPanel({
   const isCritical = sev === "CRITICAL";
   const isWatch = sev === "HIGH" || sev === "MODERATE";
 
-  const borderColor = isCritical
-    ? "border-l-[#791F1F]"
+  const badgeStyles = isCritical
+    ? "bg-red-500/20 text-red-400 border-red-500/30"
     : isWatch
-    ? "border-l-[#854F0B]"
-    : "border-l-[#3B6D11]";
-
-  const badgeBg = isCritical
-    ? "bg-[#791F1F] text-white border-[#A83232]"
-    : isWatch
-    ? "bg-[#854F0B] text-white border-[#B26B10]"
-    : "bg-[#3B6D11] text-white border-[#559E18]";
+    ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+    : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
 
   const score = zone.severity_score !== undefined ? zone.severity_score : isCritical ? 9 : 6;
   const lat = zone.location_lat ?? zone.latitude ?? 13.0827;
   const lng = zone.location_lng ?? zone.longitude ?? 80.2707;
 
   return (
-    <div className={`border border-[#222933] border-l-4 ${borderColor} bg-[#181E26] rounded-sm flex flex-col font-ibm-sans overflow-hidden shadow-lg`}>
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md flex flex-col font-ibm-sans overflow-hidden shadow-2xl">
       {/* Panel Header */}
-      <div className="p-4 border-b border-[#222933] bg-[#141920] flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className={
-                isCritical
-                  ? "dot-critical"
-                  : isWatch
-                  ? "dot-watch"
-                  : "dot-safe"
-              }
-            />
-            <span className="font-mono text-[10px] uppercase tracking-widest text-[#8A99AD]">
-              ZONE INSPECTION // ID: {zone.id.slice(0, 8)}
-            </span>
+      <div className="p-5 border-b border-white/[0.06] bg-white/[0.02] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+            <Layers className="w-4 h-4 text-blue-400" />
           </div>
-          <h3 className="text-sm sm:text-base font-bold text-[#F6F4EF] truncate max-w-[280px]">
-            {zone.name || zone.zone || zone.type}
-          </h3>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-200">
+                Zone Inspection
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">
+                ID: {zone.id.slice(0, 8)}
+              </span>
+            </div>
+            <h3 className="text-sm font-bold text-slate-100 truncate max-w-[260px] mt-0.5">
+              {zone.name || zone.zone || zone.type}
+            </h3>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${badgeBg}`}>
-            SCORE {score}/10
+          <span className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg border ${badgeStyles}`}>
+            Score {score}/10
           </span>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 text-[#8A99AD] hover:text-[#F6F4EF] hover:bg-[#222933] rounded transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition"
               title="Close Zone Inspector"
             >
-              <X className="w-4 h-4" strokeWidth={1.75} />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Panel Body */}
-      <div className="p-4 space-y-4 text-xs">
-        {/* Geo Telemetry */}
-        <div className="grid grid-cols-2 gap-2 bg-[#12161C] p-2.5 rounded border border-[#222933] font-mono text-[11px]">
+      {/* Panel Content */}
+      <div className="p-5 space-y-4 text-xs">
+        {/* Geographic Coordinates & Time */}
+        <div className="grid grid-cols-2 gap-3 bg-black/20 p-3 rounded-xl border border-white/[0.04] font-mono text-[11px]">
           <div>
-            <span className="text-[#8A99AD] block text-[10px]">COORDINATES</span>
-            <span className="text-[#F6F4EF] font-bold">
+            <span className="text-slate-400 block text-[10px] uppercase font-sans">
+              Coordinates
+            </span>
+            <span className="text-slate-200 font-bold">
               {lat.toFixed(4)}° N, {lng.toFixed(4)}° E
             </span>
           </div>
           <div>
-            <span className="text-[#8A99AD] block text-[10px]">TIME RECORDED</span>
-            <span className="text-[#F6F4EF]">
+            <span className="text-slate-400 block text-[10px] uppercase font-sans">
+              Time Detected
+            </span>
+            <span className="text-slate-200">
               {zone.created_at
                 ? new Date(zone.created_at).toLocaleTimeString("en-IN", {
                     hour: "2-digit",
@@ -142,23 +129,21 @@ export default function ZoneDetailPanel({
           </div>
         </div>
 
-        {/* Incident Narrative */}
+        {/* Situation Briefing */}
         <div className="space-y-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A99AD] block">
-            Situation Briefing
-          </span>
-          <p className="text-[#F6F4EF] leading-relaxed bg-[#141920] p-3 rounded border border-[#222933]">
+          <p className="text-xs font-medium text-slate-400">Situation Briefing</p>
+          <p className="text-slate-200 leading-relaxed bg-black/20 p-3 rounded-xl border border-white/[0.04]">
             {zone.description}
           </p>
         </div>
 
-        {/* Extracted Needs & Allocation Status */}
+        {/* Tactical Resource Requirements */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A99AD]">
+            <p className="text-xs font-medium text-slate-400">
               Tactical Resource Requirements
-            </span>
-            <span className="font-mono text-[10px] text-[#3B6D11] flex items-center gap-1">
+            </p>
+            <span className="text-[11px] text-emerald-400 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> Auto-Optimized
             </span>
           </div>
@@ -168,54 +153,50 @@ export default function ZoneDetailPanel({
               zone.needed_resources.map((res, idx) => (
                 <div
                   key={idx}
-                  className="px-2 py-1 bg-[#12161C] border border-[#222933] rounded font-mono text-[10px] text-[#F6F4EF] flex items-center gap-1.5"
+                  className="px-2.5 py-1 bg-white/[0.04] border border-white/[0.06] rounded-lg font-mono text-[11px] text-slate-200 flex items-center gap-1.5"
                 >
-                  <Boxes className="w-3 h-3 text-[#38BDF8]" strokeWidth={1.75} />
+                  <Boxes className="w-3 h-3 text-cyan-400" />
                   <span>{res.replace(/_/g, " ").toUpperCase()}</span>
                 </div>
               ))
             ) : (
-              <span className="text-[11px] text-[#8A99AD] font-mono">
-                Standard perimeter monitoring resources deployed.
+              <span className="text-slate-400 text-xs">
+                Standard precautionary monitoring deployed.
               </span>
             )}
           </div>
         </div>
 
-        {/* AI Autonomous Triage Box */}
-        <div className="border border-[#222933] bg-[#141920] p-3 rounded space-y-1.5">
-          <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#8A99AD] uppercase tracking-wider">
-            <Cpu className="w-3.5 h-3.5 text-[#A78BFA]" />
+        {/* Autonomous Sentinel Triage Assessment */}
+        <div className="rounded-xl border border-white/[0.04] bg-white/[0.02] p-3.5 space-y-1.5">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
+            <Cpu className="w-4 h-4 text-violet-400" />
             <span>Autonomous Sentinel Triage Assessment</span>
           </div>
-          <p className="text-[11px] text-[#CBD5E1] leading-relaxed">
-            Incident classified with priority weighting {score}/10 based on structural risk and population vulnerability. Gemini logistics algorithm routed closest forward supply from Central Logistics Hub.
+          <p className="text-slate-400 leading-relaxed text-[11px]">
+            Incident classified with priority weighting {score}/10 based on structural risk and density. Gemini logistics algorithm mapped closest forward depots with zero transit bottlenecks.
           </p>
         </div>
 
         {/* Action Controls */}
-        <div className="pt-2 border-t border-[#222933] flex items-center gap-2">
-          <Button
-            variant="default"
-            size="sm"
+        <div className="pt-3 border-t border-white/[0.06] flex items-center gap-3">
+          <button
             onClick={() => onDispatchSquad && onDispatchSquad(zone)}
-            className="flex-1 h-8 text-[11px] font-bold tracking-wider uppercase bg-[#F6F4EF] text-[#12161C] hover:bg-white flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/20 transition flex items-center justify-center gap-2"
           >
-            <Truck className="w-3.5 h-3.5" />
-            <span>Deploy Immediate Squad</span>
-          </Button>
+            <Truck className="w-4 h-4" />
+            <span>Deploy Emergency Squad</span>
+          </button>
 
-          <Button
-            variant="secondary"
-            size="sm"
+          <button
             onClick={() => {
               const el = document.getElementById("inventory-section");
               if (el) el.scrollIntoView({ behavior: "smooth" });
             }}
-            className="h-8 text-[11px] font-mono text-[#F6F4EF] border-[#222933] bg-[#12161C] hover:bg-[#181E26]"
+            className="py-2.5 px-4 rounded-xl text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.06] transition"
           >
             <span>Audit Stocks</span>
-          </Button>
+          </button>
         </div>
       </div>
     </div>

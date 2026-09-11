@@ -6,15 +6,13 @@
  * Authority Master Tactical Console (/dashboard/authority/page.tsx)
  * ==============================================================================
  * 
- * Strict Institutional Design System:
- * - Base: #12161C, Card: #181E26, Border: #222933, Text: #F6F4EF
- * - Severity Left-Border Strips: #791F1F (Critical), #854F0B (Watch), #3B6D11 (Safe)
- * - Typography: IBM Plex Sans (UI) & IBM Plex Mono (Metrics, Timestamps, IDs)
- * - Strict 3 Button Variants (Primary solid, Secondary outline, Destructive)
- * - Top Row: 4 Stat Cards
- * - Middle Row: 60% Interactive Map + 40% Audit Log Terminal & Notification Feed
- * - Bottom Row: Resource Inventory Table
- * - Fixed Action: Bottom-Right Floating Disaster Simulation Trigger
+ * Command Glass Design System:
+ * - Frosted glass cards on deep gradient background
+ * - Purposeful severity accents: Critical (#EF4444), Warning (#F59E0B), Safe (#10B981), Info (#3B82F6)
+ * - Hero Stat Cards with ambient glow blobs and drop-shadow metrics
+ * - Live India GIS Command Map with NASA FIRMS & USGS real-time feeds
+ * - Timeline-style AI Agent Audit Trail with manual commander ratification
+ * - Glowing CTA "Simulate Disaster Scenario" with animated shimmer
  */
 
 import React, { useState, useEffect } from "react";
@@ -25,57 +23,154 @@ import InventoryTable from "@/components/InventoryTable";
 import AuditLog from "@/components/AuditLog";
 import { DispatchedNotificationFeed } from "@/components/authority/DispatchedNotificationFeed";
 import { IncidentReport } from "@/components/ReportForm";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
-  ShieldAlert,
-  Radio,
-  MapPin,
-  RefreshCw,
-  AlertTriangle,
-  Users,
+  Shield,
   Activity,
-  Boxes,
-  Cpu,
-  Loader2,
-  AlertCircle,
+  Package,
+  Users,
+  AlertTriangle,
+  RefreshCw,
+  Terminal,
   Layers,
-  Terminal
+  MapPin,
+  TrendingUp,
+  Loader2,
 } from "lucide-react";
 import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
 import type { TacticalZone } from "@/components/authority/TacticalIndiaMap";
 
-// Dynamic client-only Tactical India Command Map
+// Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
   () => import("@/components/authority/TacticalIndiaMap"),
   {
     ssr: false,
     loading: () => (
-      <div className="h-[520px] w-full border border-[#222933] bg-[#12161C] rounded-sm p-6 flex flex-col justify-between">
+      <div className="h-[520px] w-full rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 flex flex-col justify-between backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-52 bg-[#222933]" />
+          <Skeleton className="h-4 w-52 bg-white/[0.06]" />
           <div className="flex gap-2">
-            <Skeleton className="h-5 w-16 bg-[#222933]" />
-            <Skeleton className="h-5 w-16 bg-[#222933]" />
+            <Skeleton className="h-5 w-16 bg-white/[0.06]" />
+            <Skeleton className="h-5 w-16 bg-white/[0.06]" />
           </div>
         </div>
         <div className="flex flex-col items-center justify-center space-y-2 text-center">
-          <Loader2 className="h-7 w-7 text-[#8A99AD] animate-spin" strokeWidth={1.75} />
-          <p className="text-xs font-mono uppercase tracking-wider text-[#8A99AD]">
+          <Loader2 className="h-7 w-7 text-slate-400 animate-spin" strokeWidth={1.75} />
+          <p className="text-xs font-mono uppercase tracking-wider text-slate-400">
             Synchronizing NASA FIRMS &amp; USGS Satellite Telemetry...
           </p>
         </div>
-        <div className="flex items-center justify-between pt-2 border-t border-[#222933]">
-          <Skeleton className="h-3 w-36 bg-[#222933]" />
-          <Skeleton className="h-3 w-28 bg-[#222933]" />
+        <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+          <Skeleton className="h-3 w-36 bg-white/[0.06]" />
+          <Skeleton className="h-3 w-28 bg-white/[0.06]" />
         </div>
       </div>
     ),
   }
 );
 
+// Stat Card Component with ambient color glow blob & soft number shadow
+function StatCard({
+  label,
+  value,
+  subtitle,
+  icon: Icon,
+  trend,
+  color,
+}: {
+  label: string;
+  value: string;
+  subtitle: string;
+  icon: any;
+  trend?: string;
+  color: "blue" | "emerald" | "violet" | "red";
+}) {
+  const colorMap = {
+    blue: {
+      iconBg: "bg-blue-500/10",
+      iconColor: "text-blue-400",
+      valueShadow: "drop-shadow-[0_0_12px_rgba(59,130,246,0.3)]",
+      blobColor: "bg-blue-500",
+    },
+    emerald: {
+      iconBg: "bg-emerald-500/10",
+      iconColor: "text-emerald-400",
+      valueShadow: "drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]",
+      blobColor: "bg-emerald-500",
+    },
+    violet: {
+      iconBg: "bg-violet-500/10",
+      iconColor: "text-violet-400",
+      valueShadow: "drop-shadow-[0_0_12px_rgba(139,92,246,0.3)]",
+      blobColor: "bg-violet-500",
+    },
+    red: {
+      iconBg: "bg-red-500/10",
+      iconColor: "text-red-400",
+      valueShadow: "drop-shadow-[0_0_12px_rgba(239,68,68,0.3)]",
+      blobColor: "bg-red-500",
+    },
+  };
+
+  const c = colorMap[color];
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/[0.10] transition-all duration-300 backdrop-blur-md cursor-default">
+      {/* Subtle ambient gradient blob in corner */}
+      <div
+        className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 transition-opacity duration-300 group-hover:opacity-30 ${c.blobColor}`}
+      />
+
+      <div className="relative">
+        {/* Top row: label + icon */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-medium text-slate-400">{label}</p>
+          <div className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center transition-transform group-hover:scale-105`}>
+            <Icon className={`w-[18px] h-[18px] ${c.iconColor}`} strokeWidth={1.75} />
+          </div>
+        </div>
+
+        {/* Big number */}
+        <p className={`text-3xl font-bold text-slate-100 font-mono tracking-tight ${c.valueShadow}`}>
+          {value}
+        </p>
+
+        {/* Subtitle */}
+        <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
+
+        {/* Trend badge */}
+        {trend && (
+          <div className="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 text-[11px] font-medium font-mono">
+            <TrendingUp className="w-3 h-3" />
+            {trend}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Legend Dot Component
+function LegendDot({
+  color,
+  label,
+}: {
+  color: "red" | "amber" | "emerald";
+  label: string;
+}) {
+  const dotClass = {
+    red: "bg-red-500",
+    amber: "bg-amber-500",
+    emerald: "bg-emerald-500",
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={`w-2 h-2 rounded-full ${dotClass[color]}`} />
+      <span className="text-[11px] text-slate-400">{label}</span>
+    </div>
+  );
+}
 
 const INITIAL_MASTER_INCIDENTS: IncidentReport[] = [
   {
@@ -165,7 +260,6 @@ export default function AuthorityDashboardPage() {
     setSelectedZone(zone);
     setActiveRightTab("zone");
   };
-
 
   // Fetch incidents from Supabase
   const fetchIncidents = async () => {
@@ -319,172 +413,158 @@ export default function AuthorityDashboardPage() {
   const totalIncidents = incidents.length;
   const criticalAlerts = incidents.filter((i) => i.severity === "CRITICAL" || i.severity === "HIGH").length;
   const activeRescueTeams = 8;
-  const resourcesAvailable = 8245;
+  const resourcesAvailable = "8,245";
 
   return (
-    <div className="space-y-6 text-[#F6F4EF] font-ibm-sans pb-16">
+    <div className="space-y-6 text-slate-100 font-ibm-sans pb-16">
       
-      {/* Portal Header */}
-      <div className="border border-[#222933] bg-[#181E26] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="dot-critical" />
-            <span className="font-ibm-mono text-[11px] uppercase tracking-widest text-[#8A99AD]">
-              OPERATIONAL CONSOLE // STATE DISASTER MANAGEMENT AUTHORITY
-            </span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#F6F4EF]">
-            Tactical Disaster Command &amp; Multi-Agent Allocation Desk
-          </h1>
-          <p className="text-xs text-[#8A99AD] mt-0.5">
-            Realtime GIS sensor telemetry, autonomous Sentinel triage, and Gemini resource distribution.
+      {/* 8. Page Header — Clean, Warm, Professional */}
+      <div className="mb-2">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <p className="text-xs font-medium text-slate-400">
+            Operational Console — State Disaster Management Authority
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
+              Tactical Disaster Command
+            </h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Real-time GIS telemetry, autonomous triage, and AI resource distribution
+            </p>
+          </div>
+          
+          <button
             onClick={fetchIncidents}
             disabled={loadingIncidents}
-            className="h-8"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition shadow-sm self-start sm:self-auto"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loadingIncidents ? "animate-spin" : ""}`} strokeWidth={1.75} />
+            <RefreshCw className={`w-4 h-4 ${loadingIncidents ? "animate-spin text-white" : ""}`} />
             <span>Re-sync Grid</span>
-          </Button>
+          </button>
         </div>
       </div>
 
       {incidentError && (
-        <div className="border border-[#222933] border-l-4 border-l-[#854F0B] bg-[#181E26] p-3 text-xs flex items-center justify-between gap-2">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs flex items-center justify-between gap-2 text-amber-300">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-[#854F0B]" strokeWidth={1.75} />
-            <span className="text-[#8A99AD]">{incidentError}</span>
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <span>{incidentError}</span>
           </div>
           <button
             onClick={fetchIncidents}
-            className="font-ibm-mono text-[11px] uppercase font-semibold text-[#F6F4EF] hover:underline"
+            className="font-mono text-[11px] font-semibold text-slate-200 hover:underline"
           >
             Retry Sync
           </button>
         </div>
       )}
 
-      {/* TOP ROW: 4 Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Card 1: Total Incidents */}
-        <Card severity="watch" className="p-4 bg-[#181E26] border-[#222933]">
-          <div className="flex items-center justify-between pb-1">
-            <span className="font-ibm-mono text-[11px] uppercase tracking-wider text-[#8A99AD]">
-              Total Incidents
-            </span>
-            <Activity className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
-          </div>
-          <p className="font-ibm-mono text-2xl sm:text-3xl font-bold text-[#F6F4EF] mt-1">
-            {totalIncidents}
-          </p>
-          <span className="font-ibm-mono text-[10px] text-[#8A99AD] block mt-1">
-            Sector zones A through E
-          </span>
-        </Card>
-
-        {/* Card 2: Resources Available */}
-        <Card severity="safe" className="p-4 bg-[#181E26] border-[#222933]">
-          <div className="flex items-center justify-between pb-1">
-            <span className="font-ibm-mono text-[11px] uppercase tracking-wider text-[#8A99AD]">
-              Resources Available
-            </span>
-            <Boxes className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
-          </div>
-          <p className="font-ibm-mono text-2xl sm:text-3xl font-bold text-[#F6F4EF] mt-1">
-            {resourcesAvailable.toLocaleString()}
-          </p>
-          <span className="font-ibm-mono text-[10px] text-[#8A99AD] block mt-1">
-            Units across 4 regional hubs
-          </span>
-        </Card>
-
-        {/* Card 3: Active Rescue Teams */}
-        <Card severity="none" className="p-4 bg-[#181E26] border-[#222933]">
-          <div className="flex items-center justify-between pb-1">
-            <span className="font-ibm-mono text-[11px] uppercase tracking-wider text-[#8A99AD]">
-              Active Rescue Teams
-            </span>
-            <Radio className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
-          </div>
-          <p className="font-ibm-mono text-2xl sm:text-3xl font-bold text-[#F6F4EF] mt-1">
-            {activeRescueTeams}
-          </p>
-          <span className="font-ibm-mono text-[10px] text-[#8A99AD] block mt-1">
-            Field squads on duty
-          </span>
-        </Card>
-
-        {/* Card 4: AI Alerts / Critical Hotspots */}
-        <Card severity="critical" className="p-4 bg-[#181E26] border-[#222933]">
-          <div className="flex items-center justify-between pb-1">
-            <span className="font-ibm-mono text-[11px] uppercase tracking-wider text-[#8A99AD]">
-              AI Critical Alerts
-            </span>
-            <Cpu className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
-          </div>
-          <p className="font-ibm-mono text-2xl sm:text-3xl font-bold text-[#F6F4EF] mt-1">
-            {criticalAlerts}
-          </p>
-          <span className="font-ibm-mono text-[10px] text-[#8A99AD] block mt-1">
-            Priority score &ge; 7
-          </span>
-        </Card>
+      {/* 4. Stats Cards Row (The Hero Numbers) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Total Incidents"
+          value={totalIncidents.toString()}
+          subtitle="Sector zones A through E"
+          icon={Activity}
+          trend="+2 in last hour"
+          color="blue"
+        />
+        <StatCard 
+          label="Resources Available"
+          value={resourcesAvailable}
+          subtitle="Units across 4 regional hubs"
+          icon={Package}
+          color="emerald"
+        />
+        <StatCard 
+          label="Active Rescue Teams"
+          value={activeRescueTeams.toString()}
+          subtitle="Field squads on duty"
+          icon={Users}
+          color="violet"
+        />
+        <StatCard 
+          label="AI Critical Alerts"
+          value={criticalAlerts.toString()}
+          subtitle="Priority score ≥ 7"
+          icon={AlertTriangle}
+          color="red"
+        />
       </div>
 
-      {/* MIDDLE ROW: 60% Map + 40% Audit Log Terminal & Notifications */}
+      {/* 5 & 6. Middle Section: Map + AI Audit Log Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: 60% (7 Cols on desktop) Live India Command Map & Notification Stream */}
-        <div className="lg:col-span-7 space-y-6">
-          <TacticalIndiaMap
-            initialZones={tacticalZones}
-            onSelectZone={handleSelectZone}
-            selectedZoneId={selectedZone?.id}
-          />
+        {/* Left Column: 60% (7 Cols) Live Tactical India Map */}
+        <div id="map-section" className="lg:col-span-7 space-y-6">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden backdrop-blur-md">
+            {/* Map Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+              <div className="flex items-center gap-3">
+                <MapPin className="w-4 h-4 text-blue-400" />
+                <h3 className="text-sm font-semibold text-slate-200">
+                  Regional Incident Telemetry
+                </h3>
+              </div>
+              
+              {/* Legend Dots */}
+              <div className="flex items-center gap-4">
+                <LegendDot color="red" label="Critical" />
+                <LegendDot color="amber" label="Watch" />
+                <LegendDot color="emerald" label="Safe" />
+              </div>
+            </div>
 
-          {/* Dispatched Broadcast Feed */}
+            {/* Live Command Map Container */}
+            <TacticalIndiaMap
+              initialZones={tacticalZones}
+              onSelectZone={handleSelectZone}
+              selectedZoneId={selectedZone?.id}
+            />
+          </div>
+
+          {/* Dispatched Broadcast Notification Feed */}
           <DispatchedNotificationFeed />
         </div>
 
-        {/* Right Column: 40% (5 Cols on desktop) Dual Tab: Monospace AI Audit Log & Zone Inspector */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* Top Tab Bar for Right Column */}
-          <div className="flex items-center gap-1 border-b border-[#222933] pb-2 font-ibm-mono text-[11px]">
+        {/* Right Column: 40% (5 Cols) Dual Tab: AI Audit Log & Zone Inspector */}
+        <div id="audit-section" className="lg:col-span-5 space-y-4">
+          {/* Dual Tab Header */}
+          <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3 text-xs font-medium">
             <button
               type="button"
               onClick={() => setActiveRightTab("audit")}
-              className={`px-3 py-1.5 rounded-sm transition flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-2 ${
                 activeRightTab === "audit"
-                  ? "bg-[#222933] text-[#F6F4EF] font-bold shadow-sm"
-                  : "text-[#8A99AD] hover:text-[#F6F4EF]"
+                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <Terminal className="w-3.5 h-3.5" />
-              <span>AI AUDIT TERMINAL</span>
+              <Terminal className="w-4 h-4 text-cyan-400" />
+              <span>AI Agent Audit Log</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveRightTab("zone")}
-              className={`px-3 py-1.5 rounded-sm transition flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-2 ${
                 activeRightTab === "zone"
-                  ? "bg-[#222933] text-[#F6F4EF] font-bold shadow-sm"
-                  : "text-[#8A99AD] hover:text-[#F6F4EF]"
+                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>ZONE INSPECTOR</span>
+              <Layers className="w-4 h-4 text-blue-400" />
+              <span>Zone Inspector</span>
               {selectedZone && (
-                <span className="w-2 h-2 rounded-full bg-[#791F1F] inline-block ml-0.5 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse" />
               )}
             </button>
           </div>
 
-          {/* Tab Content Display */}
+          {/* Right Column Content */}
           {activeRightTab === "zone" ? (
             <ZoneDetailPanel
               zone={selectedZone}
@@ -501,32 +581,53 @@ export default function AuthorityDashboardPage() {
         </div>
       </div>
 
-
-      {/* BOTTOM ROW: Resource Inventory Table */}
-      <div id="inventory-section">
-        <InventoryTable />
-      </div>
-
-      {/* FLOATING ACTION: Fixed Bottom-Right Simulate Disaster Trigger */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          variant="destructive"
+      {/* 7. The "Simulate Disaster" Button — Prominent Glowing CTA with animated shimmer */}
+      <div className="pt-2">
+        <button
           onClick={handleSimulateDisaster}
           disabled={simulating}
-          className="h-11 px-5 shadow-2xl border border-[#791F1F] text-xs font-bold tracking-wider uppercase flex items-center gap-2 hover:bg-[#922626]"
+          className="
+            group relative overflow-hidden
+            w-full py-4 px-6 
+            rounded-2xl 
+            bg-gradient-to-r from-red-600 to-red-500
+            text-white font-semibold text-sm
+            shadow-lg shadow-red-500/20
+            hover:shadow-xl hover:shadow-red-500/30
+            hover:from-red-500 hover:to-red-400
+            active:scale-[0.98]
+            transition-all duration-200
+            flex items-center justify-center gap-3
+          "
         >
+          {/* Animated shimmer effect */}
+          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+          
           {simulating ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin text-white" strokeWidth={1.75} />
-              <span>Simulating Emergency Wave...</span>
+              <Loader2 className="w-5 h-5 animate-spin relative" />
+              <span className="relative">Simulating Emergency Wave...</span>
             </>
           ) : (
             <>
-              <AlertTriangle className="w-4 h-4 text-white" strokeWidth={1.75} />
-              <span>Simulate Disaster Scenario</span>
+              <AlertTriangle className="w-5 h-5 relative" />
+              <span className="relative tracking-wide">Simulate Disaster Scenario</span>
             </>
           )}
-        </Button>
+        </button>
+      </div>
+
+      {/* Bottom: Resource Inventory Table in Glass Container */}
+      <div id="inventory-section" className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-md">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-slate-200">
+            Regional Logistics &amp; Relief Stock Inventory
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Real-time supply tracking across designated Forward Relief Depots.
+          </p>
+        </div>
+        <InventoryTable />
       </div>
 
     </div>

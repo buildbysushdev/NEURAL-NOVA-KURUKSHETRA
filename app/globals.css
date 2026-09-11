@@ -8,21 +8,52 @@
     --font-sans: var(--font-ibm-sans);
     --font-mono: var(--font-ibm-mono);
 
-    /* Clean neutral dark tokens default for Authority/Rescue */
-    --background: #12161C;
-    --foreground: #F6F4EF;
-    --card: #181E26;
-    --card-foreground: #F6F4EF;
-    --border: #222933;
-    --input: #1E252E;
-    --ring: #F6F4EF;
+    /* Command Glass Design System Palette */
+    --bg-primary: #0B0F19;
+    --bg-secondary: #111827;
+    --bg-gradient: linear-gradient(145deg, #0B0F19 0%, #111827 50%, #0F172A 100%);
 
-    /* Severity colors (used ONLY for strips and dots) */
-    --severity-safe: #3B6D11;
-    --severity-watch: #854F0B;
-    --severity-critical: #791F1F;
+    /* Glass card surfaces */
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.06);
+    --card-hover: rgba(255, 255, 255, 0.06);
 
-    --radius: 2px;
+    /* Text hierarchy */
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-muted: #475569;
+    --text-accent: #CBD5E1;
+
+    /* Severity Accents */
+    --critical: #EF4444;
+    --critical-soft: rgba(239, 68, 68, 0.12);
+    --critical-glow: 0 0 20px rgba(239, 68, 68, 0.15);
+
+    --warning: #F59E0B;
+    --warning-soft: rgba(245, 158, 11, 0.12);
+    --warning-glow: 0 0 20px rgba(245, 158, 11, 0.15);
+
+    --safe: #10B981;
+    --safe-soft: rgba(16, 185, 129, 0.12);
+    --safe-glow: 0 0 20px rgba(16, 185, 129, 0.15);
+
+    --info: #3B82F6;
+    --info-soft: rgba(59, 130, 246, 0.10);
+    --info-glow: 0 0 20px rgba(59, 130, 246, 0.15);
+
+    --live: #06B6D4;
+    --live-soft: rgba(6, 182, 212, 0.10);
+
+    /* Compatibility mapping for theme tokens */
+    --background: #0B0F19;
+    --foreground: #F1F5F9;
+    --card: #111827;
+    --card-foreground: #F1F5F9;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.06);
+    --ring: #3B82F6;
+
+    --radius: 12px;
   }
 
   /* Citizen App Theme Tokens: Warm off-white base, charcoal text */
@@ -37,6 +68,46 @@
     font-family: var(--font-public-sans), sans-serif;
   }
 }
+
+@layer components {
+  /* Command Glass Card Effect */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Severity-specific card glows */
+  .glass-card.critical {
+    border-color: rgba(239, 68, 68, 0.20);
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.08);
+  }
+
+  .glass-card.warning {
+    border-color: rgba(245, 158, 11, 0.20);
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.08);
+  }
+
+  .glass-card.safe {
+    border-color: rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.06);
+  }
+
+  .glass-card.info {
+    border-color: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.06);
+  }
+}
+
 
 @layer base {
   * {
@@ -173,4 +244,36 @@ samp {
 .animate-tactical-pulse {
   animation: tacticalPulse 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
+
+/* Smooth scrollbar for dark Command Glass theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: #fff;
+}
+
+/* Live pulse animation */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-live {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
 
