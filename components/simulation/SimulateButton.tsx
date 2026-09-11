@@ -189,7 +189,7 @@ export function SimulateButton({
     <>
       {/* Floating progress overlay drawer when simulation is executing */}
       {running && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 rounded-2xl border border-white/[0.10] bg-[#111827]/95 p-5 backdrop-blur-2xl shadow-2xl animate-slide-up">
+        <div className="fixed bottom-36 right-6 z-50 w-80 sm:w-96 rounded-2xl border border-white/[0.10] bg-[#111827]/95 p-5 backdrop-blur-2xl shadow-2xl animate-slide-up">
           <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/[0.06]">
             <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
             <p className="text-xs font-semibold text-slate-100 uppercase tracking-wider font-mono">
@@ -251,7 +251,7 @@ export function SimulateButton({
 
       {/* Scenario selector popover */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 rounded-2xl border border-white/[0.10] bg-[#111827]/95 p-1 backdrop-blur-2xl shadow-2xl overflow-hidden animate-slide-up">
+        <div className="fixed bottom-36 right-6 z-50 w-80 rounded-2xl border border-white/[0.10] bg-[#111827]/95 p-1 backdrop-blur-2xl shadow-2xl overflow-hidden animate-slide-up">
           <div className="p-3 border-b border-white/[0.06]">
             <p className="text-xs font-semibold text-slate-200">
               Select Simulation Scenario
@@ -286,7 +286,7 @@ export function SimulateButton({
         onClick={() => !running && setOpen(!open)}
         disabled={running}
         className={`
-          fixed bottom-6 right-6 z-40 group overflow-hidden
+          fixed bottom-20 right-6 z-40 group overflow-hidden
           px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl 
           bg-gradient-to-r from-red-600 to-red-500
           hover:from-red-500 hover:to-red-400

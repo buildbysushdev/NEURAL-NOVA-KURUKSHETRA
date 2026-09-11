@@ -23,6 +23,7 @@ import { Toaster } from "sonner";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppTopbar } from "@/components/layout/AppTopbar";
 import { Sheet } from "@/components/ui/sheet";
+import { AgentStatusBar } from "@/components/ui/AgentStatusBar";
 
 export default function DashboardLayout({
   children,
@@ -252,6 +253,9 @@ export default function DashboardLayout({
         </motion.main>
       </div>
 
+      {/* Floating AI Agent Status Bar — visible on Authority & Rescue dashboards */}
+      {!isCitizen && <AgentStatusBar />}
+      
       <Toaster richColors position="top-right" theme={isCitizen ? "light" : "dark"} />
     </div>
   );
