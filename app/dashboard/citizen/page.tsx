@@ -7,6 +7,7 @@ import { GovernmentAlertModal } from "@/components/citizen/GovernmentAlertModal"
 import { FloatingChatbotButton } from "@/components/citizen/FloatingChatbotButton";
 import AlertMap from "@/components/AlertMap";
 import { RichAlertCard, RichAlertIncident } from "@/components/notifications/RichAlertCard";
+import WalkieTalkie from "@/components/WalkieTalkie";
 import { generateFallbackAnalysis } from "@/lib/agents/analyst";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
 import { toast } from "sonner";
@@ -100,7 +101,7 @@ export default function CitizenDashboardPage() {
   const { language } = useLanguage();
 
   const [userLocation] = useState<[number, number]>([13.0544, 80.2818]);
-  const [activeTab, setActiveTab] = useState<"safety" | "shelters" | "report" | "helplines" | "relief">("safety");
+  const [activeTab, setActiveTab] = useState<"safety" | "shelters" | "report" | "helplines" | "relief" | "walkie">("safety");
   const [isMarkedSafe, setIsMarkedSafe] = useState(false);
   const [recentReports, setRecentReports] = useState<IncidentReport[]>([]);
 
@@ -208,8 +209,8 @@ export default function CitizenDashboardPage() {
           advisoryText="High-tide sea surge at 2.4m. Coastal roadways experiencing rapid inundation. Safe shelter: Central Relief Station Alpha (800m inland via Anna Salai corridor)."
         />
 
-        {/* App-Style Main Quick Navigation Buttons (5 Big Tactile Tabs) */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        {/* App-Style Main Quick Navigation Buttons (6 Big Tactile Tabs) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <button
             type="button"
             onClick={() => setActiveTab("safety")}
@@ -288,7 +289,7 @@ export default function CitizenDashboardPage() {
           <button
             type="button"
             onClick={() => setActiveTab("relief")}
-            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 col-span-2 sm:col-span-1 ${
+            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
               activeTab === "relief"
                 ? "bg-slate-900 text-white border-slate-900 shadow-md"
                 : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
@@ -299,6 +300,30 @@ export default function CitizenDashboardPage() {
               <div className="text-xs font-bold">Relief Supplies</div>
               <div className={`text-[10px] ${activeTab === "relief" ? "text-slate-400" : "text-slate-500"}`}>
                 3,000 Food Kits
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("walkie")}
+            className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+              activeTab === "walkie"
+                ? "bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-bold"
+                : "bg-white text-slate-800 border-amber-300/60 hover:border-amber-400"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <Radio className={`w-5 h-5 ${activeTab === "walkie" ? "text-slate-950 animate-pulse" : "text-amber-500"}`} />
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+            </div>
+            <div>
+              <div className="text-xs font-bold">Mesh Radio</div>
+              <div className={`text-[10px] ${activeTab === "walkie" ? "text-slate-900 font-semibold" : "text-amber-600"}`}>
+                CH 7 • PTT Voice
               </div>
             </div>
           </button>
@@ -400,6 +425,28 @@ export default function CitizenDashboardPage() {
 
               <div className="rounded-2xl shadow-sm overflow-hidden">
                 <RichAlertCard incident={activeRichIncident} />
+              </div>
+            </div>
+
+            {/* Walkie-Talkie Push-to-Talk Emergency Mesh Comms */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 font-mono">
+                    Offline Tactical Mesh Comms · Push-To-Talk Radio
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  AI Sector Band: CH 7
+                </span>
+              </div>
+              <div className="flex justify-center">
+                <WalkieTalkie
+                  role="citizen"
+                  sector="Marina Waterfront Sector B"
+                  channel="CH 7 • 462.7125 MHz"
+                />
               </div>
             </div>
           </div>
@@ -575,6 +622,45 @@ export default function CitizenDashboardPage() {
                   Location: All 3 Relief Shelters
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: STANDALONE OFFLINE MESH WALKIE TALKIE */}
+        {activeTab === "walkie" && (
+          <div className="space-y-4">
+            <div className="rounded-3xl bg-slate-950 p-5 text-white border border-amber-500/30 shadow-xl">
+              <div className="flex items-center gap-2.5 text-amber-400 mb-2">
+                <Radio className="w-5 h-5 animate-pulse" />
+                <h3 className="text-sm font-bold uppercase tracking-wider font-mono">
+                  Sentinel AI Dynamic Sector Radio Coordination
+                </h3>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                When telecommunication towers fail during coastal surge events, Kurukshetra automatically activates peer-to-peer audio mesh broadcasting. Sentinel AI allocates non-interfering channels per district so citizens can broadcast voice alerts directly to local NDRF rescue squads.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-xs">
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Channel Frequency</span>
+                  <span className="text-amber-400 font-bold font-mono">462.7125 MHz (CH 7)</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Channel Bandwidth</span>
+                  <span className="text-emerald-400 font-bold font-mono">12.5 kHz Narrow</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Squelch CTCSS Tone</span>
+                  <span className="text-blue-400 font-bold font-mono">67.0 Hz Tone Squ.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <WalkieTalkie
+                role="citizen"
+                sector="Marina Waterfront Sector B"
+                channel="CH 7 • 462.7125 MHz"
+              />
             </div>
           </div>
         )}

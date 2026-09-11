@@ -319,6 +319,7 @@ function RescueShell({
           { label: "🗺️", text: "OSM Terrain", tabId: "terrain" },
           { label: "🧠", text: "AI Measures", tabId: "measures" },
           { label: "📦", text: "Field Stock", tabId: "inventory" },
+          { label: "📻", text: "Walkie PTT", tabId: "radio" },
         ].map((tab) => (
           <button
             key={tab.text}
@@ -376,9 +377,9 @@ export default function DashboardLayout({
         else if (pathname?.includes("/citizen")) routeRole = "citizen";
 
         const savedRole =
+          routeRole ||
           (localStorage.getItem("kurukshetra_active_role") as UserRole) ||
           (localStorage.getItem("kurukshetra_role") as UserRole) ||
-          routeRole ||
           "authority";
 
         const savedEmail =

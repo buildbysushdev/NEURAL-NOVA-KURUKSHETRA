@@ -45,6 +45,7 @@ import { TerrainRoadAnalysisPanel } from "@/components/rescue/TerrainRoadAnalysi
 import { AITacticalMeasuresPanel } from "@/components/rescue/AITacticalMeasuresPanel";
 import { RescueInventoryManager } from "@/components/rescue/RescueInventoryManager";
 import { RescueAIChatbot } from "@/components/rescue/RescueAIChatbot";
+import WalkieTalkie from "@/components/WalkieTalkie";
 
 const INITIAL_RESCUE_TASKS: RescueTask[] = [
   {
@@ -105,7 +106,7 @@ export default function RescueDashboardPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isOnDuty, setIsOnDuty] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory">("missions");
+  const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory" | "radio">("missions");
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
 
   // Load duty state from localStorage on mount & listen to tab changes
@@ -370,6 +371,18 @@ export default function RescueDashboardPage() {
           <Package className="w-4 h-4" />
           <span>Field Stock &amp; HQ Inventory Sync</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab("radio")}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === "radio"
+              ? "bg-amber-500/20 border border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/10 font-bold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+          }`}
+        >
+          <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
+          <span>Walkie Mesh Comms (PTT)</span>
+        </button>
       </div>
 
       {/* Tab 1: Missions Queue */}
@@ -472,6 +485,29 @@ export default function RescueDashboardPage() {
       {/* Tab 4: Field Stock & Depot Sync */}
       {activeTab === "inventory" && (
         <RescueInventoryManager />
+      )}
+
+      {/* Tab 5: Tactical Offline Mesh Radio (PTT) */}
+      {activeTab === "radio" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+              <Radio className="w-4 h-4" />
+              <span>NDRF Tactical Field Radio · Offline Mesh Frequency Assignment</span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Coordinated by Sentinel AI to prevent radio signal congestion across active flood sectors. Responders hear incoming civilian SOS voice packets with auto-replay, and can broadcast field directives back over CH 7 (462.7125 MHz).
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <WalkieTalkie
+              role="rescue"
+              sector="Zone B • Marina Waterfront Basin"
+              channel="CH 7 • 462.7125 MHz"
+            />
+          </div>
+        </div>
       )}
 
       {/* 4. Floating Tactical AI Copilot with Voice & Alert Sentinel */}
