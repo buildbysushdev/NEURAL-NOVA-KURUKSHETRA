@@ -1,47 +1,73 @@
-import { NextResponse } from "next/server";
+// =========================================================================
+// PROJECT: Kurukshetra PS20 - Agentic Disaster Relief System
+// STEP 5: Demo Helpers & API Routes
+// FILE: app/api/audit-log/route.ts
+// ROLE: Senior Backend Architect & Frontend Integration
+// DESCRIPTION: Next.js 14 API route to fetch the latest 50 audit logs
+//              from the audit_logs table for the Authority War Room dashboard,
+//              and handle PATCH for manual officer override.
+// =========================================================================
+
+import { NextRequest, NextResponse } from "next/server";
+import { disasterStore } from "@/lib/supabase/mock-data";
 import { supabase, isConfigured } from "@/lib/supabaseClient";
 import { AuditLogRecord } from "@/types/backend";
 
+export const dynamic = "force-dynamic";
+
 /**
- * ==============================================================================
- * KURUKSHETRA PS20 - BACKEND API CONTRACT
- * API Route: /api/audit-log (GET & PATCH)
- * ==============================================================================
- * 
- * Fetches the last 50 immutable audit records for the war room dashboard.
+ * GET /api/audit-log
+ * Fetches the last 50 audit log entries in reverse-chronological order.
  */
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    if (isConfigured && supabase) {
-      const { data, error } = await supabase
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    const limit = 50;
+
+    // 1. If Supabase DB is connected, fetch live logs from public.audit_logs
+    if (supabaseUrl && serviceRoleKey && !supabaseUrl.includes("your-project")) {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+      const { data: dbLogs, error: dbError } = await supabaseAdmin
         .from("audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .select("id, agent_name, action, details_json, timestamp")
+        .order("timestamp", { ascending: false })
+        .limit(limit);
 
-      if (!error && data && data.length > 0) {
-        const formatted: AuditLogRecord[] = data.map((d: any) => ({
-          id: d.id,
-          agent_name: d.agent_name || "Strategist Agent",
-          action: d.action || "Resource Allocation Executed",
-          details_json: d.details_json || {
-            event: "RESOURCE_ALLOCATION",
-            resource_type: "water",
-            quantity: 500
-          },
-          timestamp: d.timestamp || d.created_at || new Date().toISOString()
-        }));
-
+      if (!dbError && dbLogs && dbLogs.length > 0) {
         return NextResponse.json({
           success: true,
-          count: formatted.length,
-          logs: formatted
+          count: dbLogs.length,
+          logs: dbLogs,
         });
       }
     }
 
-    // Default 50-limit fallback audit logs matching the contract
+    // 2. Local fallback from in-memory store if available
+    try {
+      const localLogs = disasterStore.getAuditLogs().map((l) => ({
+        id: l.id,
+        agent_name: (l as any).agent_name || l.actor_id || "Sentinel/Strategist Agent",
+        action: l.action,
+        details_json: (l as any).details_json || l.details,
+        timestamp: l.timestamp,
+      }));
+
+      if (localLogs.length > 0) {
+        return NextResponse.json({
+          success: true,
+          count: Math.min(limit, localLogs.length),
+          logs: localLogs.slice(0, limit),
+        });
+      }
+    } catch {
+      // Proceed to default mock records
+    }
+
+    // 3. Fallback audit logs matching the contract
     const defaultLogs: AuditLogRecord[] = [
       {
         id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
@@ -96,13 +122,18 @@ export async function GET() {
       logs: defaultLogs
     });
   } catch (error: any) {
+    console.error("[GET /api/audit-log] Exception fetching audit logs:", error.message || error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch audit logs" },
+      { success: false, error: "Internal server error fetching audit logs." },
       { status: 500 }
     );
   }
 }
 
+/**
+ * PATCH /api/audit-log
+ * Manual officer override for AI decisions.
+ */
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
