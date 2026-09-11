@@ -207,7 +207,12 @@ export function MesmerizingSimulationModal({
   ];
 
   // Start Autonomous AI Pipeline
-  const handleStartPipeline = () => {
+  const handleStartPipeline = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    toast.loading("AI Multi-Agent Pipeline Engaging...", { id: "sim-pipeline-toast" });
     setStep("ORCHESTRATING");
     setActiveAgentIndex(0);
     setConfidenceScore(15);
@@ -236,15 +241,22 @@ export function MesmerizingSimulationModal({
           `[${new Date().toLocaleTimeString()}] AUTONOMOUS PIPELINE COMPLETE: 100% OPERATIONAL PLAN SYNTHESIZED.`,
           `[${new Date().toLocaleTimeString()}] AWAITING INCIDENT COMMANDER RATIFICATION (PRESS OK).`,
         ]);
+        toast.success("AI Swarm Analysis Complete — Awaiting Ratification", { id: "sim-pipeline-toast" });
         setTimeout(() => {
           setStep("RATIFICATION");
-        }, 1200);
+        }, 1000);
       }
-    }, 1400);
+    }, 1200);
   };
 
   // THE ICONIC "PRESS OK" MOMENT
-  const handlePressOK = () => {
+  const handlePressOK = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    toast.loading("Ratifying Tactical Directives...", { id: "sim-ratify-toast" });
+
     // 1. Prepare Emergency Alert Object
     const emergencyAlert = {
       id: `sim-alert-${Date.now()}`,
@@ -429,7 +441,7 @@ export function MesmerizingSimulationModal({
               </div>
 
               <button
-                onClick={handleStartPipeline}
+                onClick={(e) => handleStartPipeline(e)}
                 className="group px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-bold text-sm shadow-xl shadow-red-600/30 flex items-center gap-3 transition-all active:scale-95 whitespace-nowrap self-start sm:self-auto"
               >
                 <Play className="w-4 h-4 fill-white" />
@@ -608,7 +620,7 @@ export function MesmerizingSimulationModal({
               </div>
 
               <button
-                onClick={handlePressOK}
+                onClick={(e) => handlePressOK(e)}
                 className="group relative overflow-hidden px-10 py-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-base sm:text-lg shadow-2xl shadow-emerald-500/40 border-2 border-emerald-400/80 transition-all active:scale-95 flex items-center gap-4 animate-pulse-live"
               >
                 {/* Shimmer Effect */}

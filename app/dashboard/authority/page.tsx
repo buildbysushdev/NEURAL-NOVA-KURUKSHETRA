@@ -396,7 +396,11 @@ export default function AuthorityDashboardPage() {
         actions={
           <div className="flex items-center gap-3 flex-wrap">
             <button
-              onClick={() => setSimulationModalOpen(true)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSimulationModalOpen(true);
+              }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all active:scale-95 border border-red-400/40"
             >
               <Cpu className="w-4 h-4 animate-pulse" />
@@ -647,7 +651,10 @@ export default function AuthorityDashboardPage() {
       </div>
 
       {/* Autonomous Simulation Launcher (Scenario Picker + 5-Stage Live Drawer) */}
-      <SimulateButton onComplete={handleSimulationComplete} />
+      <SimulateButton
+        onComplete={handleSimulationComplete}
+        onOpenModal={() => setSimulationModalOpen(true)}
+      />
 
       {/* Mesmerizing Multi-Agent Crisis Simulator Modal & Ratification Engine */}
       <MesmerizingSimulationModal

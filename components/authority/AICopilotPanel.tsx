@@ -56,7 +56,11 @@ export function AICopilotPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  async function handleSend(textToSend?: string) {
+  async function handleSend(textToSend?: string, e?: React.MouseEvent | React.FormEvent) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const query = textToSend || input;
     if (!query.trim() || loading) return;
 

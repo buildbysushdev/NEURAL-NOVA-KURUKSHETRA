@@ -282,3 +282,61 @@
   color: var(--text-muted) !important;
   font-size: 10px !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   INSTANT DEMO GLOW-UP OVERRIDES (HACKATHON POLISH)
+   ════════════════════════════════════════════════════════════ */
+
+/* Crisp glass panels with glow */
+.glass-panel, [class*="glass"] {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+  border-radius: 16px !important;
+}
+
+/* Make buttons feel super clicky & responsive */
+button {
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  z-index: 20 !important; /* Forces buttons above maps/overlays */
+}
+
+button:hover {
+  transform: translateY(-1px) scale(1.01) !important;
+  filter: brightness(1.1) !important;
+}
+
+button:active {
+  transform: translateY(1px) scale(0.98) !important;
+}
+
+/* Ensure Red CTA buttons glow prominently */
+button[class*="bg-red"], .bg-red-600, .bg-red-500 {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4) !important;
+}
+
+button[class*="bg-blue"], .bg-blue-600, .bg-blue-500 {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Custom crisp scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Fix any map pointer-events blocking buttons below it */
+.leaflet-container {
+  z-index: 1 !important;
+}
+

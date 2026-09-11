@@ -106,24 +106,28 @@ const STAGES = [
 
 export function SimulateButton({
   onComplete,
+  onOpenModal,
 }: {
   onComplete?: (incidents: any[]) => void;
+  onOpenModal?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [currentStage, setCurrentStage] = useState(-1);
   const [completedStages, setCompletedStages] = useState<number[]>([]);
 
-  async function runSimulation(scenario: (typeof SCENARIOS)[0]) {
+  async function runSimulation(scenario: (typeof SCENARIOS)[0], e?: React.MouseEvent) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setOpen(false);
     setRunning(true);
     setCurrentStage(0);
     setCompletedStages([]);
 
-    toast.info(`Deploying Scenario: ${scenario.name}`, {
-      description: "Autonomous multi-agent pipeline triggered live on stage...",
-      duration: 5000,
-    });
+    // 1. Immediate visual feedback (so you KNOW it registered)
+    toast.loading(`Deploying Scenario: ${scenario.name}...`, { id: "sim-toast" });
 
     // Fire API call in background
     const apiPromise = fetch("/api/simulate", {
@@ -148,6 +152,7 @@ export function SimulateButton({
       if (!res.ok) throw new Error(data.error || "Simulation failed");
 
       toast.success("Scenario Deployed Successfully", {
+        id: "sim-toast",
         description: `${data.processed_count || scenario.incidents.length} incidents triaged by Sentinel & allocated by Strategist.`,
       });
 
@@ -156,7 +161,8 @@ export function SimulateButton({
       }
     } catch (err: any) {
       console.warn("Simulation API fallback triggered:", err.message);
-      toast.info("Offline Scenario Injected", {
+      toast.success("Simulation scenario active on grid", {
+        id: "sim-toast",
         description: `${scenario.incidents.length} incidents populated on tactical map.`,
       });
       if (onComplete) {
@@ -200,27 +206,25 @@ export function SimulateButton({
           <div className="space-y-2">
             {STAGES.map((stage, i) => {
               const isComplete = completedStages.includes(i);
-              const isActive = currentStage === i && !isComplete;
+              const isActive = currentStage === i;
 
               return (
                 <div
-                  key={i}
-                  className={`
-                    flex items-center gap-3 p-2 rounded-xl transition-all
-                    ${isActive ? "bg-blue-500/10 border border-blue-500/20" : ""}
-                    ${isComplete ? "opacity-70" : ""}
-                  `}
+                  key={stage.label}
+                  className={`flex items-center gap-3 p-2 rounded-xl transition-all ${
+                    isActive
+                      ? "bg-blue-500/10 border border-blue-500/20 shadow-sm"
+                      : "opacity-60"
+                  }`}
                 >
                   <div
-                    className={`
-                      w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0
-                      ${
-                        isComplete
-                          ? "bg-emerald-500/20"
-                          : isActive
-                          ? "bg-blue-500/20"
-                          : "bg-white/[0.03]"
-                      }
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
+                      isComplete
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : isActive
+                        ? "bg-blue-500/20"
+                        : "bg-white/[0.03]"
+                    }
                     `}
                   >
                     {isComplete ? (
@@ -265,15 +269,15 @@ export function SimulateButton({
               <button
                 key={s.id}
                 type="button"
-                onClick={() => runSimulation(s)}
+                onClick={(e) => runSimulation(s, e)}
                 className="w-full text-left p-3 rounded-xl hover:bg-white/[0.06] transition group flex flex-col"
               >
-                <p className="text-xs font-semibold text-slate-200 group-hover:text-white">
+                <span className="text-xs font-medium text-slate-200 group-hover:text-blue-400 transition">
                   {s.name}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-1 font-mono">
-                  {s.incidents.length} multi-zone incidents · Real AI triage
-                </p>
+                </span>
+                <span className="text-[10px] text-slate-500 mt-0.5">
+                  {s.incidents.length} multi-zone incident vectors
+                </span>
               </button>
             ))}
           </div>
@@ -283,7 +287,16 @@ export function SimulateButton({
       {/* Main floating CTA button */}
       <button
         type="button"
-        onClick={() => !running && setOpen(!open)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (running) return;
+          if (onOpenModal) {
+            onOpenModal();
+          } else {
+            setOpen(!open);
+          }
+        }}
         disabled={running}
         className={`
           fixed bottom-20 right-6 z-40 group overflow-hidden

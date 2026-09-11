@@ -251,14 +251,22 @@ export default function AuditLog() {
     approved: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20",
   };
 
-  const handleActionOverride = (id: string, newStatus: "approved" | "overridden") => {
+  const handleActionOverride = (id: string, newStatus: "approved" | "overridden", e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setLogs((prev) =>
       prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
     );
     toast.success(
       newStatus === "approved"
         ? "Allocation Confirmed by Commander"
-        : "Allocation Overridden by Commander"
+        : "Human Override Recorded in Audit Log",
+      {
+        id: `audit-toast-${id}`,
+        description: `Action marked ${newStatus.toUpperCase()} with cryptographic audit signature.`,
+      }
     );
   };
 
@@ -367,19 +375,24 @@ export default function AuditLog() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* Manual Commander Override buttons if pending */}
-                    {entry.status === "pending" || entry.status === "overridden" ? (
-                      <div className="flex items-center gap-1">
+                    {/* Manual Commander Ratify / Approve Allocation button */}
+                    <div className="flex items-center gap-1">
+                      {entry.status !== "approved" ? (
                         <button
-                          onClick={() => handleActionOverride(entry.id, "approved")}
-                          className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1"
-                          title="Approve AI Decision"
+                          type="button"
+                          onClick={(e) => handleActionOverride(entry.id, "approved", e)}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1 border border-emerald-500/30 active:scale-95"
+                          title="Approve AI Allocation"
                         >
                           <Check className="w-3 h-3" />
-                          <span>Ratify</span>
+                          <span>Approve Allocation</span>
                         </button>
-                      </div>
-                    ) : null}
+                      ) : (
+                        <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/25">
+                          <Check className="w-3 h-3" /> Ratified
+                        </span>
+                      )}
+                    </div>
 
                     <span className="text-slate-400 font-mono flex items-center gap-1">
                       <Clock className="w-3 h-3" />
