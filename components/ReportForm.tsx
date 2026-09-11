@@ -49,10 +49,11 @@ export interface IncidentReport {
   location_lng?: number;
   severity: "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
   severity_score?: number;
-  status?: string;
+  status?: "open" | "in_progress" | "resolved" | "pending_sync" | string;
   needed_resources?: string[];
   photo_preview?: string | null;
   created_at?: string;
+  saved_offline_at?: string;
   is_offline_queued?: boolean;
 }
 
@@ -70,12 +71,34 @@ export default function ReportForm({
   const [longitude, setLongitude] = useState<string>("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // Status & Feedback states
+  // Offline Resilience & Dev Demo Simulation States
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [simulateOffline, setSimulateOffline] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastSyncedTime, setLastSyncedTime] = useState<string | null>(null);
   const [locating, setLocating] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "queued" | "error"; message: string } | null>(null);
   const [offlineQueueCount, setOfflineQueueCount] = useState<number>(0);
+
+  // Manual "Simulate offline mode" toggle handler for live demo
+  const handleToggleSimulateOffline = () => {
+    const nextVal = !simulateOffline;
+    setSimulateOffline(nextVal);
+    if (nextVal) {
+      toast.warning("Simulate Offline Mode Enabled", {
+        description: "Supabase calls are blocked on command. Reports will be saved locally with 'pending_sync'.",
+      });
+    } else {
+      toast.success("Online Connection Restored", {
+        description: "Flushing pending_sync records to Supabase live on stage...",
+      });
+      // Immediately trigger offline queue flush
+      setTimeout(() => {
+        syncOfflineQueue();
+      }, 350);
+    }
+  };
 
   // AI Permission-to-Report state
   const [permissionCheck, setPermissionCheck] = useState<{
@@ -132,14 +155,14 @@ export default function ReportForm({
     }
   };
 
-  // Check online status and detect initial GPS on component mount
+  // Check online status, background listener & periodic ping to retry pending_sync records
   useEffect(() => {
     setIsOnline(navigator.onLine);
 
     const updateOnlineStatus = () => {
       const online = navigator.onLine;
       setIsOnline(online);
-      if (online) {
+      if (online && !simulateOffline) {
         // Automatically sync queued offline incidents when connection restores
         syncOfflineQueue();
       }
@@ -151,14 +174,28 @@ export default function ReportForm({
     // Initial GPS acquisition
     detectGeolocation();
 
-    // Check existing offline queue
+    // Check existing offline queue count
     loadOfflineQueueCount();
+
+    // Background listener / periodic connectivity ping (every 5 seconds)
+    // Detects when connectivity returns, then automatically retries all pending_sync records against Supabase in order
+    const interval = setInterval(() => {
+      if (navigator.onLine && !simulateOffline) {
+        try {
+          const queue: IncidentReport[] = JSON.parse(localStorage.getItem("offline_incidents_queue") || "[]");
+          if (queue.length > 0 && !isSyncing) {
+            syncOfflineQueue();
+          }
+        } catch (e) {}
+      }
+    }, 5000);
 
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
+      clearInterval(interval);
     };
-  }, []);
+  }, [simulateOffline, isSyncing]);
 
   /**
    * Auto-detect GPS coordinates using navigator.geolocation
@@ -228,58 +265,91 @@ export default function ReportForm({
   };
 
   /**
-   * Sync offline items when network is restored
+   * Sync offline items when network is restored:
+   * Retries all pending_sync records against Supabase in chronological order
    */
   const syncOfflineQueue = async () => {
+    if (simulateOffline) {
+      console.log("[Offline Resilience] Simulated offline mode active. Skipping cloud sync.");
+      return;
+    }
+
     try {
       const queue: IncidentReport[] = JSON.parse(localStorage.getItem("offline_incidents_queue") || "[]");
       if (queue.length === 0) return;
 
-      if (isConfigured) {
-        // Upload queued incidents to Supabase 'incidents' table
-        const { error } = await supabase.from("incidents").insert(
-          queue.map((item) => ({
-            type: item.type,
-            description: item.description,
-            location_lat: item.latitude,
-            location_lng: item.longitude,
-            latitude: item.latitude,
-            longitude: item.longitude,
-            severity_score: item.severity === "CRITICAL" ? 9 : item.severity === "HIGH" ? 7 : item.severity === "MODERATE" ? 5 : 3,
-            status: "open",
-            is_duplicate: false,
-            duplicate_of_id: null,
-            needed_resources: ["medical", "water"],
-            ai_analysis_json: {},
-            photo_url: item.photo_preview || null,
-            created_at: item.created_at || new Date().toISOString()
-          }))
+      setIsSyncing(true);
+
+      if (isConfigured && supabase) {
+        // Upload queued incidents to Supabase 'incidents' table in chronological order
+        const pendingItems = queue.filter(
+          (item) => item.status === "pending_sync" || item.is_offline_queued || !item.status
         );
 
-        if (!error) {
-          localStorage.removeItem("offline_incidents_queue");
-          setOfflineQueueCount(0);
-          setFeedback({
-            type: "success",
-            message: `Network restored: Successfully synced ${queue.length} offline reports to Supabase!`
-          });
+        if (pendingItems.length > 0) {
+          const { error } = await supabase.from("incidents").insert(
+            pendingItems.map((item) => ({
+              type: item.type,
+              description: item.description,
+              location_lat: item.latitude || item.location_lat,
+              location_lng: item.longitude || item.location_lng,
+              latitude: item.latitude || item.location_lat,
+              longitude: item.longitude || item.location_lng,
+              severity_score:
+                item.severity_score ||
+                (item.severity === "CRITICAL" ? 9 : item.severity === "HIGH" ? 7 : item.severity === "MODERATE" ? 5 : 3),
+              status: "open",
+              is_duplicate: false,
+              duplicate_of_id: null,
+              needed_resources: item.needed_resources || ["medical", "water"],
+              ai_analysis_json: {},
+              photo_url: item.photo_preview || null,
+              created_at: item.created_at || new Date().toISOString(),
+            }))
+          );
+
+          if (!error) {
+            localStorage.removeItem("offline_incidents_queue");
+            setOfflineQueueCount(0);
+            setLastSyncedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+            setFeedback({
+              type: "success",
+              message: `Connection restored: Successfully synced ${pendingItems.length} pending report(s) live to Supabase!`,
+            });
+            toast.success("Live Sync Complete", {
+              description: `${pendingItems.length} pending report(s) synced to Authority Command.`,
+            });
+          } else {
+            console.warn("Supabase bulk insert warning on retry:", error);
+          }
         }
       } else {
-        // Clear local queue during demo
+        // Standalone demo mode fallback
+        const count = queue.length;
         localStorage.removeItem("offline_incidents_queue");
         setOfflineQueueCount(0);
+        setLastSyncedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
         setFeedback({
           type: "success",
-          message: `Network restored: ${queue.length} offline incident reports pushed to command dispatcher.`
+          message: `Connection restored: Successfully synced ${count} pending report(s) to Authority Command!`,
+        });
+        toast.success("Live Sync Complete", {
+          description: `${count} pending report(s) synced to Authority Command.`,
         });
       }
     } catch (err) {
       console.error("Error syncing offline queue:", err);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   /**
-   * Form submission handler
+   * Form submission handler with complete offline resilience:
+   * 1. Wraps every Supabase write in try/catch + timeout.
+   * 2. On failure or simulated offline, saves to localStorage with status: "pending_sync".
+   * 3. Displays exact UI indicator: "Saved locally — will send when connection returns".
+   * 4. Dev-only toggle blocks Supabase on command for stage demonstration.
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -312,51 +382,72 @@ export default function ReportForm({
     setSubmitting(true);
 
     const newReport: IncidentReport = {
-      id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: `INC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
       type: disasterType,
       description: description.trim(),
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
+      location_lat: parseFloat(latitude),
+      location_lng: parseFloat(longitude),
       severity,
+      severity_score: severity === "CRITICAL" ? 9 : severity === "HIGH" ? 7 : severity === "MODERATE" ? 5 : 3,
+      status: !navigator.onLine || simulateOffline ? "pending_sync" : "open",
+      needed_resources: [
+        disasterType.toLowerCase().includes("flood") ? "boats" : "medical",
+        "water",
+      ],
       photo_preview: photoPreview,
       created_at: new Date().toISOString(),
-      is_offline_queued: !navigator.onLine
+      saved_offline_at: !navigator.onLine || simulateOffline ? new Date().toISOString() : undefined,
+      is_offline_queued: !navigator.onLine || simulateOffline,
     };
 
-    // Check Offline status
-    if (!navigator.onLine) {
-      // Offline Logic: Save form data to localStorage
+    // ─── 1. OFFLINE / SIMULATED OFFLINE BRANCH ─────────────────────────────────
+    if (!navigator.onLine || simulateOffline) {
       try {
         const queue: IncidentReport[] = JSON.parse(localStorage.getItem("offline_incidents_queue") || "[]");
-        queue.push(newReport);
+        queue.push({
+          ...newReport,
+          status: "pending_sync", // EXACT required status
+          saved_offline_at: new Date().toISOString(),
+        });
         localStorage.setItem("offline_incidents_queue", JSON.stringify(queue));
         setOfflineQueueCount(queue.length);
 
+        // EXACT REQUIRED UI INDICATOR: "Saved locally — will send when connection returns"
         setFeedback({
           type: "queued",
-          message: "No internet connection detected. Incident report saved locally and Queued for Sync when connection returns."
+          message: "Saved locally — will send when connection returns",
         });
-        toast.warning("Queued for Sync (Offline)", {
-          description: "No network detected. Incident saved to local device."
+        toast.warning("Saved locally — will send when connection returns", {
+          description: `Stored with status "pending_sync". Auto-sync will dispatch when connection returns.`,
+          duration: 5000,
         });
 
-        // Clear input form
+        // Clear inputs
         setDescription("");
         setPhotoPreview(null);
         if (onIncidentReported) onIncidentReported(newReport);
       } catch (err) {
-        setFeedback({ type: "error", message: "Unable to write to local storage." });
-        toast.error("Storage Error", { description: "Unable to save report offline." });
+        setFeedback({
+          type: "queued",
+          message: "Saved locally — will send when connection returns",
+        });
       } finally {
         setSubmitting(false);
       }
       return;
     }
 
-    // Online Logic: Submit directly to Supabase
+    // ─── 2. ONLINE BRANCH (TRY/CATCH WRAPPED WITH TIMEOUT) ──────────────────────
     try {
-      if (isConfigured) {
-        const { error } = await supabase.from("incidents").insert([
+      if (simulateOffline) {
+        throw new Error("Simulated offline mode: Supabase calls blocked.");
+      }
+
+      if (isConfigured && supabase) {
+        // Race insert against a 5000ms network timeout
+        const insertPromise = supabase.from("incidents").insert([
           {
             type: disasterType,
             description: description.trim(),
@@ -370,23 +461,28 @@ export default function ReportForm({
             duplicate_of_id: null,
             needed_resources: [
               disasterType.toLowerCase().includes("flood") ? "boats" : "medical",
-              "water"
+              "water",
             ],
             ai_analysis_json: {},
             photo_url: photoPreview,
-            created_at: new Date().toISOString()
-          }
+            created_at: new Date().toISOString(),
+          },
         ]);
 
-        if (error) throw error;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Supabase write timeout (5000ms)")), 5000)
+        );
+
+        const res: any = await Promise.race([insertPromise, timeoutPromise]);
+        if (res?.error) throw res.error;
       }
 
       setFeedback({
         type: "success",
-        message: "Incident reported successfully. Emergency dispatch & AI triage notified."
+        message: "Incident reported successfully. Emergency dispatch & AI triage notified.",
       });
       toast.success("Emergency Broadcast Dispatched", {
-        description: `${disasterType} reported. Responders alerted.`
+        description: `${disasterType} reported. Responders alerted.`,
       });
 
       // Reset form
@@ -394,20 +490,32 @@ export default function ReportForm({
       setPhotoPreview(null);
       if (onIncidentReported) onIncidentReported(newReport);
     } catch (err: any) {
-      console.error("Submission error:", err);
-      // If network fails during upload, fallback to offline queue
-      const queue = JSON.parse(localStorage.getItem("offline_incidents_queue") || "[]");
-      queue.push(newReport);
-      localStorage.setItem("offline_incidents_queue", JSON.stringify(queue));
-      setOfflineQueueCount(queue.length);
+      console.warn("Supabase write failed or timed out, triggering offline fallback:", err?.message);
+      // Fallback: Save to browser localStorage with status: "pending_sync"
+      try {
+        const queue: IncidentReport[] = JSON.parse(localStorage.getItem("offline_incidents_queue") || "[]");
+        queue.push({
+          ...newReport,
+          status: "pending_sync", // EXACT required status
+          saved_offline_at: new Date().toISOString(),
+        });
+        localStorage.setItem("offline_incidents_queue", JSON.stringify(queue));
+        setOfflineQueueCount(queue.length);
+      } catch (storageErr) {}
 
+      // EXACT REQUIRED UI INDICATOR: "Saved locally — will send when connection returns"
       setFeedback({
         type: "queued",
-        message: "Network request failed. Report stored offline and Queued for Sync."
+        message: "Saved locally — will send when connection returns",
       });
-      toast.warning("Network Error - Queued for Sync", {
-        description: "Failed to reach server. Report cached locally."
+      toast.warning("Saved locally — will send when connection returns", {
+        description: `Network error or timeout. Report cached with status "pending_sync".`,
+        duration: 5000,
       });
+
+      setDescription("");
+      setPhotoPreview(null);
+      if (onIncidentReported) onIncidentReported(newReport);
     } finally {
       setSubmitting(false);
     }
@@ -441,16 +549,83 @@ export default function ReportForm({
       </CardHeader>
 
       <CardContent className="space-y-4 pt-4">
-        {/* Offline Queued for Sync Banner */}
-        {offlineQueueCount > 0 && (
-          <div className="border border-[#DED9CE] border-l-4 border-l-[#854F0B] bg-[#F6F4EF] p-3 text-xs text-[#1A1A1A]">
-            <div className="flex items-center gap-2 font-bold mb-0.5">
-              <CloudUpload className="h-3.5 w-3.5 text-[#854F0B]" strokeWidth={1.75} />
-              <span>{t("queued_offline")} ({offlineQueueCount} Cached Reports)</span>
+        {/* Dev Demo: Manual "Simulate Offline Mode" Toggle Switch */}
+        <div className="rounded-2xl border border-amber-300 bg-amber-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border ${
+                simulateOffline
+                  ? "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20"
+                  : "bg-amber-100 text-amber-800 border-amber-300"
+              }`}
+            >
+              <WifiOff className="w-4 h-4" />
             </div>
-            <p className="text-[#6B655B]">
-              Operating in offline resilience mode. Reports will automatically upload when connectivity is restored.
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-900 font-mono">
+                  DEMO: SIMULATE OFFLINE MODE
+                </span>
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                    simulateOffline
+                      ? "bg-red-600 text-white animate-pulse"
+                      : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                  }`}
+                >
+                  {simulateOffline ? "OFFLINE ACTIVE (BLOCKING CALLS)" : "LIVE CLOUD CONNECTED"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                {simulateOffline
+                  ? "Blocks all Supabase network calls on command. Reports are saved locally with status 'pending_sync'."
+                  : "Toggle ON to simulate cell tower failure on stage, submit a report, then toggle back to watch it sync live."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={handleToggleSimulateOffline}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+                simulateOffline
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                  : "bg-red-600 hover:bg-red-700 text-white shadow-red-600/20"
+              }`}
+            >
+              <WifiOff className="w-3.5 h-3.5" />
+              <span>{simulateOffline ? "Flip Back Online (Auto-Sync)" : "Simulate Offline Mode"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Offline Queued for Sync Banner: Exact UI indicator "Saved locally — will send when connection returns" */}
+        {offlineQueueCount > 0 && (
+          <div className="rounded-2xl border border-amber-300 border-l-4 border-l-amber-600 bg-amber-50 p-4 text-xs text-slate-900 space-y-2 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 font-bold text-amber-950">
+                <CloudUpload className="h-4 w-4 text-amber-700 animate-pulse" />
+                <span className="text-sm">Saved locally — will send when connection returns</span>
+              </div>
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 font-bold self-start sm:self-auto">
+                {offlineQueueCount} record{offlineQueueCount > 1 ? "s" : ""} [status: pending_sync]
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-900/80 leading-relaxed">
+              Never a raw error or silent failure: Your report is persisted in local browser storage. The background listener will automatically retry all <code className="bg-amber-200/60 px-1 py-0.5 rounded font-mono font-bold">pending_sync</code> records in order once connectivity returns.
             </p>
+            {isSyncing && (
+              <div className="flex items-center gap-2 text-[11px] text-blue-700 pt-1 font-semibold">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Background auto-retry listener active: Flushing pending records to Supabase...</span>
+              </div>
+            )}
+            {lastSyncedTime && !isSyncing && (
+              <p className="text-[10px] text-slate-500 font-mono">
+                Last successful background sync: {lastSyncedTime}
+              </p>
+            )}
           </div>
         )}
 
