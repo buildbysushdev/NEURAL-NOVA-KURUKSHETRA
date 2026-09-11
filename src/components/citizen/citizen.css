@@ -1,0 +1,424 @@
+/* Citizen App Styling - Single column, mobile-first, max content width ~380px */
+.citizen-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+  background-color: #E2DDD2;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+
+.citizen-device-frame {
+  width: 100%;
+  max-width: 380px;
+  min-height: calc(100vh - 90px);
+  background-color: var(--cit-bg);
+  color: var(--cit-text);
+  font-family: var(--font-citizen-body);
+  border: 1px solid var(--cit-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Citizen Header */
+.citizen-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--cit-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.citizen-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cit-text);
+}
+
+.citizen-location-picker-btn {
+  background: transparent;
+  border: 1px solid var(--cit-border);
+  font-family: var(--font-citizen-body);
+  font-size: 11px;
+  color: var(--cit-text-muted);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* Scrollable main citizen content */
+.citizen-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 80px; /* padding-bottom to clear persistent bottom chat bar */
+  gap: 20px;
+}
+
+/* Top: Location + current alert status in plain language */
+.citizen-status-card {
+  background-color: var(--cit-surface);
+  border: 1px solid var(--cit-border-subtle);
+  padding: 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-left-width: 3px; /* severity indicator strip */
+}
+
+.citizen-location-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.citizen-location-name {
+  font-size: 12px;
+  color: var(--cit-text-muted);
+}
+
+.citizen-time-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cit-text-muted);
+}
+
+.citizen-alert-headline {
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--cit-text);
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.citizen-alert-description {
+  font-size: 13px;
+  color: var(--cit-text-muted);
+  line-height: 1.45;
+}
+
+/* Middle: Report button — one clear primary action, not buried in a menu */
+.citizen-primary-action-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-citizen-report {
+  width: 100%;
+  background-color: var(--cit-btn-primary-bg);
+  color: var(--cit-btn-primary-text);
+  border: none;
+  padding: 14px 16px;
+  font-family: var(--font-citizen-body);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-citizen-report:active {
+  background-color: #333333;
+}
+
+.citizen-report-hint {
+  font-size: 12px;
+  color: var(--cit-text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Informational guidance cards */
+.citizen-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.citizen-section-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--cit-text);
+}
+
+.citizen-guidance-card {
+  background-color: var(--cit-surface);
+  border: 1px solid var(--cit-border-subtle);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left-width: 3px;
+}
+
+.citizen-guidance-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cit-text);
+}
+
+.citizen-guidance-text {
+  font-size: 12px;
+  color: var(--cit-text-muted);
+  line-height: 1.4;
+}
+
+/* Recent reports list */
+.citizen-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.citizen-report-item {
+  background-color: var(--cit-surface);
+  border: 1px solid var(--cit-border-subtle);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left-width: 3px;
+}
+
+.citizen-report-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--cit-text-muted);
+}
+
+.citizen-report-text {
+  font-size: 12.5px;
+  color: var(--cit-text);
+}
+
+.citizen-report-status {
+  font-size: 11.5px;
+  color: #3B6D11;
+  font-weight: 500;
+}
+
+/* Bottom: Chatbot access as a persistent but unobtrusive bar, not a floating bubble icon */
+.citizen-persistent-chat-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #EDE8DC;
+  border-top: 1px solid var(--cit-border);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+}
+
+.chat-bar-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--cit-surface);
+  border: 1px solid var(--cit-border);
+  padding: 9px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.chat-bar-placeholder {
+  font-size: 12.5px;
+  color: #6C665C;
+  font-family: var(--font-citizen-body);
+}
+
+.chat-bar-action-icon {
+  font-size: 12px;
+  color: #1A1A1A;
+}
+
+/* Report Incident Drawer / Sheet */
+.citizen-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 22, 28, 0.45);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 20;
+}
+
+.citizen-modal-sheet {
+  background: var(--cit-surface);
+  border-top: 2px solid var(--cit-border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 85%;
+  overflow-y: auto;
+}
+
+.citizen-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.citizen-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cit-text);
+}
+
+.citizen-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--cit-text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.report-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cit-text);
+}
+
+.report-select, .report-input, .report-textarea {
+  background-color: #FAF9F6;
+  border: 1px solid var(--cit-border);
+  padding: 10px 12px;
+  font-family: var(--font-citizen-body);
+  font-size: 13px;
+  color: var(--cit-text);
+}
+
+.report-select:focus, .report-input:focus, .report-textarea:focus {
+  outline: 1px solid #1A1A1A;
+  border-color: #1A1A1A;
+}
+
+.report-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.btn-submit-report {
+  background-color: var(--cit-btn-primary-bg);
+  color: var(--cit-btn-primary-text);
+  border: none;
+  padding: 12px;
+  font-family: var(--font-citizen-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* Chatbot drawer view */
+.citizen-chat-drawer {
+  position: absolute;
+  inset: 0;
+  background-color: var(--cit-bg);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-drawer-header {
+  padding: 14px 16px;
+  background-color: #EDE8DC;
+  border-bottom: 1px solid var(--cit-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-drawer-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--cit-text);
+}
+
+.chat-messages-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-bubble {
+  max-width: 85%;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background-color: var(--cit-surface);
+  border: 1px solid var(--cit-border-subtle);
+  color: var(--cit-text);
+  border-left-width: 3px;
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+  background-color: #1A1A1A;
+  color: #F6F4EF;
+}
+
+.chat-time {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--cit-text-muted);
+  margin-top: 4px;
+  display: block;
+}
+
+.chat-input-bar {
+  display: flex;
+  padding: 10px 14px;
+  background-color: #EDE8DC;
+  border-top: 1px solid var(--cit-border);
+  gap: 8px;
+}
+
+.chat-text-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--cit-border);
+  background-color: var(--cit-surface);
+  font-family: var(--font-citizen-body);
+  font-size: 12.5px;
+  color: var(--cit-text);
+}
+.chat-text-input:focus {
+  outline: 1px solid #1A1A1A;
+}
+
+.chat-send-btn {
+  background-color: var(--cit-btn-primary-bg);
+  color: var(--cit-btn-primary-text);
+  border: none;
+  padding: 8px 14px;
+  font-family: var(--font-citizen-body);
+  font-size: 12.5px;
+  cursor: pointer;
+}
