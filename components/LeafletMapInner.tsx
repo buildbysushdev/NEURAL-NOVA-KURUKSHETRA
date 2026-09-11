@@ -84,7 +84,10 @@ export default function LeafletMapInner({
       {/* Dark Tactical CartoDB TileLayer */}
       <TileLayer
         attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+        subdomains={["a", "b", "c", "d"]}
+        maxZoom={18}
+        errorTileUrl="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
       />
 
       {/* Safety perimeter ring around current area */}
