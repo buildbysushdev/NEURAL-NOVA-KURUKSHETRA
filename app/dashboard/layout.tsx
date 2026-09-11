@@ -315,13 +315,16 @@ function RescueShell({
         }}
       >
         {[
-          { label: "📋", text: "Missions" },
-          { label: "🗺️", text: "Zone Map" },
-          { label: "✅", text: "Resolved" },
-          { label: "📡", text: "Radio" },
+          { label: "📋", text: "Missions", tabId: "missions" },
+          { label: "🗺️", text: "OSM Terrain", tabId: "terrain" },
+          { label: "🧠", text: "AI Measures", tabId: "measures" },
+          { label: "📦", text: "Field Stock", tabId: "inventory" },
         ].map((tab) => (
           <button
             key={tab.text}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("rescue_tab_change", { detail: tab.tabId }));
+            }}
             style={{
               flex: 1,
               display: "flex",
@@ -329,7 +332,7 @@ function RescueShell({
               alignItems: "center",
               justifyContent: "center",
               fontSize: 9,
-              color: tab.text === "Missions" ? "#f59e0b" : "#64748b",
+              color: "#f59e0b",
               background: "none",
               border: "none",
               gap: 2,

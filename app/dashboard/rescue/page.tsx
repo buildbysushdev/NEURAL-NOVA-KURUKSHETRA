@@ -6,12 +6,13 @@
  * Rescue Team Field Console (/dashboard/rescue/page.tsx)
  * ==============================================================================
  * 
- * Command Glass Design System:
- * - On Duty / Off Duty persistence in localStorage with active glow
- * - Dynamic task filtering (All, Open, In Progress, Resolved)
- * - Real-time subscription to incoming field assignments
- * - Automatic dynamic reallocation notification on task resolution
- * - Layout-matching skeleton loaders & clean empty state
+ * Command Glass Tactical Design System for NDRF / SDRF:
+ * - Live Incoming Authority Notification with precise GPS Coordinates
+ * - OpenStreetMap Terrain & Road Navigability (Inundation depths, elevation profile)
+ * - AI-Recommended Tactical Measures (Groq LLaMA 3.3 SOPs & safety perimeters)
+ * - Two-Way Field Stock & Equipment Inventory Sync with Authority Central Depot
+ * - Tactical AI Chatbot with Voice Recognition & Alert Sentinel
+ * - Mission Task Cards with accept/resolve workflows
  */
 
 import React, { useState, useEffect } from "react";
@@ -32,8 +33,18 @@ import {
   Layers,
   AlertOctagon,
   Clock,
-  Sparkles
+  Sparkles,
+  Compass,
+  Package,
+  Brain,
+  ListTodo
 } from "lucide-react";
+
+import { IncomingDispatchBanner } from "@/components/rescue/IncomingDispatchBanner";
+import { TerrainRoadAnalysisPanel } from "@/components/rescue/TerrainRoadAnalysisPanel";
+import { AITacticalMeasuresPanel } from "@/components/rescue/AITacticalMeasuresPanel";
+import { RescueInventoryManager } from "@/components/rescue/RescueInventoryManager";
+import { RescueAIChatbot } from "@/components/rescue/RescueAIChatbot";
 
 const INITIAL_RESCUE_TASKS: RescueTask[] = [
   {
@@ -58,7 +69,7 @@ const INITIAL_RESCUE_TASKS: RescueTask[] = [
     type: "Storm Surge & Flood",
     zone: "Zone B - Marina Waterfront",
     location_name: "Marina Beach Esplanade, Promenade Sector",
-    description: "Storm surge breached coastal seawall along Marina Beach. Inundation entered residential communities.",
+    description: "Storm surge breached coastal seawall along Marina Beach. Inundation entered residential communities. Standing water 1.4m.",
     location_lat: 13.0544,
     location_lng: 80.2818,
     latitude: 13.0544,
@@ -75,7 +86,7 @@ const INITIAL_RESCUE_TASKS: RescueTask[] = [
     type: "Transformer Explosion",
     zone: "Zone C - Central Metro",
     location_name: "Metro Junction Substation, Anna Salai",
-    description: "Electrical substation explosion following floodwater infiltration near hospital.",
+    description: "Electrical substation explosion following floodwater infiltration near hospital. 50m exclusion zone required.",
     location_lat: 13.0827,
     location_lng: 80.2707,
     latitude: 13.0827,
@@ -94,14 +105,23 @@ export default function RescueDashboardPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isOnDuty, setIsOnDuty] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory">("missions");
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
 
-  // Load duty state from localStorage on mount
+  // Load duty state from localStorage on mount & listen to tab changes
   useEffect(() => {
     const savedDuty = localStorage.getItem("kurukshetra_rescue_duty");
     if (savedDuty !== null) {
       setIsOnDuty(savedDuty === "true");
     }
+
+    const handleTabChange = (e: any) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
+    window.addEventListener("rescue_tab_change", handleTabChange);
+    return () => window.removeEventListener("rescue_tab_change", handleTabChange);
   }, []);
 
   const handleDutyToggle = (duty: boolean) => {
@@ -229,68 +249,27 @@ export default function RescueDashboardPage() {
     }).catch((e) => console.log("Reallocation background dispatch:", e));
   };
 
-  const [liveBroadcast, setLiveBroadcast] = useState<any>(null);
-
-  useEffect(() => {
-    const syncAlert = () => {
-      try {
-        const item = localStorage.getItem("latest_public_emergency_alert");
-        if (item) {
-          setLiveBroadcast(JSON.parse(item));
-        }
-      } catch (e) {}
-    };
-    syncAlert();
-    window.addEventListener("storage", syncAlert);
-    const timer = setInterval(syncAlert, 2500);
-    return () => {
-      window.removeEventListener("storage", syncAlert);
-      clearInterval(timer);
-    };
-  }, []);
-
   const filteredTasks = tasks.filter((t) => {
     if (filterStatus === "all") return true;
     return t.status === filterStatus;
   });
 
   return (
-    <div className="space-y-6 text-slate-100 font-ibm-sans pb-20">
+    <div className="space-y-6 text-slate-100 font-ibm-sans pb-24 relative">
       
-      {/* Live Authority Command Dispatch Alert */}
-      {liveBroadcast && (
-        <div className="rounded-xl border border-red-500/40 bg-red-950/25 p-4 flex items-start justify-between gap-4 backdrop-blur-md">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
-              <AlertTriangle className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-mono text-[10px] font-bold">
-                  AUTHORITY LIVE COMMAND BROADCAST
-                </span>
-                <span className="text-xs font-mono text-slate-400">
-                  Target: {liveBroadcast.zone}
-                </span>
-              </div>
-              <h4 className="text-sm font-semibold text-white">{liveBroadcast.title}</h4>
-              <p className="text-xs text-slate-300 mt-1">{liveBroadcast.situationReport}</p>
-              <div className="mt-2 text-xs text-amber-300 font-mono bg-amber-500/10 p-2 rounded border border-amber-500/20">
-                🚨 <strong>Squad Mobilization:</strong> {liveBroadcast.allocatedSquads} | <strong>Evac Corridor:</strong> {liveBroadcast.evacuationCorridor}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 1. Live Authority Incoming Dispatch Banner with Coordinates */}
+      <IncomingDispatchBanner
+        onInspectTerrain={() => setActiveTab("terrain")}
+      />
 
-      {/* Page Header */}
+      {/* 2. Tactical Page Header */}
       <PageHeader
-        eyebrow="NDRF / SDRF Tactical Field Dispatch Operations"
-        title="Rescue Squad Mission Queue"
-        description="Active mission assignments, required equipment packs, and real-time incident resolution"
+        eyebrow="NDRF / SDRF Tactical Field Command"
+        title="Rescue Squad Alpha Operations"
+        description="Active GPS dispatches, OpenStreetMap terrain reconnaissance, AI-recommended safety measures & field inventory"
         actions={
           <div className="flex items-center gap-3">
-            {/* On / Off Duty Switch */}
+            {/* On / Standby Duty Switch */}
             <div className="flex items-center rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
               <button
                 type="button"
@@ -301,7 +280,7 @@ export default function RescueDashboardPage() {
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse-live" />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
                 On Duty
               </button>
               <button
@@ -323,7 +302,7 @@ export default function RescueDashboardPage() {
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-slate-300 transition"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-              <span>Sync</span>
+              <span>Sync Feed</span>
             </button>
           </div>
         }
@@ -342,87 +321,161 @@ export default function RescueDashboardPage() {
         </div>
       )}
 
-      {/* Filter Tabs & Task Count */}
-      <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-white/[0.06]">
-        <div className="flex items-center gap-1.5">
-          {(["all", "open", "in_progress", "resolved"] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
-                filterStatus === status
-                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
-              }`}
-            >
-              {status === "all" ? "All Tasks" : status === "in_progress" ? "In Progress" : status.toUpperCase()}
-            </button>
-          ))}
-        </div>
+      {/* 3. Tactical 4-Way Operational Tabs */}
+      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-3 overflow-x-auto text-xs font-semibold">
+        <button
+          onClick={() => setActiveTab("missions")}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === "missions"
+              ? "bg-amber-500/20 border border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/10 font-bold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+          }`}
+        >
+          <ListTodo className="w-4 h-4" />
+          <span>Missions Queue ({tasks.length})</span>
+        </button>
 
-        <span className="font-mono text-xs text-slate-500">
-          {filteredTasks.length} active {filteredTasks.length === 1 ? "mission" : "missions"}
-        </span>
+        <button
+          onClick={() => setActiveTab("terrain")}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === "terrain"
+              ? "bg-blue-500/20 border border-blue-500/40 text-blue-300 shadow-md shadow-blue-500/10 font-bold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+          }`}
+        >
+          <Compass className="w-4 h-4" />
+          <span>OpenStreetMap Terrain &amp; Roads</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("measures")}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === "measures"
+              ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 shadow-md shadow-cyan-500/10 font-bold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+          }`}
+        >
+          <Brain className="w-4 h-4" />
+          <span>AI Tactical Measures (SOPs)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === "inventory"
+              ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shadow-md shadow-emerald-500/10 font-bold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          <span>Field Stock &amp; HQ Inventory Sync</span>
+        </button>
       </div>
 
-      {/* State 1: Skeleton Loaders */}
-      {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3 animate-pulse"
-            >
-              <div className="flex justify-between">
-                <Skeleton className="h-4 w-32 bg-white/[0.06]" />
-                <Skeleton className="h-5 w-16 bg-white/[0.06]" />
-              </div>
-              <Skeleton className="h-12 w-full bg-white/[0.04]" />
-              <div className="flex justify-between pt-3 border-t border-white/[0.06]">
-                <Skeleton className="h-8 w-24 bg-white/[0.06]" />
-                <Skeleton className="h-8 w-28 bg-white/[0.06]" />
-              </div>
+      {/* Tab 1: Missions Queue */}
+      {activeTab === "missions" && (
+        <div className="space-y-4">
+          {/* Sub-filters for tasks */}
+          <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-white/[0.06]">
+            <div className="flex items-center gap-1.5">
+              {(["all", "open", "in_progress", "resolved"] as const).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+                    filterStatus === status
+                      ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+                  }`}
+                >
+                  {status === "all" ? "All Tasks" : status === "in_progress" ? "In Progress" : status.toUpperCase()}
+                </button>
+              ))}
             </div>
-          ))}
+
+            <span className="font-mono text-xs text-slate-500">
+              {filteredTasks.length} active {filteredTasks.length === 1 ? "mission" : "missions"}
+            </span>
+          </div>
+
+          {/* Skeleton Loaders */}
+          {loading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3 animate-pulse"
+                >
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-32 bg-white/[0.06]" />
+                    <Skeleton className="h-5 w-16 bg-white/[0.06]" />
+                  </div>
+                  <Skeleton className="h-12 w-full bg-white/[0.04]" />
+                  <div className="flex justify-between pt-3 border-t border-white/[0.06]">
+                    <Skeleton className="h-8 w-24 bg-white/[0.06]" />
+                    <Skeleton className="h-8 w-28 bg-white/[0.06]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && filteredTasks.length === 0 && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-400">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-100">
+                All Sector Missions Cleared
+              </h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                No pending tasks found for this filter. Stand by on emergency communications channel or trigger a crisis wave from the Authority War Room.
+              </p>
+            </div>
+          )}
+
+          {/* Tasks Grid */}
+          {!loading && filteredTasks.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onAccept={handleAccept}
+                  onComplete={handleComplete}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* State 2: Empty Queue State */}
-      {!loading && filteredTasks.length === 0 && (
-        <div className="glass-panel p-12 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-400">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-slate-100">
-            All Sector Missions Cleared
-          </h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-            No pending tasks found for this filter. Stand by on emergency communications channel or trigger a crisis wave from the Authority War Room.
-          </p>
-          <div className="pt-2">
-            <button
-              onClick={fetchTasks}
-              className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-medium text-slate-300 transition"
-            >
-              Refresh Task Feed
-            </button>
-          </div>
-        </div>
+      {/* Tab 2: OpenStreetMap Terrain & Road Navigability */}
+      {activeTab === "terrain" && (
+        <TerrainRoadAnalysisPanel
+          latitude={13.0544}
+          longitude={80.2818}
+          zoneName="Marina Coastal Waterfront Basin"
+        />
       )}
 
-      {/* State 3: Task Cards Grid */}
-      {!loading && filteredTasks.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onAccept={handleAccept}
-              onComplete={handleComplete}
-            />
-          ))}
-        </div>
+      {/* Tab 3: AI Tactical Directives (Groq LLaMA 3.3) */}
+      {activeTab === "measures" && (
+        <AITacticalMeasuresPanel
+          incidentType="Storm Surge & Extreme Flooding"
+          zoneName="Marina Waterfront Basin"
+          severityScore={9}
+        />
       )}
+
+      {/* Tab 4: Field Stock & Depot Sync */}
+      {activeTab === "inventory" && (
+        <RescueInventoryManager />
+      )}
+
+      {/* 4. Floating Tactical AI Copilot with Voice & Alert Sentinel */}
+      <RescueAIChatbot />
 
     </div>
   );

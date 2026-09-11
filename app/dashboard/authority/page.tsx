@@ -55,6 +55,7 @@ import type { TacticalZone } from "@/components/authority/TacticalIndiaMap";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SimulateButton } from "@/components/simulation/SimulateButton";
+import { MesmerizingSimulationModal } from "@/components/authority/MesmerizingSimulationModal";
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
@@ -166,6 +167,7 @@ export default function AuthorityDashboardPage() {
   const [loadingIncidents, setLoadingIncidents] = useState<boolean>(false);
   const [incidentError, setIncidentError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState<boolean>(false);
+  const [simulationModalOpen, setSimulationModalOpen] = useState<boolean>(false);
 
   // Tactical Right Column Tab Selector (Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
   const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
@@ -392,14 +394,24 @@ export default function AuthorityDashboardPage() {
         title="Tactical Disaster Command"
         description="Real-time GIS telemetry, autonomous Sentinel triage, and Strategist AI resource distribution"
         actions={
-          <button
-            onClick={fetchIncidents}
-            disabled={loadingIncidents}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition shadow-sm self-start sm:self-auto"
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingIncidents ? "animate-spin text-white" : ""}`} />
-            <span>Re-sync Grid</span>
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => setSimulationModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white text-sm font-bold shadow-lg shadow-red-600/30 transition-all active:scale-95 border border-red-400/40"
+            >
+              <Cpu className="w-4 h-4 animate-pulse" />
+              <span>Simulate Crisis Wave (Live Swarm)</span>
+            </button>
+
+            <button
+              onClick={fetchIncidents}
+              disabled={loadingIncidents}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition shadow-sm self-start sm:self-auto"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingIncidents ? "animate-spin text-white" : ""}`} />
+              <span>Re-sync Grid</span>
+            </button>
+          </div>
         }
         statusIndicator="live"
       />
@@ -636,6 +648,28 @@ export default function AuthorityDashboardPage() {
 
       {/* Autonomous Simulation Launcher (Scenario Picker + 5-Stage Live Drawer) */}
       <SimulateButton onComplete={handleSimulationComplete} />
+
+      {/* Mesmerizing Multi-Agent Crisis Simulator Modal & Ratification Engine */}
+      <MesmerizingSimulationModal
+        isOpen={simulationModalOpen}
+        onClose={() => setSimulationModalOpen(false)}
+        onSimulationDispatched={(scen) => {
+          const newIncident: IncidentReport = {
+            id: `sim-${Date.now()}`,
+            type: scen.type,
+            description: `${scen.name}: ${scen.summary}`,
+            location_lat: scen.lat,
+            location_lng: scen.lng,
+            latitude: scen.lat,
+            longitude: scen.lng,
+            severity: "CRITICAL",
+            severity_score: scen.severity,
+            needed_resources: ["rescue_boats", "medical_kits", "life_jackets"],
+            created_at: new Date().toISOString(),
+          };
+          setIncidents((prev) => [newIncident, ...prev]);
+        }}
+      />
 
     </div>
   );

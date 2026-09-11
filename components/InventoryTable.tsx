@@ -146,6 +146,22 @@ export default function InventoryTable() {
   const [loading, setLoading] = useState<boolean>(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const loadStock = () => {
+      try {
+        const stored = localStorage.getItem("disaster_relief_resources");
+        if (stored) {
+          setResources(JSON.parse(stored));
+        } else {
+          localStorage.setItem("disaster_relief_resources", JSON.stringify(DEFAULT_RESOURCES));
+        }
+      } catch (e) {}
+    };
+    loadStock();
+    window.addEventListener("storage", loadStock);
+    return () => window.removeEventListener("storage", loadStock);
+  }, []);
+
   // Category Icon helper
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -166,21 +182,26 @@ export default function InventoryTable() {
     }
   };
 
-  // Adjust stock quantity helper (+ / - replenish)
+  // Adjust stock quantity helper (+ / - replenish) with two-way sync
   const adjustStock = (id: string, delta: number) => {
     setUpdatingId(id);
-    setResources((prev) =>
-      prev.map((item) => {
+    setResources((prev) => {
+      const updated = prev.map((item) => {
         if (item.id === id) {
           const newAvailable = Math.max(0, item.available_qty + delta);
           return {
             ...item,
-            available_qty: newAvailable
+            available_qty: newAvailable,
           };
         }
         return item;
-      })
-    );
+      });
+      try {
+        localStorage.setItem("disaster_relief_resources", JSON.stringify(updated));
+        window.dispatchEvent(new Event("storage"));
+      } catch (e) {}
+      return updated;
+    });
     setTimeout(() => setUpdatingId(null), 300);
   };
 
