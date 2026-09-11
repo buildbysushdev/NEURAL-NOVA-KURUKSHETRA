@@ -615,13 +615,11 @@ export default function TacticalIndiaMap({
           style={{ height: "100%", width: "100%", background: "#12161C" }}
           className="z-0"
         >
-          {/* CartoDB Dark Matter Base Tiles: dark background with muted borders */}
+          {/* Esri World Dark Gray Base: crisp, high-tech tactical map without watermarks */}
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-            subdomains={["a", "b", "c", "d"]}
-            maxZoom={18}
-            errorTileUrl="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a> &copy; OpenStreetMap'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={16}
           />
 
           {/* ----------------------------------------------------------------- */}

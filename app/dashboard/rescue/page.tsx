@@ -229,6 +229,26 @@ export default function RescueDashboardPage() {
     }).catch((e) => console.log("Reallocation background dispatch:", e));
   };
 
+  const [liveBroadcast, setLiveBroadcast] = useState<any>(null);
+
+  useEffect(() => {
+    const syncAlert = () => {
+      try {
+        const item = localStorage.getItem("latest_public_emergency_alert");
+        if (item) {
+          setLiveBroadcast(JSON.parse(item));
+        }
+      } catch (e) {}
+    };
+    syncAlert();
+    window.addEventListener("storage", syncAlert);
+    const timer = setInterval(syncAlert, 2500);
+    return () => {
+      window.removeEventListener("storage", syncAlert);
+      clearInterval(timer);
+    };
+  }, []);
+
   const filteredTasks = tasks.filter((t) => {
     if (filterStatus === "all") return true;
     return t.status === filterStatus;
@@ -237,6 +257,32 @@ export default function RescueDashboardPage() {
   return (
     <div className="space-y-6 text-slate-100 font-ibm-sans pb-20">
       
+      {/* Live Authority Command Dispatch Alert */}
+      {liveBroadcast && (
+        <div className="rounded-xl border border-red-500/40 bg-red-950/25 p-4 flex items-start justify-between gap-4 backdrop-blur-md">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
+              <AlertTriangle className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-mono text-[10px] font-bold">
+                  AUTHORITY LIVE COMMAND BROADCAST
+                </span>
+                <span className="text-xs font-mono text-slate-400">
+                  Target: {liveBroadcast.zone}
+                </span>
+              </div>
+              <h4 className="text-sm font-semibold text-white">{liveBroadcast.title}</h4>
+              <p className="text-xs text-slate-300 mt-1">{liveBroadcast.situationReport}</p>
+              <div className="mt-2 text-xs text-amber-300 font-mono bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                🚨 <strong>Squad Mobilization:</strong> {liveBroadcast.allocatedSquads} | <strong>Evac Corridor:</strong> {liveBroadcast.evacuationCorridor}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <PageHeader
         eyebrow="NDRF / SDRF Tactical Field Dispatch Operations"

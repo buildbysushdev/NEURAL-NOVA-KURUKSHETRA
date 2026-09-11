@@ -19,6 +19,28 @@ export function ActiveDisasterBanner({
 }: ActiveDisasterBannerProps) {
   const [dismissed, setDismissed] = useState(false);
   const [lastSeenScore, setLastSeenScore] = useState(severityScore);
+  const [liveAlert, setLiveAlert] = useState<any>(null);
+
+  useEffect(() => {
+    const syncAlert = () => {
+      try {
+        const item = localStorage.getItem("latest_public_emergency_alert");
+        if (item) {
+          const parsed = JSON.parse(item);
+          setLiveAlert(parsed);
+          setDismissed(false);
+        }
+      } catch (e) {}
+    };
+
+    syncAlert();
+    window.addEventListener("storage", syncAlert);
+    const timer = setInterval(syncAlert, 2500);
+    return () => {
+      window.removeEventListener("storage", syncAlert);
+      clearInterval(timer);
+    };
+  }, []);
 
   // If severity increases, banner reappears automatically
   useEffect(() => {
@@ -30,17 +52,22 @@ export function ActiveDisasterBanner({
 
   if (dismissed) return null;
 
+  const currentTitle = liveAlert?.title || zoneName;
+  const currentAdvisory = liveAlert?.situationReport || advisoryText;
+  const currentEvacuation = liveAlert?.evacuationCorridor;
+  const currentLevel = liveAlert?.severity === "CRITICAL" ? "critical" : severityLevel;
+
   const borderClass =
-    severityLevel === "critical"
+    currentLevel === "critical"
       ? "border-l-[#791F1F]"
-      : severityLevel === "watch"
+      : currentLevel === "watch"
       ? "border-l-[#854F0B]"
       : "border-l-[#3B6D11]";
 
   const dotClass =
-    severityLevel === "critical"
+    currentLevel === "critical"
       ? "bg-[#791F1F]"
-      : severityLevel === "watch"
+      : currentLevel === "watch"
       ? "bg-[#854F0B]"
       : "bg-[#3B6D11]";
 
@@ -55,18 +82,28 @@ export function ActiveDisasterBanner({
             <AlertTriangle className="w-4 h-4" strokeWidth={1.75} />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className={`inline-block w-2 h-2 rounded-full ${dotClass}`} />
               <h4 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A]">
-                ACTIVE HAZARD IN YOUR VICINITY: {zoneName}
+                ACTIVE HAZARD IN YOUR VICINITY: {currentTitle}
               </h4>
               <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-sm bg-[#F6F4EF] border border-[#DED9CE] font-bold">
-                SEV {severityScore}/10
+                SEV {liveAlert?.severityScore || severityScore}/10
               </span>
+              {liveAlert && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-semibold">
+                  LIVE BROADCAST DISPATCH
+                </span>
+              )}
             </div>
-            <p className="text-xs text-[#4A4A4A] leading-relaxed">
-              {advisoryText}
+            <p className="text-xs text-[#4A4A4A] leading-relaxed mb-1">
+              {currentAdvisory}
             </p>
+            {currentEvacuation && (
+              <div className="text-xs text-emerald-800 bg-emerald-50 px-2 py-1 rounded mt-1 border border-emerald-200 font-medium">
+                👉 <strong>Evacuation Corridor:</strong> {currentEvacuation}
+              </div>
+            )}
           </div>
         </div>
 

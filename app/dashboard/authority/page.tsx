@@ -40,10 +40,17 @@ import {
   History,
   Radio,
   BookOpen,
+  Brain,
+  Cpu,
+  BellRing,
 } from "lucide-react";
 import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
 import { HistoricalChecklistPanel } from "@/components/authority/HistoricalChecklistPanel";
 import { CAPDispatchPanel } from "@/components/authority/CAPDispatchPanel";
+import { AICopilotPanel } from "@/components/authority/AICopilotPanel";
+import { EmergencyAlertsTab } from "@/components/authority/EmergencyAlertsTab";
+import { AgentOrchestrationVisualizer } from "@/components/authority/AgentOrchestrationVisualizer";
+import { WeatherTelemetryBar } from "@/components/authority/WeatherTelemetryBar";
 import type { TacticalZone } from "@/components/authority/TacticalIndiaMap";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -160,9 +167,11 @@ export default function AuthorityDashboardPage() {
   const [incidentError, setIncidentError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState<boolean>(false);
 
-  // Tactical Zone selection state for the right-hand detail inspector panel
+  // Tactical Right Column Tab Selector (Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
   const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
-  const [activeRightTab, setActiveRightTab] = useState<"audit" | "zone" | "checklist" | "dispatch">("audit");
+  const [activeRightTab, setActiveRightTab] = useState<
+    "copilot" | "alerts" | "orchestration" | "checklist" | "zone" | "audit" | "dispatch"
+  >("copilot");
 
   const tacticalZones: TacticalZone[] = React.useMemo(() => {
     return incidents.map((inc) => ({
@@ -443,17 +452,21 @@ export default function AuthorityDashboardPage() {
         />
       </div>
 
-      {/* 5 & 6. Middle Section: Map + AI Audit Log Side by Side */}
+      {/* 5 & 6. Middle Section: Map + Telemetry + AI System Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: 60% (7 Cols) Live Tactical India Map */}
-        <div id="map-section" className="lg:col-span-7 space-y-6">
+        {/* Left Column: 60% (7 Cols) Live Tactical India Map & Telemetry HUD */}
+        <div id="map-section" className="lg:col-span-7 space-y-4">
+          
+          {/* Real-time Environmental & Weather Telemetry HUD */}
+          <WeatherTelemetryBar fireCount={139} quakeCount={2} />
+
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden backdrop-blur-md">
             {/* Map Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-blue-400" />
                 <h3 className="text-sm font-semibold text-slate-200">
-                  Regional Incident Telemetry
+                  Regional Incident Telemetry (Crisp Esri Tactical Canvas)
                 </h3>
               </div>
               
@@ -477,21 +490,60 @@ export default function AuthorityDashboardPage() {
           <DispatchedNotificationFeed />
         </div>
 
-        {/* Right Column: 40% (5 Cols) Dual Tab: AI Audit Log & Zone Inspector */}
+        {/* Right Column: 40% (5 Cols) Live AI Copilot, Emergency Alerts & Workflow Tabs */}
         <div id="audit-section" className="lg:col-span-5 space-y-4">
-          {/* Command Console 4-Way Tab Header */}
-          <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-3 text-xs font-medium overflow-x-auto">
+          {/* Command Console 7-Way Tab Header */}
+          <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-3 text-xs font-medium overflow-x-auto scrollbar-none">
             <button
               type="button"
-              onClick={() => setActiveRightTab("audit")}
+              onClick={() => setActiveRightTab("copilot")}
               className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-                activeRightTab === "audit"
-                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                activeRightTab === "copilot"
+                  ? "bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              <span>AI Audit Log</span>
+              <Brain className="w-3.5 h-3.5 text-cyan-400" />
+              <span>AI Copilot (Live)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("alerts")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "alerts"
+                  ? "bg-red-500/15 border border-red-500/40 text-red-300 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+              <span>Emergency Alerts</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("orchestration")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "orchestration"
+                  ? "bg-violet-500/15 border border-violet-500/40 text-violet-300 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5 text-violet-400" />
+              <span>AI Workflow</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("checklist")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "checklist"
+                  ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <History className="w-3.5 h-3.5 text-amber-400" />
+              <span>AI Checklist</span>
             </button>
 
             <button
@@ -499,7 +551,7 @@ export default function AuthorityDashboardPage() {
               onClick={() => setActiveRightTab("zone")}
               className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeRightTab === "zone"
-                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  ? "bg-blue-500/15 border border-blue-500/40 text-blue-300 shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
@@ -512,15 +564,15 @@ export default function AuthorityDashboardPage() {
 
             <button
               type="button"
-              onClick={() => setActiveRightTab("checklist")}
+              onClick={() => setActiveRightTab("audit")}
               className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-                activeRightTab === "checklist"
+                activeRightTab === "audit"
                   ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <History className="w-3.5 h-3.5 text-amber-400" />
-              <span>AI Checklist</span>
+              <Terminal className="w-3.5 h-3.5 text-slate-400" />
+              <span>Audit Trail</span>
             </button>
 
             <button
@@ -528,20 +580,26 @@ export default function AuthorityDashboardPage() {
               onClick={() => setActiveRightTab("dispatch")}
               className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeRightTab === "dispatch"
-                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <Radio className="w-3.5 h-3.5 text-red-400" />
+              <Radio className="w-3.5 h-3.5 text-emerald-400" />
               <span>CAP Dispatch</span>
             </button>
           </div>
 
-          {/* Right Column Content */}
-          {activeRightTab === "zone" ? (
+          {/* Right Column Content Panel */}
+          {activeRightTab === "copilot" ? (
+            <AICopilotPanel />
+          ) : activeRightTab === "alerts" ? (
+            <EmergencyAlertsTab />
+          ) : activeRightTab === "orchestration" ? (
+            <AgentOrchestrationVisualizer />
+          ) : activeRightTab === "zone" ? (
             <ZoneDetailPanel
               zone={selectedZone}
-              onClose={() => setActiveRightTab("audit")}
+              onClose={() => setActiveRightTab("copilot")}
               onDispatchSquad={(z) => {
                 toast.success("Emergency Response Squad Dispatched", {
                   description: `Tactical unit en route to ${z.name || z.type}.`,
