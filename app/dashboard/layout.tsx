@@ -32,6 +32,7 @@ function CitizenShell({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/citizen", label: "🏠", text: "Home" },
     { href: "/dashboard/citizen?tab=report", label: "⚠️", text: "Report" },
     { href: "/dashboard/citizen?tab=map", label: "📍", text: "Shelters" },
+    { href: "/dashboard/citizen?tab=walkie", label: "📡", text: "Mesh SOS" },
     { href: "/dashboard/citizen?tab=chat", label: "💬", text: "Help" },
   ];
 
@@ -320,6 +321,7 @@ function RescueShell({
           { label: "🧠", text: "AI Measures", tabId: "measures" },
           { label: "📦", text: "Field Stock", tabId: "inventory" },
           { label: "📻", text: "Walkie PTT", tabId: "radio" },
+          { label: "✨", text: "AI Clusters", tabId: "clusters" },
         ].map((tab) => (
           <button
             key={tab.text}
@@ -408,6 +410,20 @@ export default function DashboardLayout({
     }
     checkAuthAndRole();
   }, [pathname, router]);
+
+  // Register PWA Emergency Offline Service Worker
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          console.log("[PWA] Kurukshetra Emergency SW active:", reg.scope);
+        })
+        .catch((err) => {
+          console.warn("[PWA] Service worker registration note:", err);
+        });
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {

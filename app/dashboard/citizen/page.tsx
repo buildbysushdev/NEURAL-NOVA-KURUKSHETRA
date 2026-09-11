@@ -8,6 +8,7 @@ import { FloatingChatbotButton } from "@/components/citizen/FloatingChatbotButto
 import AlertMap from "@/components/AlertMap";
 import { RichAlertCard, RichAlertIncident } from "@/components/notifications/RichAlertCard";
 import WalkieTalkie from "@/components/WalkieTalkie";
+import LocalAIMeshSOS from "@/components/citizen/LocalAIMeshSOS";
 import { generateFallbackAnalysis } from "@/lib/agents/analyst";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
 import { toast } from "sonner";
@@ -105,12 +106,28 @@ export default function CitizenDashboardPage() {
   const [isMarkedSafe, setIsMarkedSafe] = useState(false);
   const [recentReports, setRecentReports] = useState<IncidentReport[]>([]);
 
-  // Check saved citizen safety status
+  // Check saved citizen safety status & sync URL tab param
   useEffect(() => {
     try {
       const saved = localStorage.getItem("citizen_safety_status");
       if (saved === "SAFE") setIsMarkedSafe(true);
     } catch (e) {}
+
+    const syncTabFromUrl = () => {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get("tab");
+        if (tab === "report") setActiveTab("report");
+        else if (tab === "walkie" || tab === "mesh") setActiveTab("walkie");
+        else if (tab === "shelters" || tab === "map") setActiveTab("shelters");
+        else if (tab === "helplines") setActiveTab("helplines");
+        else if (tab === "relief") setActiveTab("relief");
+        else if (tab === "safety" || !tab) setActiveTab("safety");
+      }
+    };
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    return () => window.removeEventListener("popstate", syncTabFromUrl);
   }, []);
 
   const handleToggleSafe = () => {
@@ -654,6 +671,9 @@ export default function CitizenDashboardPage() {
                 </div>
               </div>
             </div>
+
+            {/* Local AI On-Device Natural Language Triage & Multi-Hop LoRa Mesh Simulator */}
+            <LocalAIMeshSOS />
 
             <div className="flex justify-center">
               <WalkieTalkie

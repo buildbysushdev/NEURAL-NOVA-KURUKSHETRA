@@ -46,6 +46,7 @@ import { AITacticalMeasuresPanel } from "@/components/rescue/AITacticalMeasuresP
 import { RescueInventoryManager } from "@/components/rescue/RescueInventoryManager";
 import { RescueAIChatbot } from "@/components/rescue/RescueAIChatbot";
 import WalkieTalkie from "@/components/WalkieTalkie";
+import { AIIncidentClusterPanel } from "@/components/rescue/AIIncidentClusterPanel";
 
 const INITIAL_RESCUE_TASKS: RescueTask[] = [
   {
@@ -106,7 +107,7 @@ export default function RescueDashboardPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isOnDuty, setIsOnDuty] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory" | "radio">("missions");
+  const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory" | "radio" | "clusters">("missions");
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
 
   // Load duty state from localStorage on mount & listen to tab changes
@@ -383,6 +384,18 @@ export default function RescueDashboardPage() {
           <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
           <span>Walkie Mesh Comms (PTT)</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab("clusters")}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === "clusters"
+              ? "bg-purple-500/20 border border-purple-500/40 text-purple-300 shadow-md shadow-purple-500/10 font-bold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
+          <span>AI Incident Clusters (#17)</span>
+        </button>
       </div>
 
       {/* Tab 1: Missions Queue */}
@@ -508,6 +521,11 @@ export default function RescueDashboardPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Tab 6: AI Incident Clusters (Aggregates 50 SOS calls into Building B-17 Cluster #17) */}
+      {activeTab === "clusters" && (
+        <AIIncidentClusterPanel />
       )}
 
       {/* 4. Floating Tactical AI Copilot with Voice & Alert Sentinel */}

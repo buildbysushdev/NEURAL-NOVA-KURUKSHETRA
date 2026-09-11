@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DisasterReliefProvider } from "@/context/DisasterReliefContext";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -8,6 +8,11 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "Kurukshetra PS20: Agentic Disaster Relief System",
   description: "Autonomous agentic emergency response system for Citizens, Rescue Squads, and Authorities powered by Groq LPU Sentinel and Google Gemini Strategist.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#12161C",
 };
 
 export default function RootLayout({
