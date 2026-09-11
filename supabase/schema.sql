@@ -118,6 +118,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
+-- Ensure columns exist in case tables were created prior to Phase 7
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS preferred_language TEXT NOT NULL DEFAULT 'en' CHECK (preferred_language IN ('en', 'hi'));
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'hi'));
+
 -- -------------------------------------------------------------------------
 -- 6. ROW LEVEL SECURITY (RLS) ACTIVATION
 -- -------------------------------------------------------------------------
@@ -130,6 +134,7 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 -- 7. RLS POLICIES: profiles
 -- -------------------------------------------------------------------------
 -- Citizens: Can SELECT their own profile
+DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
 CREATE POLICY "profiles_select_own"
 ON public.profiles
 FOR SELECT
@@ -139,6 +144,7 @@ USING (
 );
 
 -- Users can update their own phone or location
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 CREATE POLICY "profiles_update_own"
 ON public.profiles
 FOR UPDATE
@@ -146,6 +152,7 @@ USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
 -- Authority: Can SELECT and UPDATE all profiles
+DROP POLICY IF EXISTS "profiles_authority_all" ON public.profiles;
 CREATE POLICY "profiles_authority_all"
 ON public.profiles
 FOR ALL
@@ -156,6 +163,7 @@ WITH CHECK (public.get_user_role() = 'authority');
 -- 8. RLS POLICIES: incidents
 -- -------------------------------------------------------------------------
 -- Citizens: Can INSERT new emergency incidents & SELECT their own reports
+DROP POLICY IF EXISTS "incidents_citizen_insert" ON public.incidents;
 CREATE POLICY "incidents_citizen_insert"
 ON public.incidents
 FOR INSERT
@@ -166,6 +174,7 @@ WITH CHECK (
     OR auth.role() = 'anon' -- Allows public unauthenticated emergency SOS calls
 );
 
+DROP POLICY IF EXISTS "incidents_citizen_select" ON public.incidents;
 CREATE POLICY "incidents_citizen_select"
 ON public.incidents
 FOR SELECT
@@ -175,6 +184,7 @@ USING (
 );
 
 -- Rescue: Can SELECT all assigned incidents and UPDATE their status ('open' -> 'resolved')
+DROP POLICY IF EXISTS "incidents_rescue_update" ON public.incidents;
 CREATE POLICY "incidents_rescue_update"
 ON public.incidents
 FOR UPDATE
@@ -182,6 +192,7 @@ USING (public.get_user_role() IN ('rescue', 'authority'))
 WITH CHECK (public.get_user_role() IN ('rescue', 'authority'));
 
 -- Authority: Can SELECT, UPDATE, DELETE all incidents
+DROP POLICY IF EXISTS "incidents_authority_all" ON public.incidents;
 CREATE POLICY "incidents_authority_all"
 ON public.incidents
 FOR ALL
@@ -192,6 +203,7 @@ WITH CHECK (public.get_user_role() = 'authority' OR auth.role() = 'service_role'
 -- 9. RLS POLICIES: resources
 -- -------------------------------------------------------------------------
 -- Rescue: Can SELECT assigned resource tasks
+DROP POLICY IF EXISTS "resources_rescue_select" ON public.resources;
 CREATE POLICY "resources_rescue_select"
 ON public.resources
 FOR SELECT
@@ -201,6 +213,7 @@ USING (
 );
 
 -- Authority: Full access (SELECT, INSERT, UPDATE, DELETE)
+DROP POLICY IF EXISTS "resources_authority_all" ON public.resources;
 CREATE POLICY "resources_authority_all"
 ON public.resources
 FOR ALL
@@ -211,12 +224,14 @@ WITH CHECK (public.get_user_role() = 'authority' OR auth.role() = 'service_role'
 -- 10. RLS POLICIES: audit_logs
 -- -------------------------------------------------------------------------
 -- Authority: Can SELECT all audit logs for review in War Room
+DROP POLICY IF EXISTS "audit_logs_authority_select" ON public.audit_logs;
 CREATE POLICY "audit_logs_authority_select"
 ON public.audit_logs
 FOR SELECT
 USING (public.get_user_role() = 'authority' OR auth.role() = 'service_role');
 
 -- Server-side Edge Functions / Service Role: Can INSERT audit logs
+DROP POLICY IF EXISTS "audit_logs_service_insert" ON public.audit_logs;
 CREATE POLICY "audit_logs_service_insert"
 ON public.audit_logs
 FOR INSERT
