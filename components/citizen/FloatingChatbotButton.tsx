@@ -25,10 +25,11 @@ interface Message {
 }
 
 const QUICK_REPLIES = [
-  "Where is the nearest shelter?",
-  "Is my area safe?",
-  "What should I do in a flood?",
-  "How long for rescue to arrive?",
+  "📍 Nearest Shelters & Safe Locations",
+  "🌊 Flood & Storm Safety Measures",
+  "💡 Survival Suggestions & Go-Bag",
+  "⏱️ How long for rescue to arrive?",
+  "🏥 Medical Emergency & First Aid",
 ];
 
 export function FloatingChatbotButton() {
@@ -36,7 +37,7 @@ export function FloatingChatbotButton() {
   const [msgs, setMsgs] = useState<Message[]>([
     {
       role: "bot",
-      text: "Hello. I am your Sentinel Emergency Assistant. You can speak to me or type your question about shelters, evacuation corridors, or emergency rescue.",
+      text: "Hello. I am Sentinel AI, your official Disaster Relief & Emergency Safety Assistant. I provide life-saving guidance on emergency locations, disaster safety measures, survival suggestions, and rescue coordination. How can I help you right now?",
       source: "groq",
     },
   ]);
@@ -155,12 +156,12 @@ export function FloatingChatbotButton() {
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, language: "en" }),
+        body: JSON.stringify({ message: userText, language: "en", role: "citizen" }),
       });
       const d = await r.json();
       const reply =
         d.reply ||
-        "For immediate emergency assistance, dial 112. Nearest shelter: Central Relief Station Alpha (800m inland from Marina Beach).";
+        "📍 Nearest Shelter: Central Relief Station Alpha (800m inland from Marina Beach). For immediate extraction, dial 112 or 108.";
 
       setMsgs((m) => [
         ...m,
@@ -175,7 +176,7 @@ export function FloatingChatbotButton() {
       speakText(reply);
     } catch {
       const fallbackMsg =
-        "Connection issue. For immediate emergencies, dial 112. Nearest shelter: Central Relief Station Alpha.";
+        "📍 Nearest Safe Shelter: Central Relief Station Alpha (800m inland from Marina Beach). Evacuate west along Anna Salai corridor. For emergency ambulance or boat extraction, call 112 or 108.";
       setMsgs((m) => [
         ...m,
         {
