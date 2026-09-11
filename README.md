@@ -4,7 +4,7 @@
 
 ---
 
-## 📑 Table of Contents
+##  Table of Contents
 1. [Architecture Overview](#-architecture-overview)
 2. [Tech Stack](#-tech-stack)
 3. [Environment Variables](#-environment-variables)
@@ -19,7 +19,7 @@
 
 ---
 
-## 🏛 Architecture Overview
+##  Architecture Overview
 
 ```
 [Citizen / Sensors / Responders]
@@ -59,7 +59,7 @@
 
 ---
 
-## 💻 Tech Stack
+##  Tech Stack
 
 - **Framework**: Next.js 14 (App Router, Server Components & Route Handlers)
 - **Database & Auth**: Supabase PostgreSQL 15+, Row Level Security (RLS), Supabase Auth (`@supabase/ssr`)
@@ -70,7 +70,7 @@
 
 ---
 
-## 🔑 Environment Variables
+##  Environment Variables
 
 Copy `.env.example` to `.env.local` for local development:
 
@@ -90,11 +90,11 @@ cp .env.example .env.local
 | `GEMINI_API_KEY` | Strategist Agent | API key for Gemini combinatorial reasoning | `AIzaSy...` |
 | `GEMINI_MODEL` | Strategist Agent | Target Gemini model | `gemini-flash-latest` or `gemini-2.5-flash` |
 
-> ⚠️ **Security Notice**: Never commit `.env.local` or private keys to source control. The `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, and `GEMINI_API_KEY` must **never** be prefixed with `NEXT_PUBLIC_`.
+>  **Security Notice**: Never commit `.env.local` or private keys to source control. The `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, and `GEMINI_API_KEY` must **never** be prefixed with `NEXT_PUBLIC_`.
 
 ---
 
-## ⚡ Supabase Database & Edge Functions Setup
+##  Supabase Database & Edge Functions Setup
 
 ### 1. Database Schema & RLS Setup
 1. Log in to your [Supabase Dashboard](https://supabase.com/dashboard).
@@ -158,7 +158,7 @@ Configure Postgres Webhooks so Edge Functions fire automatically on database eve
 
 ---
 
-## 🚀 Vercel Deployment Guide
+##  Vercel Deployment Guide
 
 ### Step-by-Step Deployment
 1. **Push to GitHub**:
@@ -189,7 +189,7 @@ A [`vercel.json`](./vercel.json) file is included at the root of the project:
 
 ---
 
-## 📡 API Routes Reference
+##  API Routes Reference
 
 ### 1. `GET /api/auth/session`
 - **Description**: Returns the authenticated user profile, verified role (`citizen`, `rescue`, `authority`), and token state using `@supabase/ssr` cookies.
@@ -204,7 +204,7 @@ A [`vercel.json`](./vercel.json) file is included at the root of the project:
 
 ---
 
-## 🧠 AI Decisions & Hackathon Q&A Preparation
+##  AI Decisions & Hackathon Q&A Preparation
 
 Use these technical justifications when presenting to hackathon evaluators and judges:
 
@@ -231,7 +231,7 @@ Use these technical justifications when presenting to hackathon evaluators and j
 
 ---
 
-## 🧪 Testing & Verification
+##  Testing & Verification
 
 A dedicated end-to-end backend verification script is provided in [`scripts/verify-senior-backend.mjs`](./scripts/verify-senior-backend.mjs).
 
