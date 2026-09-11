@@ -3,19 +3,19 @@
 /**
  * ==============================================================================
  * KURUKSHETRA PS20 - AGENTIC DISASTER RELIEF
- * Component: TaskCard.tsx (Rescue Team Mission & Action Card)
+ * Component: TaskCard.tsx (Rescue Team Mission & Field Action Card)
  * ==============================================================================
  * 
- * Strict Institutional Design System:
- * - Base: #12161C, Card: #181E26, Border: #222933, Text: #F6F4EF
- * - Severity Left-Border Strips: #791F1F (Critical), #854F0B (Watch), #3B6D11 (Safe)
- * - Typography: IBM Plex Sans & IBM Plex Mono for metrics/coordinates
- * - Verb-driven button phrases ("Accept Field Mission", "Mark Mission Resolved", "Navigate to Sector")
+ * Command Glass Design System:
+ * - Frosted glass surface (bg-white/[0.02] with white/[0.06] border)
+ * - Severity-coded left accent border with ambient glow
+ * - Dynamic status indicators: Open, En Route, Resolved
+ * - Required equipment/resource tags with count pills
+ * - One-click GPS navigation opening Google Maps directly
+ * - Dynamic mission resolution trigger with automated reallocation callback
  */
 
 import React, { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Navigation,
@@ -26,7 +26,8 @@ import {
   Boxes,
   Loader2,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  Check
 } from "lucide-react";
 
 export interface RescueTask {
@@ -68,17 +69,26 @@ export default function TaskCard({
   const isCritical = score >= 8 || task.severity === "CRITICAL";
   const isWatch = (score >= 5 && score < 8) || task.severity === "HIGH" || task.severity === "MODERATE";
 
-  const severityStripClass = isCritical
-    ? "border-l-4 border-l-[#791F1F]"
+  const severityStyles = isCritical
+    ? {
+        strip: "border-l-[3px] border-l-red-500 shadow-[-1px_0_15px_rgba(239,68,68,0.15)]",
+        badge: "bg-red-500/15 text-red-400 border border-red-500/30",
+        dot: "bg-red-400 animate-pulse-live",
+        label: "CRITICAL",
+      }
     : isWatch
-    ? "border-l-4 border-l-[#854F0B]"
-    : "border-l-4 border-l-[#3B6D11]";
-
-  const dotClass = isCritical
-    ? "dot-critical"
-    : isWatch
-    ? "dot-watch"
-    : "dot-safe";
+    ? {
+        strip: "border-l-[3px] border-l-amber-500 shadow-[-1px_0_15px_rgba(245,158,11,0.15)]",
+        badge: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
+        dot: "bg-amber-400",
+        label: "WATCH",
+      }
+    : {
+        strip: "border-l-[3px] border-l-emerald-500 shadow-[-1px_0_15px_rgba(16,185,129,0.15)]",
+        badge: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
+        dot: "bg-emerald-400",
+        label: "SAFE",
+      };
 
   const lat = task.latitude ?? task.location_lat ?? 13.0827;
   const lng = task.longitude ?? task.location_lng ?? 80.2707;
@@ -105,122 +115,132 @@ export default function TaskCard({
   const resources = task.required_resources || task.needed_resources || [];
 
   return (
-    <Card className={`border border-[#222933] bg-[#181E26] ${severityStripClass} rounded-sm p-4 text-[#F6F4EF]`}>
-      {/* Header: Title & Severity Score */}
-      <div className="flex items-start justify-between gap-3 pb-2 border-b border-[#222933]">
-        <div>
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className={dotClass} />
-            <span className="font-ibm-mono text-[10px] uppercase tracking-wider text-[#8A99AD]">
-              {task.zone || "SECTOR OPERATION"}
-            </span>
-            <span className="text-[#8A99AD] text-xs">•</span>
-            <span className="font-ibm-mono text-[10px] text-[#8A99AD]">
-              ID: {task.id.slice(0, 8)}
-            </span>
-          </div>
-          <h3 className="text-sm font-bold text-[#F6F4EF] capitalize">
-            {task.type.replace(/_/g, " ")}
-          </h3>
-        </div>
-
-        <div className="flex flex-col items-end flex-shrink-0">
-          <span className="font-ibm-mono text-xs font-bold px-2 py-0.5 rounded-sm bg-[#12161C] border border-[#222933]">
-            SEV {score}/10
-          </span>
-          <span className="font-ibm-mono text-[9px] uppercase tracking-wider text-[#8A99AD] mt-1">
-            {isResolved ? "MISSION RESOLVED" : isInProgress ? "EN ROUTE" : "DISPATCH READY"}
-          </span>
-        </div>
-      </div>
-
-      {/* Description & Location */}
-      <div className="py-3 space-y-2 text-xs">
-        <p className="text-[#8A99AD] leading-relaxed">
-          {task.description}
-        </p>
-
-        <div className="flex items-center gap-2 text-xs text-[#F6F4EF]">
-          <MapPin className="w-3.5 h-3.5 text-[#8A99AD] flex-shrink-0" strokeWidth={1.75} />
-          <span className="truncate">{task.location_name || "Assigned Sector Grid"}</span>
-          <span className="font-ibm-mono text-[10px] text-[#8A99AD] ml-auto">
-            {lat.toFixed(4)}, {lng.toFixed(4)}
-          </span>
-        </div>
-
-        {/* Resource Badges */}
-        {resources.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap pt-1">
-            <Boxes className="w-3 h-3 text-[#8A99AD]" strokeWidth={1.75} />
-            <span className="text-[10px] font-mono text-[#8A99AD] uppercase mr-1">Required:</span>
-            {resources.map((res) => (
-              <span
-                key={res}
-                className="font-ibm-mono text-[10px] uppercase px-1.5 py-0.5 rounded-sm bg-[#12161C] border border-[#222933] text-[#F6F4EF]"
-              >
-                {res}
+    <div
+      className={`
+        rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]
+        ${severityStyles.strip} p-5 text-slate-100 backdrop-blur-md
+        transition-all duration-300 flex flex-col justify-between
+      `}
+    >
+      <div>
+        {/* Header: Type, Zone & Severity Pill */}
+        <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/[0.06]">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className={`w-2 h-2 rounded-full ${severityStyles.dot}`} />
+              <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                {task.zone || "TACTICAL SECTOR"}
               </span>
-            ))}
+              <span className="text-slate-600 text-xs">•</span>
+              <span className="font-mono text-[10px] text-slate-500">
+                ID: {task.id.slice(0, 8)}
+              </span>
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-slate-100 capitalize tracking-tight">
+              {task.type.replace(/_/g, " ")}
+            </h3>
           </div>
-        )}
+
+          <div className="flex flex-col items-end flex-shrink-0">
+            <span
+              className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg ${severityStyles.badge}`}
+            >
+              SEV {score}/10
+            </span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400 mt-1">
+              {isResolved ? "RESOLVED" : isInProgress ? "EN ROUTE" : "DISPATCH READY"}
+            </span>
+          </div>
+        </div>
+
+        {/* Description & Location Coordinates */}
+        <div className="py-3.5 space-y-2.5 text-xs">
+          <p className="text-slate-300 leading-relaxed line-clamp-3">
+            {task.description}
+          </p>
+
+          <div className="flex items-center gap-2 text-xs text-slate-400 bg-black/20 p-2.5 rounded-xl border border-white/[0.03]">
+            <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate flex-1">{task.location_name || "Grid Coordinates"}</span>
+            <span className="font-mono text-[10px] text-slate-500">
+              {lat.toFixed(4)}°N, {lng.toFixed(4)}°E
+            </span>
+          </div>
+
+          {/* Required Resource Tags */}
+          {resources.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <Boxes className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-[10px] font-mono text-slate-500 uppercase mr-1">Required:</span>
+              {resources.map((res) => (
+                <span
+                  key={res}
+                  className="font-mono text-[10px] uppercase px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-slate-300"
+                >
+                  {res.replace(/_/g, " ")}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Card Actions with Verb Phrases */}
-      <div className="pt-3 border-t border-[#222933] flex items-center justify-between gap-2 flex-wrap">
-        <Button
-          variant="secondary"
-          size="sm"
+      {/* Action Buttons */}
+      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
+        <button
+          type="button"
           onClick={handleOpenGoogleMaps}
-          className="h-8 text-xs"
+          className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-medium text-slate-300 transition flex items-center gap-1.5"
         >
-          <Navigation className="w-3 h-3 mr-1" strokeWidth={1.75} />
-          Navigate to Sector
-        </Button>
+          <Navigation className="w-3.5 h-3.5 text-blue-400" />
+          <span>Navigate</span>
+        </button>
 
         <div className="flex items-center gap-2 ml-auto">
           {!isResolved && !isInProgress && (
-            <Button
-              variant="primary"
-              size="sm"
+            <button
+              type="button"
               disabled={loadingAction === "accept"}
               onClick={() => handleAction("accept")}
-              className="h-8 text-xs"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-1.5 disabled:opacity-60"
             >
               {loadingAction === "accept" ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                "Accept Field Mission"
+                <>
+                  <Radio className="w-3.5 h-3.5" />
+                  <span>Accept Mission</span>
+                </>
               )}
-            </Button>
+            </button>
           )}
 
           {isInProgress && (
-            <Button
-              variant="primary"
-              size="sm"
+            <button
+              type="button"
               disabled={loadingAction === "complete"}
               onClick={() => handleAction("complete")}
-              className="h-8 text-xs bg-[#3B6D11] text-white hover:bg-[#498616]"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5 disabled:opacity-60"
             >
               {loadingAction === "complete" ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" strokeWidth={1.75} />
-                  Mark Mission Resolved
-                </span>
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Mark Resolved</span>
+                </>
               )}
-            </Button>
+            </button>
           )}
 
           {isResolved && (
-            <span className="font-ibm-mono text-xs text-[#3B6D11] font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-              RESOLVED
+            <span className="font-mono text-xs text-emerald-400 font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+              MISSION RESOLVED
             </span>
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

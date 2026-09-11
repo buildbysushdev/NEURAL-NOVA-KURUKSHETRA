@@ -6,31 +6,39 @@
  * Login & Responder Authentication Portal (app/login/page.tsx)
  * ==============================================================================
  * 
- * Production-Grade Institutional Emergency Design:
- * - Base: #12161C, Card: #181E26, Border: #222933, Text: #F6F4EF
- * - Verb-driven action buttons (no generic "Submit", "OK")
- * - 100% Graceful Supabase Auth error translation (no raw error objects)
- * - Safe demo prefill personas with 1-click authentication
- * - Wrapped in high-contrast accessibility focus rings
+ * Command Glass Design System:
+ * - Ambient background radial glows and subtle grid texture
+ * - Glassmorphic rounded-2xl cards with soft borders
+ * - 1-Click quick persona buttons (Citizen, Rescue, Authority) with active glow
+ * - 100% Graceful auth error handling with human-readable guidance
+ * - Instant role session persistence across cookies & localStorage
  */
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, isConfigured, getUserRole, UserRole } from "@/lib/supabaseClient";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ShieldAlert, Users, Radio, Activity, AlertCircle, ArrowRight, Loader2, CheckCircle2, Lock } from "lucide-react";
+import {
+  Shield,
+  ShieldAlert,
+  Users,
+  Radio,
+  Activity,
+  AlertCircle,
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+  Lock,
+  Sparkles,
+  KeyRound,
+  Mail
+} from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [isSignUp, setIsSignUp] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("commander@kurukshetra.gov.in");
   const [password, setPassword] = useState<string>("Authority@Demo2026");
-  const [fullName, setFullName] = useState<string>("");
   const [selectedRole, setSelectedRole] = useState<UserRole>("authority");
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -112,7 +120,7 @@ export default function LoginPage() {
             document.cookie = `kurukshetra_role=${role}; path=/; max-age=86400`;
 
             toast.success("Security Clearance Confirmed", {
-              description: `Authenticated as ${role.toUpperCase()}. Entering operational zone.`,
+              description: `Authenticated as ${role.toUpperCase()}. Entering operational console.`,
             });
             router.push(`/dashboard/${role}`);
             return;
@@ -120,7 +128,6 @@ export default function LoginPage() {
 
           if (error) {
             console.warn("Supabase auth failed, evaluating fallback:", error);
-            // If live credentials failed, show the specific parsed error
             setErrorMsg(parseAuthError(error));
             setLoading(false);
             return;
@@ -183,69 +190,89 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#12161C] text-[#F6F4EF] flex flex-col justify-center items-center p-4 sm:p-6 font-ibm-sans">
-      <div className="w-full max-w-md space-y-4">
+    <div className="min-h-screen bg-[#0A0E17] bg-gradient-to-br from-[#0A0E17] via-[#111827] to-[#0F172A] text-slate-100 flex flex-col justify-center items-center p-4 sm:p-6 font-ibm-sans relative overflow-hidden selection:bg-blue-500 selection:text-white">
+      
+      {/* Ambient background glows */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
+        <div
+          className="fixed inset-0 opacity-[0.02] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+      </div>
+
+      <div className="w-full max-w-md space-y-6 relative z-10 animate-slide-up">
         
         {/* Header Branding */}
-        <div className="text-center space-y-1.5 mb-2">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-sm bg-[#181E26] border border-[#222933] text-[#791F1F] mb-1">
-            <ShieldAlert className="w-5 h-5" strokeWidth={1.75} />
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/20 mb-1">
+            <Shield className="w-6 h-6" strokeWidth={2} />
           </div>
-          <h1 className="text-sm font-bold uppercase tracking-widest font-mono text-[#F6F4EF]">
-            KURUKSHETRA PS20 // ACCESS GATE
+          <h1 className="text-xl font-bold tracking-tight text-slate-100">
+            Kurukshetra PS20
           </h1>
-          <p className="text-xs text-[#8A99AD]">
-            Autonomous Disaster Relief & Multi-Agent Emergency Command
+          <p className="text-xs text-slate-400 max-w-xs mx-auto">
+            Autonomous Multi-Agent Crisis Command Gateway
           </p>
         </div>
 
-        {/* Rapid Persona Switcher Buttons */}
+        {/* Rapid Persona Selector Tabs */}
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => prefillCredentials("citizen")}
-            className={`p-2.5 rounded-sm border text-left transition-colors ${
+            className={`p-3 rounded-2xl border text-left transition-all backdrop-blur-md ${
               selectedRole === "citizen"
-                ? "border-[#F6F4EF] bg-[#181E26] text-[#F6F4EF]"
-                : "border-[#222933] bg-[#12161C] text-[#8A99AD] hover:bg-[#181E26]"
+                ? "bg-blue-500/15 border-blue-500/40 text-blue-300 shadow-lg shadow-blue-500/10 scale-[1.02]"
+                : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
             }`}
           >
-            <Users className="w-4 h-4 mb-1.5" strokeWidth={1.75} />
-            <span className="block text-xs font-semibold">Citizen</span>
-            <span className="block text-[10px] font-mono text-[#8A99AD]">SOS / Reports</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center mb-2">
+              <Users className="w-4 h-4 text-blue-400" strokeWidth={1.75} />
+            </div>
+            <span className="block text-xs font-semibold text-slate-100">Citizen</span>
+            <span className="block text-[10px] font-mono text-slate-500">SOS / Reports</span>
           </button>
 
           <button
             type="button"
             onClick={() => prefillCredentials("rescue")}
-            className={`p-2.5 rounded-sm border text-left transition-colors ${
+            className={`p-3 rounded-2xl border text-left transition-all backdrop-blur-md ${
               selectedRole === "rescue"
-                ? "border-[#F6F4EF] bg-[#181E26] text-[#F6F4EF]"
-                : "border-[#222933] bg-[#12161C] text-[#8A99AD] hover:bg-[#181E26]"
+                ? "bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-lg shadow-amber-500/10 scale-[1.02]"
+                : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
             }`}
           >
-            <Radio className="w-4 h-4 mb-1.5" strokeWidth={1.75} />
-            <span className="block text-xs font-semibold">Rescue</span>
-            <span className="block text-[10px] font-mono text-[#8A99AD]">Field Ops</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center mb-2">
+              <Radio className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
+            </div>
+            <span className="block text-xs font-semibold text-slate-100">Rescue</span>
+            <span className="block text-[10px] font-mono text-slate-500">Field Squad</span>
           </button>
 
           <button
             type="button"
             onClick={() => prefillCredentials("authority")}
-            className={`p-2.5 rounded-sm border text-left transition-colors ${
+            className={`p-3 rounded-2xl border text-left transition-all backdrop-blur-md ${
               selectedRole === "authority"
-                ? "border-[#F6F4EF] bg-[#181E26] text-[#F6F4EF]"
-                : "border-[#222933] bg-[#12161C] text-[#8A99AD] hover:bg-[#181E26]"
+                ? "bg-red-500/15 border-red-500/40 text-red-300 shadow-lg shadow-red-500/10 scale-[1.02]"
+                : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
             }`}
           >
-            <Activity className="w-4 h-4 mb-1.5" strokeWidth={1.75} />
-            <span className="block text-xs font-semibold">Authority</span>
-            <span className="block text-[10px] font-mono text-[#8A99AD]">HQ Command</span>
+            <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center mb-2">
+              <Activity className="w-4 h-4 text-red-400" strokeWidth={1.75} />
+            </div>
+            <span className="block text-xs font-semibold text-slate-100">Authority</span>
+            <span className="block text-[10px] font-mono text-slate-500">HQ Console</span>
           </button>
         </div>
 
-        {/* Login Form Card */}
-        <Card className="border border-[#222933] bg-[#181E26] rounded-sm p-6 shadow-none">
+        {/* Login Form Glass Container */}
+        <div className="glass-panel p-6 sm:p-7 shadow-2xl border border-white/[0.08] backdrop-blur-2xl bg-[#111827]/80">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -253,85 +280,100 @@ export default function LoginPage() {
             }}
             className="space-y-4"
           >
-            {/* Error Message Display */}
+            {/* Error Message Notice */}
             {errorMsg && (
-              <div className="p-3 rounded-sm bg-[#12161C] border border-[#791F1F] border-l-4 border-l-[#791F1F] text-xs text-[#F6F4EF] flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-[#791F1F] flex-shrink-0 mt-0.5" strokeWidth={1.75} />
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-200 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" strokeWidth={1.75} />
                 <div className="flex-1">
-                  <p className="font-semibold text-xs text-[#F6F4EF]">Authentication Notice</p>
-                  <p className="text-xs text-[#8A99AD] mt-0.5 leading-relaxed">{errorMsg}</p>
+                  <p className="font-semibold text-xs text-red-300">Authentication Notice</p>
+                  <p className="text-xs text-red-400 mt-0.5 leading-relaxed">{errorMsg}</p>
                 </div>
               </div>
             )}
 
-            {/* Email Field */}
+            {/* Email Input */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-mono uppercase tracking-wider text-[#8A99AD]">
-                Operational Email
-              </Label>
-              <Input
+              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>Operational Identity / Email</span>
+              </label>
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-[#12161C] border-[#222933] text-[#F6F4EF] text-xs font-mono h-9 rounded-sm focus-visible:ring-2 focus-visible:ring-[#F6F4EF]"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/40 transition"
                 placeholder="identity@kurukshetra.gov.in"
               />
             </div>
 
-            {/* Password Field */}
+            {/* Password Input */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-mono uppercase tracking-wider text-[#8A99AD]">
-                Security Password
-              </Label>
-              <Input
+              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-slate-400" />
+                <span>Security Clearance Password</span>
+              </label>
+              <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-[#12161C] border-[#222933] text-[#F6F4EF] text-xs font-mono h-9 rounded-sm focus-visible:ring-2 focus-visible:ring-[#F6F4EF]"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/40 transition"
                 placeholder="••••••••••••"
               />
             </div>
 
-            {/* Primary Action Button (Specific Verb Phrase) */}
-            <Button
+            {/* Primary Action Button */}
+            <button
               type="submit"
-              variant="primary"
               disabled={loading}
-              className="w-full h-10 mt-2"
+              className={`w-full py-3 px-4 rounded-xl font-semibold text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center gap-2 mt-2 ${
+                selectedRole === "authority"
+                  ? "bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-red-500/20"
+                  : selectedRole === "rescue"
+                  ? "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-amber-500/20"
+                  : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-500/20"
+              }`}
             >
               {loading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />
-                  Verifying Security Clearance...
+                <span className="inline-flex items-center gap-2 font-mono text-xs">
+                  <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
+                  Verifying Credentials...
                 </span>
               ) : selectedRole === "authority" ? (
-                "Authenticate as Authority Commander"
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Authenticate Authority Commander</span>
+                </>
               ) : selectedRole === "rescue" ? (
-                "Login as Rescue Specialist"
+                <>
+                  <Shield className="w-4 h-4" />
+                  <span>Login as Rescue Specialist</span>
+                </>
               ) : (
-                "Enter Citizen Emergency Portal"
+                <>
+                  <Users className="w-4 h-4" />
+                  <span>Enter Citizen Emergency Portal</span>
+                </>
               )}
-            </Button>
+            </button>
 
-            {/* Secondary Google OAuth */}
-            <Button
+            {/* Secondary Google SSO Button */}
+            <button
               type="button"
-              variant="secondary"
               disabled={loading}
               onClick={handleGoogleSignIn}
-              className="w-full h-9"
+              className="w-full py-2.5 px-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-slate-300 transition-all flex items-center justify-center gap-2"
             >
-              Verify Identity via Google SSO
-            </Button>
+              <span>1-Click Identity Authentication via Google</span>
+            </button>
           </form>
-        </Card>
+        </div>
 
-        {/* Security & RLS Compliance Notice */}
+        {/* Government Directive Notice */}
         <div className="text-center">
-          <p className="text-[11px] font-mono text-[#8A99AD] uppercase tracking-wider">
-            GOVERNMENT SECURITY DIRECTIVE // ROW LEVEL SECURITY ENFORCED
+          <p className="text-[11px] font-mono text-slate-500 uppercase tracking-widest">
+            STATE EMERGENCY DIRECTIVE // RLS SECURITY ENFORCED
           </p>
         </div>
 

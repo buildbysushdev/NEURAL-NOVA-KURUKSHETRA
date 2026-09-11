@@ -6,15 +6,12 @@
  * Citizen Emergency Portal (/dashboard/citizen/page.tsx)
  * ==============================================================================
  * 
- * Strict Institutional Design System:
- * - Base: Warm off-white #F6F4EF, Text: Charcoal #1A1A1A
- * - Typography: Public Sans for body text, IBM Plex Mono for metrics/coordinates
- * - Severity Colors: ONLY as left-border strips & small status dots (no full background fills)
- * - Persistent Active Disaster Warning Banner (dismissible, re-arms on severity increase)
- * - Hero: Large Safety Status Indicator Card
- * - Incident Reporting Form with GPS acquisition and photo evidence upload
- * - Interactive Citizen Sentinel Chatbot (smart autoscroll, 3-dot typing indicator, hover timestamps)
- * - Simplified Relief & Safe Zones Map
+ * Warm, Trustworthy & Human-Centered Design System:
+ * - Base: Warm off-white #F6F4EF, Soft Cards #FFFFFF with gentle slate borders
+ * - Reassuring Header & Context-Aware Greeting
+ * - Dynamic Active Threat Warning Banner with live severity pulse
+ * - Hero Area Safety Card: Area sector, Threat rating, Nearest safe haven, Wind speed, and SOS Beacon
+ * - Action Switcher: File Incident Report, Ask Assistant Chatbot, Safe Evacuation Zones Map
  */
 
 import React, { useState, useEffect } from "react";
@@ -23,24 +20,53 @@ import { CitizenChatbot } from "@/components/citizen/CitizenChatbot";
 import { ActiveDisasterBanner } from "@/components/citizen/ActiveDisasterBanner";
 import AlertMap from "@/components/AlertMap";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
+  Shield,
   ShieldCheck,
+  AlertTriangle,
   AlertOctagon,
-  LifeBuoy,
+  MessageCircle,
   MapPin,
-  Send,
   Radio,
+  Wind,
   PhoneCall,
   CheckCircle2,
-  Navigation,
-  Clock,
   Compass,
-  Home
+  FileText,
+  Navigation,
+  LifeBuoy
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+
+function StatBlock({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color: "emerald" | "blue" | "red" | "amber" | "slate";
+}) {
+  const textColors = {
+    emerald: "text-emerald-700",
+    blue: "text-blue-700",
+    red: "text-red-700",
+    amber: "text-amber-700",
+    slate: "text-slate-800",
+  };
+
+  return (
+    <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/60 text-center">
+      <span className="text-[11px] font-medium text-slate-500 block mb-0.5">
+        {label}
+      </span>
+      <span className={`text-sm font-bold font-mono ${textColors[color]}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export default function CitizenDashboardPage() {
   const { language, t } = useLanguage();
@@ -94,152 +120,166 @@ export default function CitizenDashboardPage() {
 
   return (
     <div className="theme-citizen min-h-screen bg-[#F6F4EF] text-[#1A1A1A] font-public-sans pb-16">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         
-        {/* PERSISTENT ACTIVE DISASTER WARNING BANNER */}
+        {/* Warm Greeting Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          <div>
+            <p className="text-xs text-slate-500 font-medium tracking-wide">
+              {language === "hi" ? "नमस्ते // सुरक्षित रहें" : "Good evening • Disaster Response Network"}
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              {language === "hi" ? "सुरक्षित रहें, सूचित रहें" : "Stay safe, stay informed"}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href="tel:112"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+            >
+              <PhoneCall className="w-3.5 h-3.5 text-red-600" />
+              <span>National Helpline: 112</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Dynamic Threat Warning Banner (only renders if threat detected) */}
         {isHazardActive && (
           <ActiveDisasterBanner
             zoneName="Marina Waterfront Sector B // Storm Surge Warning"
             severityLevel="critical"
             severityScore={activeZoneScore}
-            advisoryText="High-tide inundation breaching lower roadways. Designated Safe Zone: Central Multi-Story Shelter Alpha (800m inland)."
+            advisoryText="High-tide inundation breaching lower roadways. Designated Safe Shelter: Central Relief Station Alpha (800m inland). Evacuation teams stationed."
           />
         )}
 
-        {/* HERO SECTION: Large Safety Status Indicator Card */}
-        <div
-          className={`border border-[#DED9CE] bg-[#FFFFFF] p-5 sm:p-6 rounded-sm border-l-4 ${
-            isHazardActive ? "border-l-[#791F1F]" : "border-l-[#3B6D11]"
-          }`}
-        >
+        {/* Hero Area Safety Status Card */}
+        <div className="rounded-2xl bg-white p-5 sm:p-6 shadow-sm border border-slate-200/80 transition-all">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
             <div className="flex items-start gap-4">
               <div
-                className={`w-12 h-12 rounded-sm flex items-center justify-center flex-shrink-0 ${
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm ${
                   isHazardActive
-                    ? "bg-[#F6F4EF] text-[#791F1F] border border-[#DED9CE]"
-                    : "bg-[#F6F4EF] text-[#3B6D11] border border-[#DED9CE]"
+                    ? "bg-red-50 text-red-600 border border-red-200"
+                    : "bg-emerald-50 text-emerald-600 border border-emerald-200"
                 }`}
               >
                 {isHazardActive ? (
-                  <AlertOctagon className="w-7 h-7" strokeWidth={1.75} />
+                  <AlertOctagon className="w-6 h-6" strokeWidth={2} />
                 ) : (
-                  <ShieldCheck className="w-7 h-7" strokeWidth={1.75} />
+                  <ShieldCheck className="w-6 h-6" strokeWidth={2} />
                 )}
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={isHazardActive ? "dot-critical" : "dot-safe"} />
-                  <span className="font-ibm-mono text-xs uppercase tracking-widest text-[#6B655B]">
-                    CITIZEN TELEMETRY SECTOR: CHENNAI CENTRAL
-                  </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isHazardActive ? "bg-red-500 animate-pulse-live" : "bg-emerald-500"
+                    }`}
+                  />
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Your Assigned Area
+                  </p>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1A1A1A]">
-                  {isHazardActive
-                    ? "Active Alert: Elevate Precautionary Readiness"
-                    : "Your Sector is Classified Stable"}
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  Marina Waterfront Sector B // Chennai Central
                 </h2>
-                <p className="text-xs text-[#6B655B] mt-1 leading-relaxed">
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">
                   {isHazardActive
-                    ? "Automated Sentinel sensors have registered rising surge activity within 1.5 km of your location."
-                    : "All emergency barriers active. Potable water distribution and medical aid hubs operational."}
+                    ? "Sentinel AI monitoring stations have recorded rising water levels along low-lying coastal paths. Emergency squads are active in your quadrant."
+                    : "All emergency seawalls and drainways are clear. Potable water stations and community shelters are on standby."}
                 </p>
               </div>
             </div>
 
-            {/* Quick Action Verbs */}
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              <Button
-                variant="destructive"
+            {/* Emergency SOS Button */}
+            <div className="flex-shrink-0">
+              <button
+                type="button"
                 onClick={() => {
-                  toast.success("Emergency SOS Signal Transmitted", {
-                    description: "High-priority distress beacon routed to Rescue Squad Alpha.",
+                  toast.success("Emergency SOS Beacon Dispatched", {
+                    description: "High-priority distress telemetry routed to NDRF Rescue Squad Alpha.",
                   });
                 }}
-                className="h-9 px-4 text-xs font-bold"
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-red-500/20 flex items-center justify-center gap-2 transition active:scale-95"
               >
-                <Radio className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />
-                Broadcast Emergency SOS
-              </Button>
+                <AlertTriangle className="w-4 h-4" strokeWidth={2} />
+                <span>Broadcast Emergency SOS</span>
+              </button>
             </div>
           </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-[#DED9CE]">
-            <div>
-              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
-                Nearest Safe Depot
-              </span>
-              <span className="font-ibm-mono text-xs font-bold text-[#1A1A1A]">
-                Marina Central (0.8 km)
-              </span>
-            </div>
-            <div>
-              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
-                Local Threat Level
-              </span>
-              <span className="font-ibm-mono text-xs font-bold text-[#791F1F]">
-                SEV 8 // CRITICAL
-              </span>
-            </div>
-            <div>
-              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
-                Rescue Dispatch Status
-              </span>
-              <span className="font-ibm-mono text-xs font-bold text-[#3B6D11]">
-                SQUAD #4 EN ROUTE
-              </span>
-            </div>
-            <div>
-              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
-                Relief Kits Stocked
-              </span>
-              <span className="font-ibm-mono text-xs font-bold text-[#1A1A1A]">
-                3,000 Rations Ready
-              </span>
-            </div>
+          {/* Environmental & Safety Telemetry Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-100">
+            <StatBlock
+              label="Local Threat Level"
+              value={isHazardActive ? "SEV 8 // CRITICAL" : "SEV 2 // STABLE"}
+              color={isHazardActive ? "red" : "emerald"}
+            />
+            <StatBlock
+              label="Nearest Safe Haven"
+              value="0.8 km (Marina Central)"
+              color="blue"
+            />
+            <StatBlock
+              label="Coastal Wind Velocity"
+              value="42 km/h (Gusts 55)"
+              color="slate"
+            />
+            <StatBlock
+              label="Relief Food & Water"
+              value="3,000 Rations Ready"
+              color="emerald"
+            />
           </div>
         </div>
 
-        {/* TAB CONTROLS */}
-        <div className="flex items-center gap-1 border-b border-[#DED9CE] pb-2">
+        {/* Navigation Tabs for Citizen Actions */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab("report")}
-            className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition flex items-center gap-2 whitespace-nowrap ${
               activeTab === "report"
-                ? "bg-[#1A1A1A] text-[#F6F4EF]"
-                : "text-[#6B655B] hover:text-[#1A1A1A] hover:bg-[#EBE7DF]"
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
             }`}
           >
-            File Incident Report
+            <FileText className="w-3.5 h-3.5" />
+            <span>File Incident Report</span>
           </button>
+
           <button
             type="button"
             onClick={() => setActiveTab("chat")}
-            className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition flex items-center gap-2 whitespace-nowrap ${
               activeTab === "chat"
-                ? "bg-[#1A1A1A] text-[#F6F4EF]"
-                : "text-[#6B655B] hover:text-[#1A1A1A] hover:bg-[#EBE7DF]"
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
             }`}
           >
-            Sentinel Assistant Chatbot
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Ask AI Ground Assistant</span>
           </button>
+
           <button
             type="button"
             onClick={() => setActiveTab("map")}
-            className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition flex items-center gap-2 whitespace-nowrap ${
               activeTab === "map"
-                ? "bg-[#1A1A1A] text-[#F6F4EF]"
-                : "text-[#6B655B] hover:text-[#1A1A1A] hover:bg-[#EBE7DF]"
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
             }`}
           >
-            Safe Evacuation Zones
+            <Compass className="w-3.5 h-3.5" />
+            <span>Evacuation &amp; Safe Shelters</span>
           </button>
         </div>
 
-        {/* TAB 1: Incident Reporting Form */}
+        {/* Tab 1: Incident Reporting Form & Guidance */}
         {activeTab === "report" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div className="lg:col-span-7">
@@ -247,65 +287,84 @@ export default function CitizenDashboardPage() {
             </div>
 
             <div className="lg:col-span-5 space-y-4">
-              <div className="border border-[#DED9CE] bg-[#FFFFFF] p-4 rounded-sm border-l-4 border-l-[#3B6D11]">
-                <div className="flex items-center gap-2 mb-2">
-                  <Home className="w-4 h-4 text-[#3B6D11]" strokeWidth={1.75} />
-                  <h4 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A]">
-                    DESIGNATED SHELTER PROTOCOLS
-                  </h4>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Designated Shelter Corridors
+                    </h4>
+                    <p className="text-[11px] text-slate-500">Official Civil Protection Route</p>
+                  </div>
                 </div>
-                <p className="text-xs text-[#4A4A4A] leading-relaxed">
-                  During flood surges, proceed immediately along high-ground corridors. Emergency personnel are stationed at Marina High School and Royapettah Community Center.
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  In flood-impacted sectors, follow marked inland high-ground roadways. Evacuation buses and medical aid officers are stationed at Marina Central Station and Royapettah Relief Post.
                 </p>
-                <div className="mt-3 pt-2 border-t border-[#DED9CE] text-[11px] font-mono text-[#6B655B] flex justify-between">
-                  <span>Helpline: 1070 (SDMA)</span>
-                  <span className="text-[#3B6D11] font-bold">24/7 ACTIVE</span>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-slate-500">SDMA Direct Radio:</span>
+                  <span className="text-emerald-600 font-bold">1070 // ACTIVE</span>
                 </div>
               </div>
 
-              {/* Citizen Chat Mini Preview */}
-              <div className="border border-[#DED9CE] bg-[#FFFFFF] p-4 rounded-sm">
-                <h4 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A] mb-2">
-                  NEED IMMEDIATE GUIDANCE?
-                </h4>
-                <p className="text-xs text-[#6B655B] mb-3">
-                  Ask our autonomous multi-lingual assistant for real-time supply allocations or status updates.
+              {/* Quick AI Assistant Card */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">
+                      Need Shelter or Supply Guidance?
+                    </h4>
+                    <p className="text-[11px] text-slate-500">Available in English and हिन्दी</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  Chat with our grounded AI relief assistant for real-time depot stocks, safe evacuation pathways, or medical station locations.
                 </p>
-                <Button
-                  variant="secondary"
+                <button
+                  type="button"
                   onClick={() => setActiveTab("chat")}
-                  className="w-full text-xs text-[#1A1A1A] border-[#DED9CE] hover:bg-[#F6F4EF]"
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-800 transition flex items-center justify-center gap-2"
                 >
-                  Open Sentinel Chatbot
-                </Button>
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Open Citizen Sentinel Chat</span>
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: Citizen Sentinel Chatbot */}
+        {/* Tab 2: Sentinel Assistant Chatbot */}
         {activeTab === "chat" && (
           <div className="max-w-2xl mx-auto">
             <CitizenChatbot />
           </div>
         )}
 
-        {/* TAB 3: Simplified Safe Zones Map */}
+        {/* Tab 3: Safe Evacuation Zones Map */}
         {activeTab === "map" && (
-          <div className="border border-[#DED9CE] bg-[#FFFFFF] p-4 rounded-sm space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-[#DED9CE]">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#1A1A1A]" strokeWidth={1.75} />
-                <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A]">
-                  SIMPLIFIED LOCAL SAFE ZONES &amp; RELIEF HUBS
-                </h3>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <Compass className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Local Safe Havens &amp; Active Hazard Corridors
+                  </h3>
+                  <p className="text-xs text-slate-500">Live GIS telemetry with safe shelters and incident perimeters</p>
+                </div>
               </div>
-              <span className="font-ibm-mono text-[10px] text-[#3B6D11] font-bold">
-                SAFE ZONES GREEN // DANGER ZONES RED
+              <span className="hidden sm:inline text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Safe Zones: Green • Incidents: Red
               </span>
             </div>
 
-            <div className="h-[460px] w-full rounded-sm overflow-hidden border border-[#DED9CE]">
+            <div className="h-[460px] w-full rounded-xl overflow-hidden border border-slate-200">
               <AlertMap userLocation={userLocation} />
             </div>
           </div>

@@ -45,6 +45,9 @@ import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
 import { HistoricalChecklistPanel } from "@/components/authority/HistoricalChecklistPanel";
 import { CAPDispatchPanel } from "@/components/authority/CAPDispatchPanel";
 import type { TacticalZone } from "@/components/authority/TacticalIndiaMap";
+import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SimulateButton } from "@/components/simulation/SimulateButton";
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
@@ -74,87 +77,6 @@ const TacticalIndiaMap = dynamic(
     ),
   }
 );
-
-// Stat Card Component with ambient color glow blob & soft number shadow
-function StatCard({
-  label,
-  value,
-  subtitle,
-  icon: Icon,
-  trend,
-  color,
-}: {
-  label: string;
-  value: string;
-  subtitle: string;
-  icon: any;
-  trend?: string;
-  color: "blue" | "emerald" | "violet" | "red";
-}) {
-  const colorMap = {
-    blue: {
-      iconBg: "bg-blue-500/10",
-      iconColor: "text-blue-400",
-      valueShadow: "drop-shadow-[0_0_12px_rgba(59,130,246,0.3)]",
-      blobColor: "bg-blue-500",
-    },
-    emerald: {
-      iconBg: "bg-emerald-500/10",
-      iconColor: "text-emerald-400",
-      valueShadow: "drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]",
-      blobColor: "bg-emerald-500",
-    },
-    violet: {
-      iconBg: "bg-violet-500/10",
-      iconColor: "text-violet-400",
-      valueShadow: "drop-shadow-[0_0_12px_rgba(139,92,246,0.3)]",
-      blobColor: "bg-violet-500",
-    },
-    red: {
-      iconBg: "bg-red-500/10",
-      iconColor: "text-red-400",
-      valueShadow: "drop-shadow-[0_0_12px_rgba(239,68,68,0.3)]",
-      blobColor: "bg-red-500",
-    },
-  };
-
-  const c = colorMap[color];
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/[0.10] transition-all duration-300 backdrop-blur-md cursor-default">
-      {/* Subtle ambient gradient blob in corner */}
-      <div
-        className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 transition-opacity duration-300 group-hover:opacity-30 ${c.blobColor}`}
-      />
-
-      <div className="relative">
-        {/* Top row: label + icon */}
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-slate-400">{label}</p>
-          <div className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center transition-transform group-hover:scale-105`}>
-            <Icon className={`w-[18px] h-[18px] ${c.iconColor}`} strokeWidth={1.75} />
-          </div>
-        </div>
-
-        {/* Big number */}
-        <p className={`text-3xl font-bold text-slate-100 font-mono tracking-tight ${c.valueShadow}`}>
-          {value}
-        </p>
-
-        {/* Subtitle */}
-        <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
-
-        {/* Trend badge */}
-        {trend && (
-          <div className="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 text-[11px] font-medium font-mono">
-            <TrendingUp className="w-3 h-3" />
-            {trend}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Legend Dot Component
 function LegendDot({
@@ -414,6 +336,38 @@ export default function AuthorityDashboardPage() {
     }
   };
 
+  const handleSimulationComplete = (newIncidents: any[]) => {
+    if (newIncidents && newIncidents.length > 0) {
+      const mapped: IncidentReport[] = newIncidents.map((d: any) => {
+        const lat = Number(d.location_lat ?? d.latitude) || 13.0827;
+        const lng = Number(d.location_lng ?? d.longitude) || 80.2707;
+        const score = d.severity_score || 8;
+        return {
+          id: d.id?.toString() || `sim-${Date.now()}-${Math.random()}`,
+          type: d.type || "Disaster Event",
+          description: d.description || "Simulated emergency sector.",
+          location_lat: lat,
+          location_lng: lng,
+          latitude: lat,
+          longitude: lng,
+          severity:
+            score >= 8
+              ? "CRITICAL"
+              : score >= 6
+              ? "HIGH"
+              : score >= 4
+              ? "MODERATE"
+              : "LOW",
+          severity_score: score,
+          needed_resources: d.needed_resources || ["rescue_boats", "medical_kits"],
+          created_at: d.created_at || new Date().toISOString(),
+        };
+      });
+      setIncidents((prev) => [...mapped, ...prev]);
+    }
+    fetchIncidents();
+  };
+
   // Stat metrics
   const totalIncidents = incidents.length;
   const criticalAlerts = incidents.filter((i) => i.severity === "CRITICAL" || i.severity === "HIGH").length;
@@ -421,27 +375,14 @@ export default function AuthorityDashboardPage() {
   const resourcesAvailable = "8,245";
 
   return (
-    <div className="space-y-6 text-slate-100 font-ibm-sans pb-16">
+    <div className="space-y-6 text-slate-100 font-ibm-sans pb-24 relative">
       
-      {/* 8. Page Header — Clean, Warm, Professional */}
-      <div className="mb-2">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <p className="text-xs font-medium text-slate-400">
-            Operational Console — State Disaster Management Authority
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
-              Tactical Disaster Command
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Real-time GIS telemetry, autonomous triage, and AI resource distribution
-            </p>
-          </div>
-          
+      {/* 8. Page Header — Clean Command Glass */}
+      <PageHeader
+        eyebrow="Operational Console — State Disaster Management Authority"
+        title="Tactical Disaster Command"
+        description="Real-time GIS telemetry, autonomous Sentinel triage, and Strategist AI resource distribution"
+        actions={
           <button
             onClick={fetchIncidents}
             disabled={loadingIncidents}
@@ -450,8 +391,9 @@ export default function AuthorityDashboardPage() {
             <RefreshCw className={`w-4 h-4 ${loadingIncidents ? "animate-spin text-white" : ""}`} />
             <span>Re-sync Grid</span>
           </button>
-        </div>
-      </div>
+        }
+        statusIndicator="live"
+      />
 
       {incidentError && (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs flex items-center justify-between gap-2 text-amber-300">
@@ -619,41 +561,7 @@ export default function AuthorityDashboardPage() {
         </div>
       </div>
 
-      {/* 7. The "Simulate Disaster" Button — Prominent Glowing CTA with animated shimmer */}
-      <div className="pt-2">
-        <button
-          onClick={handleSimulateDisaster}
-          disabled={simulating}
-          className="
-            group relative overflow-hidden
-            w-full py-4 px-6 
-            rounded-2xl 
-            bg-gradient-to-r from-red-600 to-red-500
-            text-white font-semibold text-sm
-            shadow-lg shadow-red-500/20
-            hover:shadow-xl hover:shadow-red-500/30
-            hover:from-red-500 hover:to-red-400
-            active:scale-[0.98]
-            transition-all duration-200
-            flex items-center justify-center gap-3
-          "
-        >
-          {/* Animated shimmer effect */}
-          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
-          
-          {simulating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin relative" />
-              <span className="relative">Simulating Emergency Wave...</span>
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="w-5 h-5 relative" />
-              <span className="relative tracking-wide">Simulate Disaster Scenario</span>
-            </>
-          )}
-        </button>
-      </div>
+
 
       {/* Bottom: Resource Inventory Table in Glass Container */}
       <div id="inventory-section" className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-md">
@@ -667,6 +575,9 @@ export default function AuthorityDashboardPage() {
         </div>
         <InventoryTable />
       </div>
+
+      {/* Autonomous Simulation Launcher (Scenario Picker + 5-Stage Live Drawer) */}
+      <SimulateButton onComplete={handleSimulationComplete} />
 
     </div>
   );

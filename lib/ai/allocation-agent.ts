@@ -279,3 +279,93 @@ export async function planDynamicReallocation(
 
   return events;
 }
+
+/**
+ * Convenient wrapper for simulating or assessing single incident resource allocation
+ */
+export async function allocateResourcesWithGemini(params: {
+  incident_id: string;
+  incident_severity: number;
+  incident_type: string;
+  urgency: string;
+  required_resources?: any;
+  demanded_quantities?: Record<string, number>;
+}): Promise<any> {
+  const dummyIncident: Incident = {
+    id: params.incident_id,
+    title: `${params.incident_type.toUpperCase()} Zone Crisis`,
+    description: `Disaster wave active in sector. Severity: ${params.incident_severity}`,
+    category: params.incident_type as any,
+    severity_score: params.incident_severity * 10,
+    severity_level: params.incident_severity >= 8 ? "critical" : "high",
+    urgency_priority: params.urgency === "critical" ? 1 : 2,
+    extracted_needs: params.demanded_quantities || {
+      rescue_boats: 4,
+      medical_kits: 15,
+      drinking_water_liters: 500,
+    },
+    latitude: 13.0827,
+    longitude: 80.2707,
+    status: "open",
+    created_at: new Date().toISOString(),
+  };
+
+  const defaultDepots: Depot[] = [
+    {
+      id: "depot-1",
+      name: "Central Forward Depot",
+      latitude: 13.0827,
+      longitude: 80.2707,
+      contact_phone: "+91-44-2561-9000",
+      total_capacity: 5000,
+      current_utilization: 3200,
+    },
+    {
+      id: "depot-2",
+      name: "Marina Coastal Logistics Hub",
+      latitude: 13.0500,
+      longitude: 80.2824,
+      contact_phone: "+91-44-2561-9001",
+      total_capacity: 4000,
+      current_utilization: 2100,
+    },
+  ];
+
+  const defaultResources: ResourceItem[] = [
+    {
+      id: "res-1",
+      depot_id: "depot-1",
+      item_name: "rescue_boats",
+      total_quantity: 20,
+      available_quantity: 14,
+      unit: "units",
+      category: "rescue",
+    },
+    {
+      id: "res-2",
+      depot_id: "depot-1",
+      item_name: "medical_kits",
+      total_quantity: 200,
+      available_quantity: 140,
+      unit: "kits",
+      category: "medical",
+    },
+    {
+      id: "res-3",
+      depot_id: "depot-2",
+      item_name: "drinking_water_liters",
+      total_quantity: 5000,
+      available_quantity: 3800,
+      unit: "liters",
+      category: "water",
+    },
+  ];
+
+  const plan = await optimizeAllocationWithGemini(
+    dummyIncident,
+    defaultDepots,
+    defaultResources
+  );
+  return plan;
+}
+

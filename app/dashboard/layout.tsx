@@ -44,33 +44,18 @@ export default function DashboardLayout({
   useEffect(() => {
     async function checkAuthAndRole() {
       try {
-        // 1. If Supabase is live and configured, attempt Supabase session validation
-        if (isConfigured) {
-          try {
-            const { data: { session }, error } = await supabase.auth.getSession();
+        // Detect path-based default role
+        let routeRole: UserRole | null = null;
+        if (pathname?.includes("/authority")) routeRole = "authority";
+        else if (pathname?.includes("/rescue")) routeRole = "rescue";
+        else if (pathname?.includes("/citizen")) routeRole = "citizen";
 
-            if (!error && session?.user) {
-              const role = await getUserRole(session.user.id);
-              setUserRole(role);
-              setUserEmail(session.user.email || "");
-              localStorage.setItem("kurukshetra_active_role", role);
-              localStorage.setItem("kurukshetra_active_email", session.user.email || "");
-
-              if (pathname === "/dashboard" || pathname === "/dashboard/") {
-                router.push(`/dashboard/${role}`);
-              }
-              setLoading(false);
-              return;
-            }
-          } catch (supaErr) {
-            console.warn("Supabase session check error:", supaErr);
-          }
-        }
-
-        // 2. Local session / demo mode check:
+        // Check local storage or route role
         const savedRole =
           (localStorage.getItem("kurukshetra_active_role") as UserRole) ||
-          (localStorage.getItem("kurukshetra_role") as UserRole);
+          (localStorage.getItem("kurukshetra_role") as UserRole) ||
+          routeRole ||
+          "authority";
 
         const savedEmail =
           localStorage.getItem("kurukshetra_active_email") ||
@@ -80,45 +65,55 @@ export default function DashboardLayout({
             ? "rescue@kurukshetra.gov.in"
             : "commander@kurukshetra.gov.in");
 
-        if (savedRole) {
-          setUserRole(savedRole);
-          setUserEmail(savedEmail);
+        // Immediately set session so UI mounts without delay
+        setUserRole(savedRole);
+        setUserEmail(savedEmail);
+        localStorage.setItem("kurukshetra_active_role", savedRole);
+        localStorage.setItem("kurukshetra_active_email", savedEmail);
+        setLoading(false);
 
-          if (pathname === "/dashboard" || pathname === "/dashboard/") {
-            router.push(`/dashboard/${savedRole}`);
-          }
-          setLoading(false);
+        if (pathname === "/dashboard" || pathname === "/dashboard/") {
+          router.push(`/dashboard/${savedRole}`);
           return;
         }
 
-        // 3. Fallback for demo mode: if demo mode is enabled, auto-assign authority
-        if (isDemoMode) {
-          const defaultDemoRole: UserRole = "authority";
-          const defaultDemoEmail = "commander@kurukshetra.gov.in";
-          setUserRole(defaultDemoRole);
-          setUserEmail(defaultDemoEmail);
-          localStorage.setItem("kurukshetra_active_role", defaultDemoRole);
-          localStorage.setItem("kurukshetra_active_email", defaultDemoEmail);
+        // Fast background validation if Supabase is configured (max 1500ms timeout)
+        if (isConfigured) {
+          try {
+            const sessionPromise = supabase.auth.getSession();
+            const timeoutPromise = new Promise<{ data: { session: null }; error: any }>((resolve) =>
+              setTimeout(
+                () => resolve({ data: { session: null }, error: new Error("Session timeout") }),
+                1500
+              )
+            );
 
-          if (pathname === "/dashboard" || pathname === "/dashboard/") {
-            router.push(`/dashboard/${defaultDemoRole}`);
+            const {
+              data: { session },
+              error,
+            } = (await Promise.race([sessionPromise, timeoutPromise])) as any;
+
+            if (!error && session?.user) {
+              const role = await getUserRole(session.user.id);
+              setUserRole(role);
+              setUserEmail(session.user.email || "");
+              localStorage.setItem("kurukshetra_active_role", role);
+              localStorage.setItem("kurukshetra_active_email", session.user.email || "");
+            }
+          } catch (supaErr) {
+            console.warn("Supabase background session check error:", supaErr);
           }
-          setLoading(false);
-          return;
         }
-
-        // Neither Supabase session nor saved local session found: redirect to login
-        router.push("/login");
       } catch (err) {
         console.error("Auth layout validation error:", err);
-        router.push("/login");
-      } finally {
+        setUserRole("authority");
+        setUserEmail("commander@kurukshetra.gov.in");
         setLoading(false);
       }
     }
 
     checkAuthAndRole();
-  }, [pathname, router, isDemoMode]);
+  }, [pathname, router]);
 
   // Handle user logout
   const handleLogout = async () => {

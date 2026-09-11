@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════ */
+/*  GLOBAL FOUNDATIONS & COMMAND GLASS DESIGN SYSTEM     */
+/* ═══════════════════════════════════════════════════ */
+
 @layer base {
   :root {
     --font-ibm-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -12,23 +16,35 @@
     --font-sans: var(--font-ibm-sans);
     --font-mono: var(--font-ibm-mono);
 
-    /* Command Glass Design System Palette */
-    --bg-primary: #0B0F19;
+    /* Backgrounds — richer than flat #12161C */
+    --bg-canvas: #0A0E17;
+    --bg-panel: #111827;
+    --bg-elevated: #1A2333;
+    --bg-primary: #0A0E17;
     --bg-secondary: #111827;
-    --bg-gradient: linear-gradient(145deg, #0B0F19 0%, #111827 50%, #0F172A 100%);
-
-    /* Glass card surfaces */
+    --bg-gradient: linear-gradient(145deg, #0A0E17 0%, #111827 50%, #0F172A 100%);
+    
+    /* Glass Surfaces */
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-hover: rgba(255, 255, 255, 0.04);
     --card-bg: rgba(255, 255, 255, 0.03);
     --card-border: rgba(255, 255, 255, 0.06);
     --card-hover: rgba(255, 255, 255, 0.06);
-
+    
     /* Text hierarchy */
     --text-primary: #F1F5F9;
     --text-secondary: #94A3B8;
-    --text-muted: #475569;
+    --text-muted: #64748B;
+    --text-faded: #475569;
     --text-accent: #CBD5E1;
+    
+    /* Severity */
+    --sev-safe: #10B981;
+    --sev-watch: #3B82F6;
+    --sev-warning: #F59E0B;
+    --sev-critical: #EF4444;
 
-    /* Severity Accents */
     --critical: #EF4444;
     --critical-soft: rgba(239, 68, 68, 0.12);
     --critical-glow: 0 0 20px rgba(239, 68, 68, 0.15);
@@ -49,7 +65,7 @@
     --live-soft: rgba(6, 182, 212, 0.10);
 
     /* Compatibility mapping for theme tokens */
-    --background: #0B0F19;
+    --background: #0A0E17;
     --foreground: #F1F5F9;
     --card: #111827;
     --card-foreground: #F1F5F9;
@@ -57,10 +73,23 @@
     --input: rgba(255, 255, 255, 0.06);
     --ring: #3B82F6;
 
-    --radius: 12px;
+    --radius: 14px;
   }
 
-  /* Citizen App Theme Tokens: Warm off-white base, charcoal text */
+  /* Authority & Rescue Portals: Deep Command Theme */
+  body.theme-command {
+    background: 
+      radial-gradient(ellipse 80% 80% at 50% -20%, rgba(59, 130, 246, 0.08), transparent),
+      radial-gradient(ellipse 60% 60% at 80% 100%, rgba(239, 68, 68, 0.05), transparent),
+      linear-gradient(180deg, #0A0E17 0%, #111827 100%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: var(--font-ibm-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Citizen App: Warm Off-White Base */
+  body.theme-citizen,
   .theme-citizen {
     --background: #F6F4EF;
     --foreground: #1A1A1A;
@@ -69,187 +98,125 @@
     --border: #DED9CE;
     --input: #EAE6DC;
     --ring: #1A1A1A;
-    font-family: var(--font-public-sans), sans-serif;
+    background: linear-gradient(180deg, #F6F4EF 0%, #EDE9E0 100%);
+    color: #1A1A1A;
+    font-family: var(--font-public-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer components {
-  /* Command Glass Card Effect */
+  /* Glass Panels */
+  .glass-panel,
   .glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     transition: all 0.2s ease;
   }
 
+  .glass-panel:hover,
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--glass-hover);
     border-color: rgba(255, 255, 255, 0.10);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   }
 
-  /* Severity-specific card glows */
-  .glass-card.critical {
-    border-color: rgba(239, 68, 68, 0.20);
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.08);
+  /* Severity strips */
+  .severity-strip-critical {
+    border-left: 3px solid var(--sev-critical);
+    box-shadow: -1px 0 20px rgba(239, 68, 68, 0.15);
+  }
+  .severity-strip-warning {
+    border-left: 3px solid var(--sev-warning);
+    box-shadow: -1px 0 20px rgba(245, 158, 11, 0.12);
+  }
+  .severity-strip-watch {
+    border-left: 3px solid var(--sev-watch);
+    box-shadow: -1px 0 20px rgba(59, 130, 246, 0.12);
+  }
+  .severity-strip-safe {
+    border-left: 3px solid var(--sev-safe);
+    box-shadow: -1px 0 20px rgba(16, 185, 129, 0.10);
   }
 
-  .glass-card.warning {
-    border-color: rgba(245, 158, 11, 0.20);
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.08);
+  /* Small status dots */
+  .dot-safe {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #10B981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   }
 
-  .glass-card.safe {
-    border-color: rgba(16, 185, 129, 0.15);
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.06);
+  .dot-watch {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #3B82F6;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
   }
 
-  .glass-card.info {
-    border-color: rgba(59, 130, 246, 0.15);
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.06);
+  .dot-warning {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #F59E0B;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
   }
-}
 
-
-@layer base {
-  * {
-    border-color: var(--border);
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-ibm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    letter-spacing: -0.01em;
-  }
-}
-
-/* Strict Monospace for all Numbers, Timestamps, and IDs */
-.font-mono,
-code,
-kbd,
-samp {
-  font-family: var(--font-ibm-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Strict Severity Accent Left-Border Strips */
-.border-l-safe {
-  border-left-width: 4px !important;
-  border-left-color: #3B6D11 !important;
-}
-
-.border-l-watch {
-  border-left-width: 4px !important;
-  border-left-color: #854F0B !important;
-}
-
-.border-l-critical {
-  border-left-width: 4px !important;
-  border-left-color: #791F1F !important;
-}
-
-/* Small Status Dots */
-.dot-safe {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 9999px;
-  background-color: #3B6D11;
-  flex-shrink: 0;
-}
-
-.dot-watch {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 9999px;
-  background-color: #854F0B;
-  flex-shrink: 0;
-}
-
-.dot-critical {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 9999px;
-  background-color: #791F1F;
-  flex-shrink: 0;
-}
-
-/* Operational Map Styling without generic gradient overlays */
-.leaflet-container {
-  background: #12161C !important;
-  font-family: var(--font-ibm-sans), sans-serif !important;
-  border-radius: 2px !important;
-}
-
-.leaflet-popup-content-wrapper {
-  background: #181E26 !important;
-  color: #F6F4EF !important;
-  border: 1px solid #222933 !important;
-  border-radius: 2px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-  padding: 0 !important;
-}
-
-.leaflet-popup-content {
-  margin: 0 !important;
-  line-height: 1.4 !important;
-}
-
-.leaflet-popup-tip {
-  background: #181E26 !important;
-  border: 1px solid #222933 !important;
-}
-
-/* Command Console Tooltip */
-.leaflet-tooltip {
-  background: #181E26 !important;
-  color: #F6F4EF !important;
-  border: 1px solid #222933 !important;
-  border-radius: 2px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
-  font-family: var(--font-ibm-sans), sans-serif !important;
-  font-size: 11px !important;
-  padding: 4px 8px !important;
-}
-
-.leaflet-tooltip-top:before {
-  border-top-color: #181E26 !important;
-}
-.leaflet-tooltip-bottom:before {
-  border-bottom-color: #181E26 !important;
-}
-.leaflet-tooltip-left:before {
-  border-left-color: #181E26 !important;
-}
-.leaflet-tooltip-right:before {
-  border-right-color: #181E26 !important;
-}
-
-/* Radar ping keyframe animation */
-@keyframes tacticalPulse {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.9;
-  }
-  70% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(2.2);
-    opacity: 0;
+  .dot-critical {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #EF4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
   }
 }
 
-.animate-tactical-pulse {
-  animation: tacticalPulse 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+/* Animations */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+.animate-pulse-live {
+  animation: pulse-live 2s ease-in-out infinite;
 }
 
-/* Smooth scrollbar for dark Command Glass theme */
+@keyframes marker-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.marker-critical-pulse {
+  animation: marker-pulse 2s infinite;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Custom Smooth Dark Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -265,19 +232,46 @@ samp {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* Selection color */
+/* Selection */
 ::selection {
   background: rgba(59, 130, 246, 0.3);
-  color: #fff;
 }
 
-/* Live pulse animation */
-@keyframes live-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.animate-live {
-  animation: live-pulse 2s ease-in-out infinite;
+/* Sonner toast overrides for command theme */
+[data-sonner-toaster][data-theme='dark'] [data-sonner-toast] {
+  background: rgba(17, 24, 39, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px);
+  color: #F1F5F9 !important;
 }
 
+/* Leaflet dark theme styling */
+.leaflet-container {
+  background: #0A0E17 !important;
+  font-family: var(--font-ibm-sans), sans-serif !important;
+}
 
+.leaflet-popup-content-wrapper {
+  background: rgba(17, 24, 39, 0.95) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(17, 24, 39, 0.95) !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(17, 24, 39, 0.9) !important;
+  color: var(--text-primary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(17, 24, 39, 0.8) !important;
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+}

@@ -6,20 +6,19 @@
  * Rescue Team Field Console (/dashboard/rescue/page.tsx)
  * ==============================================================================
  * 
- * Strict Institutional Design System:
- * - Base: #12161C, Card: #181E26, Border: #222933, Text: #F6F4EF
- * - Typography: IBM Plex Sans & IBM Plex Mono
- * - On Duty / Off Duty toggle switch
- * - Card-based task list with severity left-border strips
- * - Verb-driven action buttons ("Accept Field Mission", "Mark Mission Resolved")
- * - 3 States: Loading Skeletons, Empty Direction, Error with Retry
+ * Command Glass Design System:
+ * - On Duty / Off Duty persistence in localStorage with active glow
+ * - Dynamic task filtering (All, Open, In Progress, Resolved)
+ * - Real-time subscription to incoming field assignments
+ * - Automatic dynamic reallocation notification on task resolution
+ * - Layout-matching skeleton loaders & clean empty state
  */
 
 import React, { useState, useEffect } from "react";
 import { supabase, isConfigured } from "@/lib/supabaseClient";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
 import TaskCard, { RescueTask } from "@/components/TaskCard";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -32,7 +31,8 @@ import {
   Shield,
   Layers,
   AlertOctagon,
-  Clock
+  Clock,
+  Sparkles
 } from "lucide-react";
 
 const INITIAL_RESCUE_TASKS: RescueTask[] = [
@@ -41,7 +41,7 @@ const INITIAL_RESCUE_TASKS: RescueTask[] = [
     type: "Structural Collapse",
     zone: "Zone A - North Harbor",
     location_name: "Port Warehouse 4, North Harbor Basin",
-    description: "Port warehouse roof collapsed after torrential rainfall; multiple workers trapped under debris.",
+    description: "Port warehouse roof collapsed after torrential rainfall; multiple workers trapped under debris. Heavy extrication needed.",
     location_lat: 13.1025,
     location_lng: 80.2985,
     latitude: 13.1025,
@@ -58,7 +58,7 @@ const INITIAL_RESCUE_TASKS: RescueTask[] = [
     type: "Storm Surge & Flood",
     zone: "Zone B - Marina Waterfront",
     location_name: "Marina Beach Esplanade, Promenade Sector",
-    description: "Storm surge breached coastal seawall along Marina Beach. Water entered lower residential communities.",
+    description: "Storm surge breached coastal seawall along Marina Beach. Inundation entered residential communities.",
     location_lat: 13.0544,
     location_lng: 80.2818,
     latitude: 13.0544,
@@ -96,6 +96,28 @@ export default function RescueDashboardPage() {
   const [isOnDuty, setIsOnDuty] = useState<boolean>(true);
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
 
+  // Load duty state from localStorage on mount
+  useEffect(() => {
+    const savedDuty = localStorage.getItem("kurukshetra_rescue_duty");
+    if (savedDuty !== null) {
+      setIsOnDuty(savedDuty === "true");
+    }
+  }, []);
+
+  const handleDutyToggle = (duty: boolean) => {
+    setIsOnDuty(duty);
+    localStorage.setItem("kurukshetra_rescue_duty", String(duty));
+    if (duty) {
+      toast.success("Responder Status: On Duty", {
+        description: "Your squad is actively receiving priority dispatch alerts.",
+      });
+    } else {
+      toast.info("Responder Status: Standby", {
+        description: "Duty paused. Standby on emergency radio channel.",
+      });
+    }
+  };
+
   const fetchTasks = async () => {
     if (!isConfigured || !supabase) return;
     setLoading(true);
@@ -130,7 +152,7 @@ export default function RescueDashboardPage() {
       }
     } catch (err: any) {
       console.warn("Using offline rescue tasks cache:", err);
-      setError("Database stream synchronization degraded. Operating on cached mission log.");
+      setError("Live incident database stream offline. Operating on cached local mission log.");
     } finally {
       setLoading(false);
     }
@@ -162,7 +184,7 @@ export default function RescueDashboardPage() {
           };
 
           setTasks((prev) => [newTask, ...prev]);
-          toast.warning("🚨 New Rescue Mission Dispatched", {
+          toast.warning("🚨 New Mission Dispatched", {
             description: `${newTask.type} - Severity ${newTask.severity_score}/10`,
           });
         }
@@ -179,10 +201,10 @@ export default function RescueDashboardPage() {
       prev.map((t) => (t.id === taskId ? { ...t, status: "in_progress" } : t))
     );
     if (isConfigured && supabase) {
-      await supabase.from("incidents").update({ status: "open" }).eq("id", taskId);
+      await supabase.from("incidents").update({ status: "in_progress" }).eq("id", taskId);
     }
     toast.success("Mission Accepted", {
-      description: "Field responder squad status changed to EN ROUTE.",
+      description: "Squad telemetry updated: Status is EN ROUTE.",
     });
   };
 
@@ -193,9 +215,18 @@ export default function RescueDashboardPage() {
     if (isConfigured && supabase) {
       await supabase.from("incidents").update({ status: "resolved" }).eq("id", taskId);
     }
-    toast.success("Mission Resolved", {
-      description: "Incident resolved. Resources marked free for autonomous re-allocation.",
+
+    // Dynamic Reallocation Demonstration Trigger
+    toast.success("Mission Marked Resolved", {
+      description: "Strategist Agent notified. Allocated resources freed for dynamic reassignment.",
     });
+
+    // Fire background API re-allocation check
+    fetch("/api/ai/reallocate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ critical_incident_id: taskId, execute_now: true }),
+    }).catch((e) => console.log("Reallocation background dispatch:", e));
   };
 
   const filteredTasks = tasks.filter((t) => {
@@ -204,147 +235,136 @@ export default function RescueDashboardPage() {
   });
 
   return (
-    <div className="space-y-6 text-[#F6F4EF] font-ibm-sans pb-16">
+    <div className="space-y-6 text-slate-100 font-ibm-sans pb-20">
       
-      {/* Rescue Header & On Duty Toggle */}
-      <div className="border border-[#222933] bg-[#181E26] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className={isOnDuty ? "dot-safe" : "dot-watch"} />
-            <span className="font-ibm-mono text-[11px] uppercase tracking-widest text-[#8A99AD]">
-              TACTICAL FIELD DISPATCH // SQUAD ALPHA
-            </span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#F6F4EF]">
-            Active Rescue Operations &amp; Sector Missions
-          </h1>
-          <p className="text-xs text-[#8A99AD] mt-0.5">
-            Card-based responder assignment queue. Accept missions, review required equipment, and report resolution.
-          </p>
-        </div>
+      {/* Page Header */}
+      <PageHeader
+        eyebrow="NDRF / SDRF Tactical Field Dispatch Operations"
+        title="Rescue Squad Mission Queue"
+        description="Active mission assignments, required equipment packs, and real-time incident resolution"
+        actions={
+          <div className="flex items-center gap-3">
+            {/* On / Off Duty Switch */}
+            <div className="flex items-center rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+              <button
+                type="button"
+                onClick={() => handleDutyToggle(true)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all ${
+                  isOnDuty
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-md shadow-emerald-500/10"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse-live" />
+                On Duty
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDutyToggle(false)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all ${
+                  !isOnDuty
+                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-md shadow-amber-500/10"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Standby
+              </button>
+            </div>
 
-        {/* Duty Status Switch */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-sm border border-[#222933] bg-[#12161C] p-0.5">
             <button
-              type="button"
-              onClick={() => {
-                setIsOnDuty(true);
-                toast.success("Responder Status: On Duty", {
-                  description: "You are actively receiving dispatch calls.",
-                });
-              }}
-              className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
-                isOnDuty
-                  ? "bg-[#3B6D11] text-white"
-                  : "text-[#8A99AD] hover:text-[#F6F4EF]"
-              }`}
+              onClick={fetchTasks}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-slate-300 transition"
             >
-              On Duty
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsOnDuty(false);
-                toast.info("Responder Status: Off Duty", {
-                  description: "Emergency standby mode active.",
-                });
-              }}
-              className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
-                !isOnDuty
-                  ? "bg-[#854F0B] text-white"
-                  : "text-[#8A99AD] hover:text-[#F6F4EF]"
-              }`}
-            >
-              Off Duty
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span>Sync</span>
             </button>
           </div>
-
-          <Button
-            variant="secondary"
-            onClick={fetchTasks}
-            disabled={loading}
-            className="h-8"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} strokeWidth={1.75} />
-            <span>Re-sync Missions</span>
-          </Button>
-        </div>
-      </div>
+        }
+        statusIndicator={isOnDuty ? "live" : "offline"}
+      />
 
       {error && (
-        <div className="border border-[#222933] border-l-4 border-l-[#854F0B] bg-[#181E26] p-3 text-xs flex items-center justify-between gap-2">
-          <span className="text-[#8A99AD]">{error}</span>
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs flex items-center justify-between gap-2 text-amber-300">
+          <span>{error}</span>
           <button
             onClick={fetchTasks}
-            className="font-ibm-mono text-[11px] uppercase font-semibold text-[#F6F4EF] hover:underline"
+            className="font-mono text-[11px] font-semibold text-slate-200 hover:underline"
           >
             Retry Sync
           </button>
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-2 flex-wrap pb-1 border-b border-[#222933]">
-        <div className="flex items-center gap-1">
+      {/* Filter Tabs & Task Count */}
+      <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-white/[0.06]">
+        <div className="flex items-center gap-1.5">
           {(["all", "open", "in_progress", "resolved"] as const).map((status) => (
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
                 filterStatus === status
-                  ? "bg-[#F6F4EF] text-[#12161C]"
-                  : "text-[#8A99AD] hover:text-[#F6F4EF] hover:bg-[#181E26]"
+                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              {status === "all" ? "All Tasks" : status.replace("_", " ")}
+              {status === "all" ? "All Tasks" : status === "in_progress" ? "In Progress" : status.toUpperCase()}
             </button>
           ))}
         </div>
 
-        <span className="font-ibm-mono text-[11px] text-[#8A99AD]">
-          {filteredTasks.length} MISSIONS DISPLAYED
+        <span className="font-mono text-xs text-slate-500">
+          {filteredTasks.length} active {filteredTasks.length === 1 ? "mission" : "missions"}
         </span>
       </div>
 
-      {/* STATE 1: LOADING SKELETONS */}
+      {/* State 1: Skeleton Loaders */}
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="border border-[#222933] bg-[#181E26] rounded-sm p-4 space-y-3">
+            <div
+              key={i}
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3 animate-pulse"
+            >
               <div className="flex justify-between">
-                <Skeleton className="h-4 w-32 bg-[#222933]" />
-                <Skeleton className="h-4 w-16 bg-[#222933]" />
+                <Skeleton className="h-4 w-32 bg-white/[0.06]" />
+                <Skeleton className="h-5 w-16 bg-white/[0.06]" />
               </div>
-              <Skeleton className="h-10 w-full bg-[#222933]/60" />
-              <div className="flex justify-between pt-2 border-t border-[#222933]">
-                <Skeleton className="h-7 w-24 bg-[#222933]" />
-                <Skeleton className="h-7 w-28 bg-[#222933]" />
+              <Skeleton className="h-12 w-full bg-white/[0.04]" />
+              <div className="flex justify-between pt-3 border-t border-white/[0.06]">
+                <Skeleton className="h-8 w-24 bg-white/[0.06]" />
+                <Skeleton className="h-8 w-28 bg-white/[0.06]" />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* STATE 2: EMPTY STATE */}
+      {/* State 2: Empty Queue State */}
       {!loading && filteredTasks.length === 0 && (
-        <div className="border border-[#222933] bg-[#181E26] rounded-sm p-12 text-center space-y-2">
-          <CheckCircle2 className="w-8 h-8 text-[#3B6D11] mx-auto opacity-70" strokeWidth={1.75} />
-          <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-[#F6F4EF]">
-            No Active Rescue Missions in Your Sector
+        <div className="glass-panel p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-400">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100">
+            All Sector Missions Cleared
           </h3>
-          <p className="text-xs text-[#8A99AD] max-w-md mx-auto leading-relaxed">
-            All emergency calls in this sector have been resolved or are being handled by adjoining units. Stand by on radio frequency VHF 156.8 MHz.
+          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+            No pending tasks found for this filter. Stand by on emergency communications channel or trigger a crisis wave from the Authority War Room.
           </p>
           <div className="pt-2">
-            <Button variant="secondary" onClick={fetchTasks} className="text-xs">
-              Check Incident Feed Again
-            </Button>
+            <button
+              onClick={fetchTasks}
+              className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-medium text-slate-300 transition"
+            >
+              Refresh Task Feed
+            </button>
           </div>
         </div>
       )}
 
-      {/* STATE 3: CARD-BASED TASK LIST */}
+      {/* State 3: Task Cards Grid */}
       {!loading && filteredTasks.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredTasks.map((task) => (
