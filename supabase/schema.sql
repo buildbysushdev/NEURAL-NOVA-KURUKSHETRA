@@ -48,6 +48,10 @@ CREATE TABLE IF NOT EXISTS public.incidents (
     needed_resources TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
     language TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'hi')),
     ai_analysis_json JSONB NOT NULL DEFAULT '{}'::jsonb, -- Raw AI inference payload & reasoning
+    enriched_data JSONB DEFAULT '{}'::jsonb, -- Physical parameters (Kelvin, spread rate, water depth, etc.)
+    prediction_data JSONB DEFAULT '{}'::jsonb, -- Escalation risk, time to critical, historical NDMA correlation
+    impact_data JSONB DEFAULT '{}'::jsonb, -- Affected population, vulnerable groups, economic impact estimate
+    recommended_actions JSONB DEFAULT '{}'::jsonb, -- Actionable directives & safe evacuation corridors
     reported_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );

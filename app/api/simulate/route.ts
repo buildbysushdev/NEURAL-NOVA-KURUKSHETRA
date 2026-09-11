@@ -3,6 +3,7 @@ import { supabase, isConfigured } from "@/lib/supabaseClient";
 import { assessIncidentWithGroq } from "@/lib/ai/needs-assessment";
 import { allocateResourcesWithGemini } from "@/lib/ai/allocation-agent";
 import { dispatchMultiChannelNotification } from "@/lib/notifications/dispatcher";
+import { analyzeIncident } from "@/lib/agents/analyst";
 
 interface SimulatedIncidentInput {
   type: string;
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. Sentinel AI Triage
+      // 2. Sentinel AI Triage (Groq LLaMA 3)
       const triage = await assessIncidentWithGroq({
         title: `${inc.type.toUpperCase()} Alert`,
         description: inc.description,
@@ -76,7 +77,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 3. Strategist AI Allocation (if not duplicate)
+      // 2.5 🆕 Analyst AI Agent: Physical parameter enrichment & historical prediction
+      const analysis = await analyzeIncident({
+        incidentId,
+        type: inc.type,
+        description: inc.description,
+        location: { lat: inc.location_lat, lng: inc.location_lng },
+        locationName: inc.zone_name || `${inc.type.replace(/_/g, " ")} Sector`,
+        severityScore: triage.severity_score,
+      });
+
+      // 3. Strategist AI Allocation (Gemini Knapsack) — only if not duplicate
       let allocationResult: any = null;
       if (!triage.is_duplicate) {
         allocationResult = await allocateResourcesWithGemini({
@@ -110,6 +121,7 @@ export async function POST(req: NextRequest) {
       processedResults.push({
         id: incidentId,
         type: inc.type,
+        location_name: inc.zone_name || `${inc.type.replace(/_/g, " ")} Sector`,
         description: inc.description,
         location_lat: inc.location_lat,
         location_lng: inc.location_lng,
@@ -118,12 +130,17 @@ export async function POST(req: NextRequest) {
         severity_score: triage.severity_score,
         severity: triage.severity_level,
         triage,
+        analysis,
+        enriched_data: analysis.enriched_data,
+        prediction_data: analysis.prediction_data,
+        impact_data: analysis.impact_data,
+        recommended_actions: analysis.recommended_actions,
         allocation: allocationResult,
         success: true,
       });
     }
 
-    // 4. Dispatch emergency notification and CAP protocol for the top critical incident
+    // 4. Dispatch emergency notification and CAP protocol with enriched physical telemetry
     if (processedResults.length > 0) {
       const topCritical = processedResults[0];
       await dispatchMultiChannelNotification({
@@ -132,7 +149,7 @@ export async function POST(req: NextRequest) {
         incidentType: topCritical.type,
         severity: "Extreme",
         urgency: "critical",
-        areaDesc: "Disaster Crisis Sector",
+        areaDesc: topCritical.location_name || "Disaster Crisis Sector",
         coordinates: [topCritical.location_lat, topCritical.location_lng],
         radiusKm: 5.0,
       });
