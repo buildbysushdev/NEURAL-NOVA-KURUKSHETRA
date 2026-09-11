@@ -14,8 +14,7 @@
    - [Database Webhooks Configuration](#database-webhooks-configuration)
 5. [Vercel Deployment Guide](#-vercel-deployment-guide)
 6. [API Routes Reference](#-api-routes-reference)
-7. [AI Decisions & Hackathon Q&A Preparation](#-ai-decisions--hackathon-qa-preparation)
-8. [Testing & Verification](#-testing--verification)
+7. [Testing & Verification](#-testing--verification)
 
 ---
 
@@ -201,33 +200,6 @@ A [`vercel.json`](./vercel.json) file is included at the root of the project:
 
 ### 3. `GET /api/audit-log`
 - **Description**: Fetches the most recent 50 immutable audit trail records for compliance, tracking actions taken by both human operators and autonomous AI agents (`Sentinel Agent`, `Strategist Agent`).
-
----
-
-##  AI Decisions & Hackathon Q&A Preparation
-
-Use these technical justifications when presenting to hackathon evaluators and judges:
-
-### Q1: Why Groq for the Sentinel Agent instead of a traditional LLM?
-> **Answer**: During large-scale emergencies, hundreds of calls and distress messages flood the system simultaneously. Standard commercial LLM endpoints often take 3 to 8 seconds per call, causing unmanageable request queues and delayed response dispatches. Groq's specialized LPU (Language Processing Unit) delivers inference speeds of **300–500 tokens per second** (sub-300ms round-trip latency), allowing our Sentinel Agent to ingest panic-laden natural language reports and score emergency severity in near real-time.
-
-### Q2: Why Gemini for the Strategist Agent?
-> **Answer**: Disaster resource allocation is a multi-constraint combinatorial optimization problem (balancing equipment counts, proximity, travel times, vehicle capacity, and incident urgency). Gemini provides superior mathematical reasoning, structured output adherence, and a large context window capable of ingesting entire regional depot inventory manifests in a single inference call.
-
-### Q3: How do you prevent double-booking resources under concurrent requests?
-> **Answer**: We enforce atomic database updates at the PostgreSQL level. When the Strategist allocates a boat, medical kit, or personnel team, the SQL query applies a conditional guard:
-> ```typescript
-> .update({ assigned_to_incident_id: targetIncidentId })
-> .in('id', selectedResourceIds)
-> .is('assigned_to_incident_id', null) // Atomic check
-> ```
-> If two concurrent agent workers evaluate the same inventory simultaneously, only one transaction successfully claims the row; the other receives 0 affected rows and gracefully backtracks.
-
-### Q4: How does Dynamic Re-allocation work?
-> **Answer**: In real-world relief operations, resources are not consumed and discarded; they are deployed and recovered. When an incident's status transitions from `'open'` to `'resolved'`, our system automatically traps the transition, unbinds all attached resources, queries the database for the highest-severity pending emergency, and re-dispatches those assets immediately without requiring manual operator intervention.
-
-### Q5: How does the system filter out duplicate reports?
-> **Answer**: We combine semantic understanding with geospatial filtering. When a citizen submits a report, the Sentinel Agent evaluates report semantics while the system executes a 1km Haversine distance query against all active incidents opened within the past 2 hours. If a match is detected, the incident is flagged with `is_duplicate = true` and linked to the primary incident, preventing dispatching duplicate rescue teams to the same building.
 
 ---
 
