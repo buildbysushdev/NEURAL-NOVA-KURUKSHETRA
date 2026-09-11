@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
+import { queryCitizenChatbot } from "@/lib/ai/chatbot-agent";
 
 export interface ChatMessage {
   id: string;
@@ -64,38 +65,57 @@ export function CitizenChatbot() {
     setInputText("");
     setIsTyping(true);
 
-    // Call simulated Sentinel assistant or generate intelligent response
-    setTimeout(() => {
-      let reply = "";
-      const lower = cleanText.toLowerCase();
+    // Call grounded Sentinel chatbot agent
+    setTimeout(async () => {
+      try {
+        const nearbyZonesData = [
+          {
+            id: "depot-alpha",
+            name: "Central Logistics Hub Alpha",
+            type: "relieff_depot",
+            distance_km: 0.8,
+            available_supplies: {
+              drinking_water: "5,000 Liters",
+              ration_packs: "3,000 Kits",
+            },
+          },
+          {
+            id: "shelter-beta",
+            name: "Royapettah Multi-Story Evacuation Shelter",
+            type: "shelter",
+            distance_km: 1.4,
+            available_supplies: {
+              emergency_beds: "450 Units",
+              medical_kits: "120 Kits",
+            },
+          },
+        ];
 
-      if (lower.includes("food") || lower.includes("water") || lower.includes("ration") || lower.includes("पानी") || lower.includes("भोजन")) {
-        reply =
-          language === "hi"
-            ? "निकटतम राहत केंद्र 'मरीना लॉजिस्टिक्स डिपो' में 5,000L पेयजल और 3,000 खाद्य पैकेट उपलब्ध हैं। क्या आप अपना जीपीएस स्थान साझा करना चाहते हैं?"
-            : "Central Logistics Hub Alpha currently holds 5,000L potable water and 3,000 ration kits. Coordinates: Marina Depot (13.0827, 80.2707). Assistance teams are ready.";
-      } else if (lower.includes("boat") || lower.includes("flood") || lower.includes("trapped") || lower.includes("बाढ़") || lower.includes("फंसे")) {
-        reply =
-          language === "hi"
-            ? "⚠️ अलर्ट प्राप्त हुआ। रेस्क्यू स्क्वाड #4 को हाई-अलर्ट पर रखा गया है। कृपया छत या ऊंचे स्थान पर रहें।"
-            : "⚠️ High Priority Alert logged with Groq Sentinel Agent. Rescue Squad #4 has been notified for boat evacuation. Remain on upper levels.";
-      } else {
-        reply =
-          language === "hi"
-            ? "आपकी सूचना दर्ज कर ली गई है। आपातकालीन स्थिति में ऊपर दिए गए 'रेड एसओएस' बटन को दबाएं।"
-            : "Your emergency query has been logged and routed to regional dispatch. For immediate life danger, activate the SOS Broadcast button above.";
+        const answer = await queryCitizenChatbot(cleanText, {
+          language: language as "en" | "hi",
+          nearbyZones: nearbyZonesData,
+        });
+
+        const aiMsg: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          sender: "assistant",
+          text: answer.reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        setMessages((prev) => [...prev, aiMsg]);
+      } catch (err) {
+        const fallbackMsg: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          sender: "assistant",
+          text: "Unable to assess this report right now, please retry",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+        setMessages((prev) => [...prev, fallbackMsg]);
+      } finally {
+        setIsTyping(false);
       }
-
-      const aiMsg: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        sender: "assistant",
-        text: reply,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1200);
+    }, 800);
   };
 
   return (
