@@ -16,7 +16,27 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
-import { Mic, Radio, Volume2, Signal, Users, Play, Square, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react";
+import {
+  Mic,
+  Radio,
+  Volume2,
+  Signal,
+  Users,
+  Play,
+  Square,
+  CheckCircle2,
+  AlertTriangle,
+  Sparkles,
+  MapPin,
+  ExternalLink,
+  Compass,
+  Navigation,
+  Copy,
+  Check,
+  Crosshair,
+  Send,
+  ShieldCheck
+} from "lucide-react";
 import { toast } from "sonner";
 
 export interface WalkieTransmission {
@@ -27,6 +47,15 @@ export interface WalkieTransmission {
   audioUrl: string;
   durationMs: number;
   timestamp: string;
+  location?: {
+    lat: number;
+    lng: number;
+    locationName: string;
+    building?: string;
+    floor?: string;
+    accuracyMeters?: number;
+    gridCode?: string;
+  };
 }
 
 type WalkieTalkieProps = {
@@ -51,17 +80,66 @@ export default function WalkieTalkie({
   const [listeners] = useState(role === "rescue" ? 6 : 14);
   const [incomingTx, setIncomingTx] = useState<WalkieTransmission | null>(null);
 
+  // Live Location & GPS Coordinates Telemetry
+  const [currentLocation, setCurrentLocation] = useState({
+    lat: role === "rescue" ? 13.0827 : 13.0544,
+    lng: role === "rescue" ? 80.2707 : 80.2818,
+    locationName:
+      role === "rescue"
+        ? "NDRF Forward Command Post, Central Anna Salai"
+        : "Marina Waterfront Sector B, Chennai",
+    building: role === "rescue" ? "Tactical Command Truck 01" : "Building B-17",
+    floor: role === "rescue" ? "Ground Unit" : "Floor 3",
+    accuracyMeters: 2.8,
+    gridCode: role === "rescue" ? "CHN-CMD-HQ" : "CHN-MRN-B17",
+  });
+  const [lastTransmissionTime, setLastTransmissionTime] = useState<string>("10:42:15 AM");
+  const [copied, setCopied] = useState(false);
+  const [dispatched, setDispatched] = useState(false);
+
+  const copyCoords = (lat: number, lng: number, landmark?: string) => {
+    const text = `${lat.toFixed(4)}, ${lng.toFixed(4)}${landmark ? ` (${landmark})` : ""}`;
+    navigator.clipboard?.writeText(text);
+    setCopied(true);
+    toast.success("GPS Coordinates Copied to Clipboard!", {
+      description: text,
+    });
+    setTimeout(() => setCopied(false), 2200);
+  };
+
+  const handleDispatch = (targetLat: number, targetLng: number, targetLandmark: string) => {
+    setDispatched(true);
+    toast.success("🚨 RESCUE SQUAD ALPHA DISPATCHED!", {
+      description: `Dispatched to ${targetLat.toFixed(4)}° N, ${targetLng.toFixed(4)}° E • ${targetLandmark} • ETA: 3-5 min via Amphibious Unit 02`,
+    });
+  };
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startTimeRef = useRef<number>(0);
 
-  // Check audio recording support
+  // Check audio recording support & attempt live GPS fix
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!navigator.mediaDevices?.getUserMedia) {
       setIsSupported(false);
       setStatusText("MIC UNAVAILABLE");
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCurrentLocation((prev) => ({
+            ...prev,
+            lat: Number(pos.coords.latitude.toFixed(4)),
+            lng: Number(pos.coords.longitude.toFixed(4)),
+            accuracyMeters: Number(pos.coords.accuracy.toFixed(1)),
+          }));
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
     }
   }, []);
 
@@ -160,13 +238,17 @@ export default function WalkieTalkie({
         setLastAudioUrl(url);
         setStatusText("SENT");
 
+        const timestampStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setLastTransmissionTime(timestampStr);
+
         const payload: WalkieTransmission = {
           role,
           channel,
           sector,
           audioUrl: url,
           durationMs,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          timestamp: timestampStr,
+          location: currentLocation,
         };
 
         // Save to localStorage for cross-tab transmission
@@ -215,13 +297,17 @@ export default function WalkieTalkie({
       // Fallback for demo mode
       setStatusText("SENT");
       const durationMs = Date.now() - startTimeRef.current;
+      const timestampStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      setLastTransmissionTime(timestampStr);
+
       const payload: WalkieTransmission = {
         role,
         channel,
         sector,
         audioUrl: "",
         durationMs,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        timestamp: timestampStr,
+        location: currentLocation,
       };
 
       try {
@@ -370,7 +456,7 @@ export default function WalkieTalkie({
 
       {/* Incoming Audio Transmission Alert Card */}
       {incomingTx && (
-        <div className="mb-3 rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3 text-xs space-y-1.5 animate-slide-up">
+        <div className="mb-3 rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3 text-xs space-y-2 animate-slide-up">
           <div className="flex items-center justify-between">
             <span className="font-bold text-emerald-400 uppercase font-mono text-[10px] flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -388,30 +474,253 @@ export default function WalkieTalkie({
               [Voice Packet Received via Mesh Hop · Duration: {(incomingTx.durationMs / 1000).toFixed(1)}s]
             </p>
           )}
+
+          {/* Caller GPS Origin Telemetry for Immediate Rescue Tracking */}
+          <div className="rounded-xl bg-black/60 border border-emerald-500/40 p-3 text-xs font-mono text-slate-200 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-emerald-300 flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-red-400 animate-bounce" />
+                Caller Voice Origin &amp; Location Lock
+              </span>
+              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                GNSS / MESH LOCKED
+              </span>
+            </div>
+
+            {/* Coordinate Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                <span className="text-[9px] text-slate-400 uppercase block font-sans font-semibold">
+                  GPS Latitude / Longitude
+                </span>
+                <div className="flex items-center justify-between gap-1 mt-0.5">
+                  <span className="font-bold text-emerald-300 text-xs">
+                    {incomingTx.location?.lat ? `${incomingTx.location.lat.toFixed(4)}° N, ${incomingTx.location.lng.toFixed(4)}° E` : "13.0544° N, 80.2818° E"}
+                  </span>
+                  <button
+                    onClick={() => copyCoords(incomingTx.location?.lat || 13.0544, incomingTx.location?.lng || 80.2818, incomingTx.location?.building)}
+                    className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                    title="Copy GPS Coordinates"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                <span className="text-[9px] text-slate-400 uppercase block font-sans font-semibold">
+                  Landmark / Floor
+                </span>
+                <span className="font-bold text-amber-300 text-xs mt-0.5 block">
+                  {incomingTx.location?.building || "Building B-17"} ({incomingTx.location?.floor || "Floor 3"})
+                </span>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-300 font-sans pt-1 border-t border-white/10 flex items-center justify-between">
+              <span className="truncate mr-2">
+                📍 <strong>Sector:</strong> {incomingTx.location?.locationName || incomingTx.sector}
+              </span>
+              <span className="shrink-0 text-[10px] font-mono text-emerald-400 font-bold">
+                GRID: {incomingTx.location?.gridCode || "CHN-MRN-B17"}
+              </span>
+            </div>
+
+            {/* Tactical Navigation & Dispatch Actions */}
+            <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${incomingTx.location?.lat || 13.0544}&mlon=${incomingTx.location?.lng || 80.2818}#map=18/${incomingTx.location?.lat || 13.0544}/${incomingTx.location?.lng || 80.2818}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 hover:text-cyan-200 bg-cyan-950/60 px-2.5 py-1 rounded border border-cyan-500/40 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Track on Live Map</span>
+                </a>
+                <a
+                  href={`https://www.google.com/maps?q=${incomingTx.location?.lat || 13.0544},${incomingTx.location?.lng || 80.2818}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 hover:text-blue-200 bg-blue-950/60 px-2.5 py-1 rounded border border-blue-500/40 hover:underline"
+                >
+                  <Navigation className="h-3 w-3" />
+                  <span>Google Maps</span>
+                </a>
+              </div>
+
+              <button
+                onClick={() => handleDispatch(incomingTx.location?.lat || 13.0544, incomingTx.location?.lng || 80.2818, incomingTx.location?.building || "Building B-17")}
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded text-[11px] font-bold transition-all shadow-sm ${
+                  dispatched
+                    ? "bg-emerald-600 text-white"
+                    : "bg-red-600 hover:bg-red-500 text-white animate-pulse"
+                }`}
+              >
+                {dispatched ? (
+                  <>
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Squad Alpha Dispatched</span>
+                  </>
+                ) : (
+                  <>
+                    <Crosshair className="h-3.5 w-3.5" />
+                    <span>Dispatch Rescue to Origin</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Last Sent Transmission Playback */}
+      {/* Last Sent Transmission Playback & Origin Coordinates */}
       <div
-        className={`rounded-xl border p-3 ${
-          role === "rescue" ? "border-white/10 bg-black/25" : "border-slate-200 bg-slate-50"
+        className={`rounded-2xl border p-3.5 ${
+          role === "rescue"
+            ? "border-amber-500/30 bg-black/40 text-slate-100"
+            : "border-slate-200 bg-slate-50/90 text-slate-900 shadow-sm"
         }`}
       >
         <div className="mb-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-          <span className="flex items-center gap-1.5">
-            <Volume2 className="h-3.5 w-3.5 text-amber-400" />
+          <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
+            <Volume2 className="h-4 w-4 text-amber-500" />
             Your Last Transmission
           </span>
-          {lastAudioUrl && <span className="text-emerald-400 font-bold">READY</span>}
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+            READY
+          </span>
         </div>
 
         {lastAudioUrl ? (
           <audio controls src={lastAudioUrl} className="w-full h-8" />
         ) : (
-          <p className="text-xs text-slate-400 italic">
-            No outgoing voice packet recorded yet. Hold the button above and speak.
-          </p>
+          <div className="rounded-lg bg-black/5 dark:bg-white/5 p-2 flex items-center justify-between text-xs font-mono text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Offline Mesh Voice Buffer
+            </span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">0:02 / 0:02</span>
+          </div>
         )}
+
+        {/* GPS Coordinates & Origin Location Telemetry - Placed Directly Below Voice Player */}
+        <div
+          className={`mt-3 rounded-xl border p-3.5 ${
+            role === "rescue"
+              ? "border-amber-500/40 bg-black/50 text-slate-100"
+              : "border-red-200/80 bg-white text-slate-900 shadow-md ring-1 ring-red-500/10"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[11px] font-mono uppercase font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 text-red-500 animate-bounce" />
+              Voice Origin Coordinates &amp; Location Tracking
+            </span>
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-500/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              GPS LOCKED (±{currentLocation.accuracyMeters}m)
+            </span>
+          </div>
+
+          {/* Coordinate & Landmark Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono mb-2.5">
+            <div
+              className={`p-2.5 rounded-lg border ${
+                role === "rescue" ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-slate-500 uppercase font-sans font-semibold">
+                  GPS Latitude / Longitude
+                </span>
+                <button
+                  onClick={() => copyCoords(currentLocation.lat, currentLocation.lng, currentLocation.building)}
+                  className="inline-flex items-center gap-1 text-[10px] font-mono text-blue-600 hover:text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 transition-colors"
+                  title="Copy GPS coordinates"
+                >
+                  {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                  <span>{copied ? "Copied" : "Copy"}</span>
+                </button>
+              </div>
+              <span className="font-bold text-slate-900 dark:text-slate-100 text-xs mt-1 block">
+                {currentLocation.lat.toFixed(4)}° N, {currentLocation.lng.toFixed(4)}° E
+              </span>
+            </div>
+
+            <div
+              className={`p-2.5 rounded-lg border ${
+                role === "rescue" ? "bg-white/5 border-white/10" : "bg-amber-50/60 border-amber-200"
+              }`}
+            >
+              <span className="text-[9px] text-amber-800 dark:text-amber-400 uppercase block font-sans font-semibold">
+                Landmark / Building &amp; Floor
+              </span>
+              <span className="font-bold text-amber-700 dark:text-amber-400 text-xs mt-1 block">
+                {currentLocation.building} ({currentLocation.floor})
+              </span>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-600 dark:text-slate-300 font-sans flex items-center justify-between pt-1.5 border-t border-black/5 dark:border-white/10">
+            <span className="truncate mr-2">
+              📍 <strong>Sector Address:</strong> {currentLocation.locationName}
+            </span>
+            <span className="shrink-0 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
+              GRID: {currentLocation.gridCode}
+            </span>
+          </div>
+
+          {/* Rescue Origin Action Bar with Direct Navigation Links */}
+          <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${currentLocation.lat}&mlon=${currentLocation.lng}#map=18/${currentLocation.lat}/${currentLocation.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span>Track on Live Map</span>
+              </a>
+              <a
+                href={`https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/10 px-2 py-1 rounded-lg border border-slate-300 dark:border-white/10 hover:underline"
+              >
+                <Navigation className="h-3 w-3" />
+                <span>Google Maps</span>
+              </a>
+            </div>
+
+            <button
+              onClick={() => handleDispatch(currentLocation.lat, currentLocation.lng, currentLocation.building)}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-bold transition-all shadow-sm ${
+                dispatched
+                  ? "bg-emerald-600 text-white"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }`}
+            >
+              {dispatched ? (
+                <>
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Squad Alpha En Route</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3 w-3" />
+                  <span>Dispatch Rescue Here</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="mt-2 text-[10px] text-slate-400 font-mono text-center">
+            Mesh Audio Packet Encapsulation: Opus/16kHz + Geo-Lock Header (CHN-MRN-B17)
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -183,9 +183,36 @@ export default function LandingPage() {
           <h1 className="text-4xl sm:text-6xl font-bold text-slate-100 mb-4 tracking-tight">
             Kurukshetra Disaster Response
           </h1>
-          <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-6">
             Unified agentic disaster relief platform coordinating citizens, rescue squads, and state authorities during acute natural emergencies.
           </p>
+
+          {/* RESQNET Live Hackathon Demo Launcher Banner */}
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => router.push("/resqnet")}
+              className="group relative flex items-center gap-3.5 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-red-500/10 to-amber-500/10 px-6 py-3.5 backdrop-blur-xl shadow-xl hover:border-amber-400 transition-all hover:scale-[1.02] text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold text-lg">
+                ⚡
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
+                    RESQNET MISSION CONSOLE (PS20 LIVE DEMO)
+                  </span>
+                  <span className="rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-mono font-bold text-white uppercase">
+                    5-7 Min Demo Mode
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">
+                  Adaptive mesh routing, 84-byte LoRa triage, dynamic preemption &amp; duplicate deployment guard
+                </p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-amber-400 group-hover:translate-x-1 transition-transform ml-2" />
+            </button>
+          </div>
         </div>
 
         {/* 3 Portal Cards Grid */}
