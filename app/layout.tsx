@@ -1,31 +1,9 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";
 import { DisasterReliefProvider } from "@/context/DisasterReliefContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "sonner";
-
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-ibm-sans",
-  display: "swap",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-ibm-mono",
-  display: "swap",
-});
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-public-sans",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Kurukshetra PS20: Agentic Disaster Relief System",
@@ -38,10 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} ${publicSans.variable}`}
-    >
+    <html lang="en">
       <body className="min-h-screen antialiased bg-[#12161C] text-[#F6F4EF] font-ibm-sans selection:bg-[#791F1F] selection:text-white">
         <ErrorBoundary>
           <LanguageProvider>
