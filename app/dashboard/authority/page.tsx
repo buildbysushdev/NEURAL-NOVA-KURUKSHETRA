@@ -37,8 +37,13 @@ import {
   MapPin,
   TrendingUp,
   Loader2,
+  History,
+  Radio,
+  BookOpen,
 } from "lucide-react";
 import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
+import { HistoricalChecklistPanel } from "@/components/authority/HistoricalChecklistPanel";
+import { CAPDispatchPanel } from "@/components/authority/CAPDispatchPanel";
 import type { TacticalZone } from "@/components/authority/TacticalIndiaMap";
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
@@ -235,7 +240,7 @@ export default function AuthorityDashboardPage() {
 
   // Tactical Zone selection state for the right-hand detail inspector panel
   const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
-  const [activeRightTab, setActiveRightTab] = useState<"audit" | "zone">("audit");
+  const [activeRightTab, setActiveRightTab] = useState<"audit" | "zone" | "checklist" | "dispatch">("audit");
 
   const tacticalZones: TacticalZone[] = React.useMemo(() => {
     return incidents.map((inc) => ({
@@ -532,35 +537,61 @@ export default function AuthorityDashboardPage() {
 
         {/* Right Column: 40% (5 Cols) Dual Tab: AI Audit Log & Zone Inspector */}
         <div id="audit-section" className="lg:col-span-5 space-y-4">
-          {/* Dual Tab Header */}
-          <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3 text-xs font-medium">
+          {/* Command Console 4-Way Tab Header */}
+          <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-3 text-xs font-medium overflow-x-auto">
             <button
               type="button"
               onClick={() => setActiveRightTab("audit")}
-              className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeRightTab === "audit"
                   ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <Terminal className="w-4 h-4 text-cyan-400" />
-              <span>AI Agent Audit Log</span>
+              <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+              <span>AI Audit Log</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveRightTab("zone")}
-              className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeRightTab === "zone"
                   ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
             >
-              <Layers className="w-4 h-4 text-blue-400" />
+              <Layers className="w-3.5 h-3.5 text-blue-400" />
               <span>Zone Inspector</span>
               {selectedZone && (
                 <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse" />
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("checklist")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "checklist"
+                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <History className="w-3.5 h-3.5 text-amber-400" />
+              <span>AI Checklist</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveRightTab("dispatch")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "dispatch"
+                  ? "bg-white/[0.08] text-slate-100 shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5 text-red-400" />
+              <span>CAP Dispatch</span>
             </button>
           </div>
 
@@ -575,6 +606,13 @@ export default function AuthorityDashboardPage() {
                 });
               }}
             />
+          ) : activeRightTab === "checklist" ? (
+            <HistoricalChecklistPanel
+              selectedZoneType={selectedZone?.type}
+              selectedZoneLocation={selectedZone?.name || selectedZone?.zone}
+            />
+          ) : activeRightTab === "dispatch" ? (
+            <CAPDispatchPanel />
           ) : (
             <AuditLog />
           )}

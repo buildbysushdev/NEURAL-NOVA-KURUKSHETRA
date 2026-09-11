@@ -33,7 +33,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Navigation
+  Navigation,
+  Phone,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 
 export interface IncidentReport {
@@ -73,6 +76,61 @@ export default function ReportForm({
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "queued" | "error"; message: string } | null>(null);
   const [offlineQueueCount, setOfflineQueueCount] = useState<number>(0);
+
+  // AI Permission-to-Report state
+  const [permissionCheck, setPermissionCheck] = useState<{
+    checking: boolean;
+    allowed: boolean | null;
+    reason: string | null;
+    suggestedType: string | null;
+    overrideAllowed: boolean;
+  }>({
+    checking: false,
+    allowed: null,
+    reason: null,
+    suggestedType: null,
+    overrideAllowed: false,
+  });
+
+  const verifyLocationPermission = async (lat: string, lng: string) => {
+    if (!lat || !lng || isNaN(Number(lat)) || isNaN(Number(lng))) return;
+    setPermissionCheck((prev) => ({ ...prev, checking: true }));
+    try {
+      const res = await fetch("/api/citizen/check-permission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latitude: Number(lat), longitude: Number(lng) }),
+      });
+      const data = await res.json();
+      setPermissionCheck({
+        checking: false,
+        allowed: data.allowed,
+        reason: data.reason,
+        suggestedType: data.suggestedType,
+        overrideAllowed: false,
+      });
+      if (data.allowed && data.suggestedType) {
+        const typeMap: Record<string, string> = {
+          flood: "Flood",
+          fire: "Fire",
+          earthquake: "Earthquake",
+          cyclone: "Cyclone",
+        };
+        if (typeMap[data.suggestedType]) {
+          setDisasterType(typeMap[data.suggestedType]);
+        }
+      }
+    } catch (err) {
+      console.warn("Permission verification fetch failed:", err);
+      setPermissionCheck({
+        checking: false,
+        allowed: true, // Fail-open in emergency
+        reason: "Offline / fallback permission active.",
+        suggestedType: null,
+        overrideAllowed: true,
+      });
+    }
+  };
 
   // Check online status and detect initial GPS on component mount
   useEffect(() => {
@@ -117,16 +175,22 @@ export default function ReportForm({
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLatitude(position.coords.latitude.toFixed(6));
-        setLongitude(position.coords.longitude.toFixed(6));
+        const latStr = position.coords.latitude.toFixed(6);
+        const lngStr = position.coords.longitude.toFixed(6);
+        setLatitude(latStr);
+        setLongitude(lngStr);
         setLocating(false);
+        verifyLocationPermission(latStr, lngStr);
       },
       (error) => {
         console.warn("Geolocation permission or timeout error:", error.message);
-        // Fallback demo coordinates (Bangalore relief coordinates)
-        setLatitude("12.971600");
-        setLongitude("77.594600");
+        // Fallback demo coordinates (Chennai disaster coordinates)
+        const latStr = "13.082700";
+        const lngStr = "80.270700";
+        setLatitude(latStr);
+        setLongitude(lngStr);
         setLocating(false);
+        verifyLocationPermission(latStr, lngStr);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
@@ -230,6 +294,18 @@ export default function ReportForm({
     if (!latitude || !longitude || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
       setFeedback({ type: "error", message: "Valid GPS latitude and longitude are required." });
       toast.error("GPS Coordinates Missing", { description: "Please enable location or enter valid GPS numbers." });
+      return;
+    }
+
+    // Enforce AI Permission-to-Report restriction
+    if (permissionCheck.allowed === false && !permissionCheck.overrideAllowed) {
+      setFeedback({
+        type: "error",
+        message: "Digital reporting restricted: No active disaster telemetry detected within 50km. Please dial 112 for immediate crisis response, or select 'I'm reporting an unmapped new hazard'.",
+      });
+      toast.error("Emergency Reporting Restricted", {
+        description: "No active hazard within 50km. Please call 112 directly.",
+      });
       return;
     }
 
@@ -377,6 +453,56 @@ export default function ReportForm({
             </p>
           </div>
         )}
+
+        {/* AI Permission-to-Report Status Banner */}
+        {permissionCheck.checking ? (
+          <div className="border border-[#DED9CE] bg-[#F6F4EF] p-2.5 rounded-sm flex items-center gap-2 text-xs text-[#6B655B] font-mono">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1A1A1A]" />
+            <span>AI Sentinel: Validating regional disaster proximity within 50km...</span>
+          </div>
+        ) : permissionCheck.allowed === true ? (
+          <div className="border border-[#3B6D11]/30 border-l-4 border-l-[#3B6D11] bg-[#3B6D11]/5 p-3 rounded-sm text-xs">
+            <div className="flex items-center gap-2 text-[#3B6D11] font-bold mb-0.5">
+              <ShieldCheck className="w-4 h-4" />
+              <span>AI SENTINEL VERIFIED: CRISIS ZONE CONFIRMED</span>
+            </div>
+            <p className="text-[#2F580E] font-medium text-[11px] leading-relaxed">
+              {permissionCheck.reason}
+            </p>
+          </div>
+        ) : permissionCheck.allowed === false ? (
+          <div className="border border-[#791F1F]/40 border-l-4 border-l-[#791F1F] bg-[#791F1F]/5 p-3.5 rounded-sm text-xs space-y-2">
+            <div className="flex items-center gap-2 text-[#791F1F] font-bold">
+              <ShieldAlert className="w-4 h-4" />
+              <span>AI PRE-FLIGHT RESTRICTION: NO ACTIVE DISASTER IN 50KM</span>
+            </div>
+            <p className="text-[#5A1717] text-[11px] leading-relaxed">
+              {permissionCheck.reason}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <a
+                href="tel:112"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[#791F1F] text-white font-bold text-[11px] hover:bg-[#601919] transition-colors"
+              >
+                <Phone className="w-3 h-3" />
+                Call 112 National Emergency
+              </a>
+              {!permissionCheck.overrideAllowed ? (
+                <button
+                  type="button"
+                  onClick={() => setPermissionCheck((prev) => ({ ...prev, overrideAllowed: true }))}
+                  className="px-2.5 py-1 text-[11px] font-mono text-[#6B655B] hover:text-[#1A1A1A] underline"
+                >
+                  I'm reporting an unmapped new hazard →
+                </button>
+              ) : (
+                <span className="text-[10px] font-mono text-[#854F0B] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  Manual Unmapped Hazard Override Active
+                </span>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {/* Feedback Alert */}
         {feedback && (
