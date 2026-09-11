@@ -620,6 +620,7 @@ export function MesmerizingSimulationModal({
               </div>
 
               <button
+                data-demo="approve-btn"
                 onClick={(e) => handlePressOK(e)}
                 className="group relative overflow-hidden px-10 py-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-base sm:text-lg shadow-2xl shadow-emerald-500/40 border-2 border-emerald-400/80 transition-all active:scale-95 flex items-center gap-4 animate-pulse-live"
               >

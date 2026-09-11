@@ -58,6 +58,7 @@ import { SimulateButton } from "@/components/simulation/SimulateButton";
 import { MesmerizingSimulationModal } from "@/components/authority/MesmerizingSimulationModal";
 import { FeatureInfoTooltip } from "@/components/ui/FeatureInfoTooltip";
 import { TacticalWorkflowSimulator } from "@/components/authority/TacticalWorkflowSimulator";
+import AutoDemoPlayer from "@/components/demo/AutoDemoPlayer";
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
@@ -431,6 +432,7 @@ export default function AuthorityDashboardPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
               <button
+                data-demo="simulator-tab"
                 onClick={() => setActiveRightTab("simulator")}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 border border-amber-400/50"
               >
@@ -448,6 +450,7 @@ export default function AuthorityDashboardPage() {
 
             <div className="flex items-center gap-1.5">
               <button
+                data-demo="swarm-btn"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -468,6 +471,7 @@ export default function AuthorityDashboardPage() {
 
             <div className="flex items-center gap-1.5">
               <button
+                data-demo="sync-btn"
                 onClick={fetchIncidents}
                 disabled={loadingIncidents}
                 className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition shadow-sm self-start sm:self-auto"
@@ -804,6 +808,12 @@ export default function AuthorityDashboardPage() {
           };
           setIncidents((prev) => [newIncident, ...prev]);
         }}
+      />
+
+      {/* Hands-free Autonomous Demo Director (Judge-Killer Auto Showcase) */}
+      <AutoDemoPlayer
+        onRefresh={fetchIncidents}
+        onSwitchTab={(t) => setActiveRightTab(t as any)}
       />
 
     </div>

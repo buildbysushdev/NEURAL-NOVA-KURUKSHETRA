@@ -246,6 +246,7 @@ export function HistoricalChecklistPanel({
 
                 <button
                   type="button"
+                  data-demo="approve-btn"
                   onClick={() => handleRatify(item.id, item.action)}
                   disabled={isRatified}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${

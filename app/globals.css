@@ -340,3 +340,12 @@ button[class*="bg-blue"], .bg-blue-600, .bg-blue-500 {
   z-index: 1 !important;
 }
 
+/* Auto-Demo Action Flash Indicator */
+.demo-click-flash {
+  outline: 2px solid #a78bfa !important;
+  box-shadow: 0 0 0 6px rgba(167, 139, 250, 0.45), 0 0 25px rgba(167, 139, 250, 0.7) !important;
+  transform: scale(1.04) !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 9999 !important;
+}
+

@@ -4,6 +4,58 @@ import { NextRequest, NextResponse } from "next/server";
 // Uses local heuristics as fallback, always returns valid data for demo
 
 const SCENARIO_INCIDENTS: Record<string, any[]> = {
+  "blue-flood": [
+    {
+      type: "flood",
+      description: "Operation Blue Flood: Marina coastal storm surge breached seawall. Water depth 2.4m, rise 15cm/hr. 240 people at risk.",
+      location_lat: 13.0544,
+      location_lng: 80.2818,
+      location_name: "Marina Coastal Surge Zone",
+      severity_hint: 9,
+    },
+    {
+      type: "structural_collapse",
+      description: "North Harbor warehouse roof collapsed under torrential storm surge. 12 dock workers trapped.",
+      location_lat: 13.1025,
+      location_lng: 80.2985,
+      location_name: "North Harbor Port Sector",
+      severity_hint: 10,
+    },
+    {
+      type: "flood",
+      description: "Adyar river mouth backflow inundating residential blocks. 4 rescue boats and 100 med kits required.",
+      location_lat: 13.0100,
+      location_lng: 80.2600,
+      location_name: "Adyar Basin Sector B",
+      severity_hint: 8,
+    },
+  ],
+  "red-inferno": [
+    {
+      type: "fire",
+      description: "Operation Red Inferno: NASA FIRMS thermal anomaly detected (321.5K, 3.84 MW). Industrial chemical solvent blaze with toxic plume.",
+      location_lat: 13.0100,
+      location_lng: 80.2000,
+      location_name: "Industrial SIDCO Chemical Depot",
+      severity_hint: 9,
+    },
+    {
+      type: "medical",
+      description: "Central Metro Hospital in direct 25-min smoke cone. AQI 340, spread NE 180m/hr. Evacuation corridor required.",
+      location_lat: 13.0300,
+      location_lng: 80.2200,
+      location_name: "Central Metro Hospital Corridor",
+      severity_hint: 9,
+    },
+    {
+      type: "fire",
+      description: "Textile substation secondary explosion. Evacuation corridor published West via Anna Salai (avoid Kamaraj underpass).",
+      location_lat: 13.0450,
+      location_lng: 80.2400,
+      location_name: "Anna Salai Evacuation Sector",
+      severity_hint: 8,
+    },
+  ],
   "chennai-flash-flood": [
     {
       type: "flood",

@@ -268,6 +268,7 @@ export function TacticalWorkflowSimulator() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            data-demo="simulate-btn"
             onClick={handleStartSimulation}
             disabled={isSimulating}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white text-xs font-bold shadow-lg shadow-red-600/25 transition active:scale-95 disabled:opacity-50"
@@ -315,6 +316,13 @@ export function TacticalWorkflowSimulator() {
               <button
                 key={scen.id}
                 type="button"
+                data-demo={
+                  scen.hazardType === "flood"
+                    ? "scenario-blue-flood"
+                    : scen.hazardType === "fire"
+                    ? "scenario-red-inferno"
+                    : "scenario-metro-blackout"
+                }
                 onClick={() => {
                   setSelectedScenario(scen);
                   setCurrentStage(0);
@@ -520,6 +528,7 @@ export function TacticalWorkflowSimulator() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
             <button
               type="button"
+              data-demo="cap-btn"
               onClick={handleTriggerCAPBroadcast}
               className="p-3 rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs font-bold transition flex items-center justify-between group"
             >
@@ -537,6 +546,7 @@ export function TacticalWorkflowSimulator() {
 
             <button
               type="button"
+              data-demo="approve-btn"
               onClick={handleResolveDuplicateConflict}
               className="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition flex items-center justify-between group"
             >
@@ -648,6 +658,7 @@ export function TacticalWorkflowSimulator() {
 
           <button
             type="button"
+            data-demo="aar-btn"
             onClick={() => setShowAARModal(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-400/30 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 text-xs font-bold transition self-start sm:self-auto"
           >
