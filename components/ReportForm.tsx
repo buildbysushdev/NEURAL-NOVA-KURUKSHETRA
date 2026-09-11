@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   AlertTriangle,
   MapPin,
@@ -41,7 +42,12 @@ export interface IncidentReport {
   description: string;
   latitude: number;
   longitude: number;
+  location_lat?: number;
+  location_lng?: number;
   severity: "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
+  severity_score?: number;
+  status?: string;
+  needed_resources?: string[];
   photo_preview?: string | null;
   created_at?: string;
   is_offline_queued?: boolean;
@@ -50,8 +56,9 @@ export interface IncidentReport {
 export default function ReportForm({
   onIncidentReported
 }: {
-  onIncidentReported?: (incident: IncidentReport) => void;
+  onIncidentReported?: (report: IncidentReport) => void;
 }) {
+  const { t } = useLanguage();
   // Form input states
   const [disasterType, setDisasterType] = useState<string>("Flood");
   const [description, setDescription] = useState<string>("");
@@ -336,7 +343,7 @@ export default function ReportForm({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-bold text-slate-100 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-red-500" />
-            Report Ground Incident
+            {t("report_incident")}
           </CardTitle>
 
           {/* Online / Offline Status Indicator */}
@@ -348,12 +355,12 @@ export default function ReportForm({
           ) : (
             <span className="flex items-center gap-1.5 text-[11px] font-mono text-amber-400 bg-amber-950/60 border border-amber-800 px-2 py-0.5 rounded">
               <WifiOff className="h-3 w-3" />
-              Offline Mode
+              {t("queued_offline")}
             </span>
           )}
         </div>
         <CardDescription className="text-xs text-slate-400">
-          Emergency telemetry logs are transmitted to rescue teams and Groq triage models.
+          {t("report_description")}
         </CardDescription>
       </CardHeader>
 
@@ -363,7 +370,7 @@ export default function ReportForm({
           <Alert variant="warning" className="border-amber-700/80 bg-amber-950/70">
             <CloudUpload className="h-4 w-4 text-amber-400" />
             <AlertTitle className="text-xs font-bold text-amber-300">
-              Queued for Sync ({offlineQueueCount} Report{offlineQueueCount > 1 ? "s" : ""})
+              {t("queued_offline")} ({offlineQueueCount})
             </AlertTitle>
             <AlertDescription className="text-xs text-amber-200">
               You are working in offline mode. Reports will automatically upload to Supabase when connectivity returns.
@@ -387,7 +394,7 @@ export default function ReportForm({
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Disaster Type (Select) */}
           <div className="space-y-1">
-            <Label htmlFor="disasterType">Disaster / Hazard Category</Label>
+            <Label htmlFor="disasterType">{t("disaster_type")}</Label>
             <select
               id="disasterType"
               value={disasterType}
@@ -423,7 +430,7 @@ export default function ReportForm({
           {/* Location: Browser navigator.geolocation auto-fill */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label>Location Coordinates (Auto-detected via GPS)</Label>
+              <Label>{t("gps_coordinates")}</Label>
               <button
                 type="button"
                 onClick={detectGeolocation}
@@ -431,7 +438,7 @@ export default function ReportForm({
                 className="text-[11px] font-mono text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
               >
                 <Navigation className="h-3 w-3" />
-                {locating ? "Acquiring GPS..." : "Re-pin Location"}
+                {locating ? "Acquiring GPS..." : t("fetch_gps")}
               </button>
             </div>
 
@@ -464,11 +471,11 @@ export default function ReportForm({
 
           {/* Description (Textarea) */}
           <div className="space-y-1">
-            <Label htmlFor="description">Observed Situation &amp; Needs</Label>
+            <Label htmlFor="description">{t("incident_details")}</Label>
             <textarea
               id="description"
               rows={3}
-              placeholder="Describe water depth, number of trapped individuals, accessible roads, or urgent medical needs..."
+              placeholder={t("incident_placeholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
@@ -523,9 +530,9 @@ export default function ReportForm({
                 {isOnline ? "Transmitting to Dispatch..." : "Saving Offline..."}
               </span>
             ) : isOnline ? (
-              "Submit Ground Report (Live)"
+              t("submit_report")
             ) : (
-              "Queue Report Offline"
+              t("queued_offline")
             )}
           </Button>
         </form>

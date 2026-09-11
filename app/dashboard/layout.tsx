@@ -16,10 +16,11 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase, isConfigured, getUserRole, UserRole } from "@/lib/supabaseClient";
-import { ShieldAlert, Users, Radio, Activity, LogOut, Loader2, ChevronDown, Sparkles, Check } from "lucide-react";
+import { ShieldAlert, Users, Radio, Activity, LogOut, Loader2, ChevronDown, Sparkles, Check, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DashboardLayout({
   children,
@@ -28,6 +29,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
 
   // Authentication & session state
   const [userEmail, setUserEmail] = useState<string>("");
@@ -122,14 +124,14 @@ export default function DashboardLayout({
         return (
           <Badge variant="destructive" className="flex items-center gap-1 font-mono text-[11px] uppercase py-1 px-2.5">
             <Activity className="h-3 w-3" />
-            Authority Command
+            {t("role_authority")}
           </Badge>
         );
       case "rescue":
         return (
           <Badge className="flex items-center gap-1 font-mono text-[11px] uppercase py-1 px-2.5 bg-amber-950 text-amber-300 border border-amber-800">
             <Radio className="h-3 w-3" />
-            Rescue Team
+            {t("role_rescue")}
           </Badge>
         );
       case "citizen":
@@ -137,7 +139,7 @@ export default function DashboardLayout({
         return (
           <Badge className="flex items-center gap-1 font-mono text-[11px] uppercase py-1 px-2.5 bg-blue-950 text-blue-300 border border-blue-800">
             <Users className="h-3 w-3" />
-            Citizen Portal
+            {t("role_citizen")}
           </Badge>
         );
     }
@@ -157,7 +159,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/95 backdrop-blur">
-        <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+        <div className="flex h-14 items-center justify-between px-3 sm:px-6">
           
           {/* Brand & Project Identity */}
           <div className="flex items-center gap-3">
@@ -167,17 +169,46 @@ export default function DashboardLayout({
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight text-white">
-                  Kurukshetra PS20
+                  {t("brand_title")}
                 </span>
                 <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-                  / Agentic Disaster Relief
+                  / {t("brand_subtitle")}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* User Email, Role Badge, Demo Switch, and Logout Button */}
-          <div className="flex items-center gap-2.5">
+          {/* User Email, Role Badge, Demo Switch, Language Toggle, and Logout Button */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Language Toggle: EN | HI */}
+            <div className="flex items-center rounded-md border border-slate-800 bg-slate-900/90 p-0.5 text-xs font-mono shadow-sm">
+              <button
+                type="button"
+                id="lang-toggle-en"
+                onClick={() => setLanguage("en")}
+                className={`px-2 py-0.5 rounded transition-colors text-[11px] font-bold cursor-pointer ${
+                  language === "en"
+                    ? "bg-red-600 text-white shadow"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="Switch to English"
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                id="lang-toggle-hi"
+                onClick={() => setLanguage("hi")}
+                className={`px-2 py-0.5 rounded transition-colors text-[11px] font-bold cursor-pointer ${
+                  language === "hi"
+                    ? "bg-red-600 text-white shadow"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="हिन्दी में बदलें (Switch to Hindi)"
+              >
+                HI
+              </button>
+            </div>
             {/* Demo Switch Dropdown (Only when NEXT_PUBLIC_DEMO_MODE === 'true') */}
             {isDemoMode && (
               <div className="relative">
@@ -189,7 +220,7 @@ export default function DashboardLayout({
                   className="border-emerald-600/50 bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-300 text-xs flex items-center gap-1.5 h-8 px-2.5 font-mono shadow-sm"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-                  <span className="font-semibold hidden sm:inline">Demo Switch</span>
+                  <span className="font-semibold hidden sm:inline">{t("demo_switch")}</span>
                   <ChevronDown className={`h-3 w-3 transition-transform ${demoMenuOpen ? "rotate-180" : ""}`} />
                 </Button>
 
@@ -201,7 +232,7 @@ export default function DashboardLayout({
                     />
                     <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-1.5 z-50 animate-in fade-in-50 zoom-in-95">
                       <div className="px-2.5 py-1.5 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 flex items-center justify-between">
-                        <span>Switch Responder Role</span>
+                        <span>{t("switch_role")}</span>
                         <span className="text-emerald-400 font-bold">DEMO</span>
                       </div>
 
@@ -215,7 +246,7 @@ export default function DashboardLayout({
                         >
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4 text-blue-400" />
-                            <span>Citizen Portal</span>
+                            <span>{t("role_citizen")}</span>
                           </div>
                           {userRole === "citizen" && <Check className="h-3.5 w-3.5 text-blue-400" />}
                         </button>
@@ -229,7 +260,7 @@ export default function DashboardLayout({
                         >
                           <div className="flex items-center gap-2">
                             <Radio className="h-4 w-4 text-amber-400" />
-                            <span>Rescue Team</span>
+                            <span>{t("role_rescue")}</span>
                           </div>
                           {userRole === "rescue" && <Check className="h-3.5 w-3.5 text-amber-400" />}
                         </button>
@@ -243,7 +274,7 @@ export default function DashboardLayout({
                         >
                           <div className="flex items-center gap-2">
                             <Activity className="h-4 w-4 text-red-400" />
-                            <span>Authority Command</span>
+                            <span>{t("role_authority")}</span>
                           </div>
                           {userRole === "authority" && <Check className="h-3.5 w-3.5 text-red-400" />}
                         </button>
@@ -256,7 +287,7 @@ export default function DashboardLayout({
                           className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-rose-300 hover:bg-rose-950/50 transition-colors text-left font-mono cursor-pointer"
                         >
                           <LogOut className="h-3.5 w-3.5 text-rose-400" />
-                          <span>Logout &amp; Switch (/login)</span>
+                          <span>{t("logout")} &amp; {t("switch_role")} (/login)</span>
                         </button>
                       </div>
                     </div>
@@ -281,7 +312,7 @@ export default function DashboardLayout({
               className="border-slate-800 bg-slate-900 hover:bg-red-950 hover:text-red-300 text-slate-300 text-xs flex items-center gap-1.5 h-8 px-3"
             >
               <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t("logout")}</span>
             </Button>
           </div>
         </div>

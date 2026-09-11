@@ -20,6 +20,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   MapPin,
   Navigation,
@@ -68,6 +69,7 @@ export default function TaskCard({
   onComplete,
   onRequestHelp
 }: TaskCardProps) {
+  const { t } = useLanguage();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   // Derive severity tier from score or string
@@ -251,7 +253,7 @@ export default function TaskCard({
             className="w-full sm:w-auto text-xs font-medium border-border/70 hover:bg-muted hover:text-foreground gap-1.5"
           >
             <Navigation className="w-3.5 h-3.5 text-blue-400" />
-            <span>Navigate</span>
+            <span>{t("navigate_maps")}</span>
             <ExternalLink className="w-3 h-3 text-muted-foreground ml-0.5" />
           </Button>
         </a>
@@ -270,7 +272,7 @@ export default function TaskCard({
               ) : (
                 <Radio className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Accept Task
+              {t("accept_task")}
             </Button>
           )}
 
@@ -289,7 +291,7 @@ export default function TaskCard({
               ) : (
                 <ShieldAlert className="w-3.5 h-3.5 mr-1.5 text-red-500" />
               )}
-              {task.status === "help_requested" ? "Backup Called" : "Request Help"}
+              {task.status === "help_requested" ? "Backup Called" : t("request_help")}
             </Button>
           )}
 
@@ -305,12 +307,12 @@ export default function TaskCard({
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Mark Complete
+              {t("mark_complete")}
             </Button>
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold px-2 py-1 bg-emerald-950/40 border border-emerald-800/50 rounded-md">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Resolved</span>
+              <span>{t("mission_resolved")}</span>
             </div>
           )}
         </div>

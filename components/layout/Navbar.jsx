@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useDisasterRelief } from "@/context/DisasterReliefContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { ShieldAlert, Users, Radio, Activity, LogOut, LogIn, User, ChevronDown, Sparkles, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -12,6 +13,7 @@ export default function Navbar() {
   const router = useRouter();
   const { user, role, signOut, switchRole } = useAuth();
   const { alertLevel } = useDisasterRelief();
+  const { language, setLanguage, t } = useLanguage();
   const [demoMenuOpen, setDemoMenuOpen] = useState(false);
 
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -22,14 +24,14 @@ export default function Navbar() {
         return (
           <Badge variant="destructive" className="flex items-center gap-1 font-mono text-[11px] uppercase">
             <Activity className="h-3 w-3" />
-            Authority Command
+            {t("role_authority")}
           </Badge>
         );
       case "rescue":
         return (
           <Badge className="flex items-center gap-1 font-mono text-[11px] uppercase bg-amber-950 text-amber-300 border border-amber-800">
             <Radio className="h-3 w-3" />
-            Rescue Team
+            {t("role_rescue")}
           </Badge>
         );
       case "citizen":
@@ -37,7 +39,7 @@ export default function Navbar() {
         return (
           <Badge className="flex items-center gap-1 font-mono text-[11px] uppercase bg-blue-950 text-blue-300 border border-blue-800">
             <Users className="h-3 w-3" />
-            Citizen Portal
+            {t("role_citizen")}
           </Badge>
         );
     }
@@ -64,7 +66,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/80">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+      <div className="flex h-14 items-center justify-between px-3 sm:px-6">
         {/* Left: Branding */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-3">
@@ -74,10 +76,10 @@ export default function Navbar() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight text-slate-100">
-                  Kurukshetra PS20
+                  {t("brand_title")}
                 </span>
                 <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-                  / Agentic Disaster Relief
+                  / {t("brand_subtitle")}
                 </span>
               </div>
               <span className="text-[10px] text-red-400 font-mono tracking-wider font-semibold">
@@ -87,8 +89,34 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right: Demo Switch, User Role & Auth Action */}
-        <div className="flex items-center gap-2.5">
+        {/* Right: Language Toggle, Demo Switch, User Role & Auth Action */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Language Toggle: EN | HI */}
+          <div className="flex items-center rounded-md border border-slate-800 bg-slate-900/90 p-0.5 text-xs font-mono shadow-sm">
+            <button
+              type="button"
+              onClick={() => setLanguage("en")}
+              className={`px-2 py-0.5 rounded transition-colors text-[11px] font-bold cursor-pointer ${
+                language === "en"
+                  ? "bg-red-600 text-white shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("hi")}
+              className={`px-2 py-0.5 rounded transition-colors text-[11px] font-bold cursor-pointer ${
+                language === "hi"
+                  ? "bg-red-600 text-white shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              HI
+            </button>
+          </div>
+
           {/* Demo Switch dropdown */}
           {isDemoMode && (
             <div className="relative">
@@ -99,7 +127,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-mono font-semibold bg-emerald-950/40 border border-emerald-600/50 hover:bg-emerald-900/40 text-emerald-300 shadow-sm transition-colors cursor-pointer"
               >
                 <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-                <span className="hidden sm:inline">Demo Switch</span>
+                <span className="hidden sm:inline">{t("demo_switch")}</span>
                 <ChevronDown className={`h-3 w-3 transition-transform ${demoMenuOpen ? "rotate-180" : ""}`} />
               </button>
 
