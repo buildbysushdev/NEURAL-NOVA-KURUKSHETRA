@@ -3,24 +3,26 @@
 /**
  * ==============================================================================
  * KURUKSHETRA PS20 - AGENTIC DISASTER RELIEF
- * Main Dashboard Layout (app/dashboard/layout.tsx)
+ * Production-Grade Dashboard Layout (app/dashboard/layout.tsx)
  * ==============================================================================
  * 
- * Responsibilities:
- * 1. Verifies user authentication session (Supabase session or active local session).
- * 2. Reads the user's role ('citizen', 'rescue', 'authority').
- * 3. Enforces role-based routing (e.g., citizen redirected to /dashboard/citizen).
- * 4. Displays unified top navigation with User Email, Role Badge, Demo Role Switcher, and Logout button.
+ * Features:
+ * - Emergency Modern Aesthetic with Framer Motion transitions
+ * - Collapsible AppSidebar with direct role switcher
+ * - Telemetry-rich AppTopbar with live Defcon status, profile, language switch
+ * - Mobile responsive drawer support via Shadcn Sheet
+ * - Preserves all authentication checks & Supabase RLS session logic
  */
 
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isConfigured, getUserRole, UserRole } from "@/lib/supabaseClient";
-import { ShieldAlert, Users, Radio, Activity, LogOut, Loader2, ChevronDown, Sparkles, Check } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Toaster } from "sonner";
-import { useLanguage } from "@/context/LanguageContext";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { AppTopbar } from "@/components/layout/AppTopbar";
+import { Sheet } from "@/components/ui/sheet";
 
 export default function DashboardLayout({
   children,
@@ -29,13 +31,13 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { language, setLanguage, t } = useLanguage();
 
   // Authentication & session state
   const [userEmail, setUserEmail] = useState<string>("");
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [demoMenuOpen, setDemoMenuOpen] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
@@ -149,42 +151,8 @@ export default function DashboardLayout({
 
     setUserRole(targetRole);
     setUserEmail(emailForRole);
-    setDemoMenuOpen(false);
+    setMobileMenuOpen(false);
     router.push(`/dashboard/${targetRole}`);
-  };
-
-  // Quick logout and return to /login
-  const handleQuickLogoutSwitch = async () => {
-    setDemoMenuOpen(false);
-    await handleLogout();
-  };
-
-  // Render role badge with distinct styles
-  const renderRoleBadge = (role: UserRole | null) => {
-    switch (role) {
-      case "authority":
-        return (
-          <Badge variant="destructive" className="flex items-center gap-1 font-mono text-[11px] uppercase py-1 px-2.5">
-            <Activity className="h-3 w-3" />
-            {t("role_authority")}
-          </Badge>
-        );
-      case "rescue":
-        return (
-          <Badge className="flex items-center gap-1 font-mono text-[11px] uppercase py-1 px-2.5 bg-amber-950 text-amber-300 border border-amber-800">
-            <Radio className="h-3 w-3" />
-            {t("role_rescue")}
-          </Badge>
-        );
-      case "citizen":
-      default:
-        return (
-          <Badge className="flex items-center gap-1 font-mono text-[11px] uppercase py-1 px-2.5 bg-blue-950 text-blue-300 border border-blue-800">
-            <Users className="h-3 w-3" />
-            {t("role_citizen")}
-          </Badge>
-        );
-    }
   };
 
   // Loading spinner while verifying credentials
@@ -192,181 +160,79 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
         <Loader2 className="h-8 w-8 animate-spin text-red-500 mb-3" />
-        <p className="text-xs font-mono uppercase tracking-wider">Verifying Responder Session...</p>
+        <p className="text-xs font-mono uppercase tracking-widest text-slate-400">Verifying Tactical Session...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/95 backdrop-blur">
-        <div className="flex h-14 items-center justify-between px-3 sm:px-6">
-          
-          {/* Brand & Project Identity */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-red-600/20 text-red-500 border border-red-600/40">
-              <ShieldAlert className="h-4 w-4 animate-pulse" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm tracking-tight text-white">
-                  {t("brand_title")}
-                </span>
-                <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-                  / {t("brand_subtitle")}
-                </span>
-              </div>
-            </div>
-          </div>
+      {/* Topbar */}
+      <AppTopbar
+        userRole={userRole}
+        userEmail={userEmail}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+        onMobileMenuToggle={() => setMobileMenuOpen(true)}
+      />
 
-          {/* User Email, Role Badge, Demo Switch, Language Toggle, and Logout Button */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Language Toggle: EN | HI */}
-            <div className="flex items-center rounded-md border border-slate-800 bg-slate-900/90 p-0.5 text-xs font-mono shadow-sm">
-              <button
-                type="button"
-                id="lang-toggle-en"
-                onClick={() => setLanguage("en")}
-                className={`px-2 py-0.5 rounded transition-colors text-[11px] font-bold cursor-pointer ${
-                  language === "en"
-                    ? "bg-red-600 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-                title="Switch to English"
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                id="lang-toggle-hi"
-                onClick={() => setLanguage("hi")}
-                className={`px-2 py-0.5 rounded transition-colors text-[11px] font-bold cursor-pointer ${
-                  language === "hi"
-                    ? "bg-red-600 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-                title="हिन्दी में बदलें (Switch to Hindi)"
-              >
-                HI
-              </button>
-            </div>
-            {/* Demo Switch Dropdown (Only when NEXT_PUBLIC_DEMO_MODE === 'true') */}
-            {isDemoMode && (
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  id="demo-switch-dropdown-btn"
-                  onClick={() => setDemoMenuOpen(!demoMenuOpen)}
-                  className="border-emerald-600/50 bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-300 text-xs flex items-center gap-1.5 h-8 px-2.5 font-mono shadow-sm"
+      {/* Main Container: Sidebar + Content */}
+      <div className="flex flex-1 relative overflow-hidden">
+        {/* Desktop Sidebar */}
+        <AppSidebar
+          userRole={userRole}
+          onRoleSwitch={handleRoleSwitch}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+        />
+
+        {/* Mobile Drawer (Sheet) */}
+        <Sheet
+          open={mobileMenuOpen}
+          onOpenChange={setMobileMenuOpen}
+          side="left"
+          title="Tactical Navigation"
+          description="Emergency Response Switchboard"
+        >
+          <div className="flex flex-col gap-3">
+            <p className="text-[11px] font-mono uppercase text-slate-400">Active Role: {userRole}</p>
+            <div className="flex flex-col gap-2">
+              {(["citizen", "rescue", "authority"] as UserRole[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleRoleSwitch(r)}
+                  className={`px-3 py-2 rounded-md text-xs text-left capitalize font-semibold ${
+                    userRole === r ? "bg-red-600 text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                  }`}
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-                  <span className="font-semibold hidden sm:inline">{t("demo_switch")}</span>
-                  <ChevronDown className={`h-3 w-3 transition-transform ${demoMenuOpen ? "rotate-180" : ""}`} />
-                </Button>
-
-                {demoMenuOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setDemoMenuOpen(false)} 
-                    />
-                    <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-1.5 z-50 animate-in fade-in-50 zoom-in-95">
-                      <div className="px-2.5 py-1.5 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 flex items-center justify-between">
-                        <span>{t("switch_role")}</span>
-                        <span className="text-emerald-400 font-bold">DEMO</span>
-                      </div>
-
-                      <div className="py-1 space-y-0.5">
-                        <button
-                          type="button"
-                          onClick={() => handleRoleSwitch("citizen")}
-                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs text-left transition-colors cursor-pointer ${
-                            userRole === "citizen" ? "bg-blue-950/60 text-blue-300 font-bold border border-blue-800/60" : "text-slate-300 hover:bg-slate-800/70"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-blue-400" />
-                            <span>{t("role_citizen")}</span>
-                          </div>
-                          {userRole === "citizen" && <Check className="h-3.5 w-3.5 text-blue-400" />}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRoleSwitch("rescue")}
-                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs text-left transition-colors cursor-pointer ${
-                            userRole === "rescue" ? "bg-amber-950/60 text-amber-300 font-bold border border-amber-800/60" : "text-slate-300 hover:bg-slate-800/70"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Radio className="h-4 w-4 text-amber-400" />
-                            <span>{t("role_rescue")}</span>
-                          </div>
-                          {userRole === "rescue" && <Check className="h-3.5 w-3.5 text-amber-400" />}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRoleSwitch("authority")}
-                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs text-left transition-colors cursor-pointer ${
-                            userRole === "authority" ? "bg-red-950/60 text-red-300 font-bold border border-red-800/60" : "text-slate-300 hover:bg-slate-800/70"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-red-400" />
-                            <span>{t("role_authority")}</span>
-                          </div>
-                          {userRole === "authority" && <Check className="h-3.5 w-3.5 text-red-400" />}
-                        </button>
-                      </div>
-
-                      <div className="pt-1 mt-1 border-t border-slate-800">
-                        <button
-                          type="button"
-                          onClick={handleQuickLogoutSwitch}
-                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-rose-300 hover:bg-rose-950/50 transition-colors text-left font-mono cursor-pointer"
-                        >
-                          <LogOut className="h-3.5 w-3.5 text-rose-400" />
-                          <span>{t("logout")} &amp; {t("switch_role")} (/login)</span>
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* User Role Badge */}
-            {renderRoleBadge(userRole)}
-
-            {/* User Email */}
-            <span className="text-xs text-slate-300 font-mono hidden md:inline truncate max-w-[180px]">
-              {userEmail}
-            </span>
-
-            {/* Logout Button */}
-            <Button
-              variant="outline"
-              size="sm"
+                  {r} Dashboard
+                </button>
+              ))}
+            </div>
+            <button
               onClick={handleLogout}
-              className="border-slate-800 bg-slate-900 hover:bg-red-950 hover:text-red-300 text-slate-300 text-xs flex items-center gap-1.5 h-8 px-3"
+              className="mt-6 px-3 py-2 rounded-md text-xs text-red-400 bg-red-950/40 border border-red-900/60"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{t("logout")}</span>
-            </Button>
+              Sign Out
+            </button>
           </div>
-        </div>
-      </header>
+        </Sheet>
 
-      {/* Main Dashboard Content */}
-      <main className="flex-1 pb-10">
-        {children}
-      </main>
+        {/* Dynamic Animated Page Content */}
+        <motion.main
+          key={pathname}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex-1 min-w-0 overflow-y-auto bg-slate-950/60 p-4 sm:p-6 lg:p-8"
+        >
+          <div className="max-w-7xl mx-auto space-y-6">
+            {children}
+          </div>
+        </motion.main>
+      </div>
 
-      {/* Global Realtime Toast Alerts */}
-      <Toaster position="top-right" richColors theme="dark" closeButton />
+      <Toaster richColors position="top-right" theme="dark" />
     </div>
   );
 }
