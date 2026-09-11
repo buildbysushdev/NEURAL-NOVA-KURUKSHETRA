@@ -27,16 +27,50 @@ import { ShieldAlert, Users, Radio, Activity, AlertCircle, ArrowRight, Lock, Mai
 export default function LoginPage() {
   const router = useRouter();
 
-  // Component State
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+  // Component State with prefilled evaluation credentials
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [email, setEmail] = useState<string>(
+    process.env.NEXT_PUBLIC_DEMO_AUTHORITY_EMAIL || "commander@kurukshetra.gov.in"
+  );
+  const [password, setPassword] = useState<string>(
+    process.env.NEXT_PUBLIC_DEMO_AUTHORITY_PASSWORD || "Authority@Demo2026"
+  );
   const [fullName, setFullName] = useState<string>("");
-  const [selectedRole, setSelectedRole] = useState<UserRole>("citizen");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("authority");
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  /**
+   * Helper function to prefill form credentials
+   */
+  const prefillCredentials = (role: UserRole) => {
+    let demoEmail = "";
+    let demoPassword = "";
+
+    if (role === "citizen") {
+      demoEmail = process.env.NEXT_PUBLIC_DEMO_CITIZEN_EMAIL || "citizen@kurukshetra.gov.in";
+      demoPassword = process.env.NEXT_PUBLIC_DEMO_CITIZEN_PASSWORD || "Citizen@Demo2026";
+    } else if (role === "rescue") {
+      demoEmail = process.env.NEXT_PUBLIC_DEMO_RESCUE_EMAIL || "rescue@kurukshetra.gov.in";
+      demoPassword = process.env.NEXT_PUBLIC_DEMO_RESCUE_PASSWORD || "Rescue@Demo2026";
+    } else if (role === "authority") {
+      demoEmail = process.env.NEXT_PUBLIC_DEMO_AUTHORITY_EMAIL || "commander@kurukshetra.gov.in";
+      demoPassword = process.env.NEXT_PUBLIC_DEMO_AUTHORITY_PASSWORD || "Authority@Demo2026";
+    }
+
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setIsSignUp(false);
+  };
+
+  // Automatically prefill credentials on initial mount in demo mode
+  React.useEffect(() => {
+    if (isDemoMode) {
+      prefillCredentials("authority");
+    }
+  }, [isDemoMode]);
 
   /**
    * Universal Login Executor (used by normal submit and demo buttons)
@@ -152,9 +186,10 @@ export default function LoginPage() {
    * Auto-fills email and password from environment variables and immediately triggers submit
    */
   const handleQuickDemoLogin = async (role: UserRole) => {
+    prefillCredentials(role);
+
     let demoEmail = "";
     let demoPassword = "";
-
     if (role === "citizen") {
       demoEmail = process.env.NEXT_PUBLIC_DEMO_CITIZEN_EMAIL || "citizen@kurukshetra.gov.in";
       demoPassword = process.env.NEXT_PUBLIC_DEMO_CITIZEN_PASSWORD || "Citizen@Demo2026";
@@ -165,11 +200,6 @@ export default function LoginPage() {
       demoEmail = process.env.NEXT_PUBLIC_DEMO_AUTHORITY_EMAIL || "commander@kurukshetra.gov.in";
       demoPassword = process.env.NEXT_PUBLIC_DEMO_AUTHORITY_PASSWORD || "Authority@Demo2026";
     }
-
-    // Auto-fill state fields
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setIsSignUp(false);
 
     // Automatically trigger submission
     await executeLogin(demoEmail, demoPassword, role);
@@ -299,6 +329,39 @@ export default function LoginPage() {
                     required
                     className="bg-slate-950 border-slate-800 text-xs"
                   />
+                </div>
+              )}
+
+              {/* Quick prefill chips for evaluator convenience */}
+              {isDemoMode && !isSignUp && (
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800/60 mb-2">
+                  <span className="text-[10px] font-mono text-slate-400">Prefill Accounts:</span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <button
+                      type="button"
+                      onClick={() => prefillCredentials("citizen")}
+                      className="px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/60 hover:bg-blue-900/60 transition-colors cursor-pointer"
+                      title="Prefill Citizen credentials"
+                    >
+                      Citizen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => prefillCredentials("rescue")}
+                      className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 hover:bg-amber-900/60 transition-colors cursor-pointer"
+                      title="Prefill Rescue credentials"
+                    >
+                      Rescue
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => prefillCredentials("authority")}
+                      className="px-2 py-0.5 rounded bg-red-950/60 text-red-300 border border-red-800/60 hover:bg-red-900/60 transition-colors cursor-pointer"
+                      title="Prefill Authority credentials"
+                    >
+                      Authority
+                    </button>
+                  </div>
                 </div>
               )}
 
