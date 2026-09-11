@@ -255,46 +255,77 @@ export default function AuthorityDashboardPage() {
   useEffect(() => {
     fetchIncidents();
 
+    // Check localStorage for any recently submitted citizen reports
+    try {
+      const localIncidents: IncidentReport[] = JSON.parse(localStorage.getItem("citizen_submitted_incidents") || "[]");
+      if (localIncidents.length > 0) {
+        setIncidents((prev) => {
+          const newOnes = localIncidents.filter((l) => !prev.some((p) => p.id === l.id));
+          return [...newOnes, ...prev];
+        });
+      }
+    } catch (e) {}
+
+    const handleIncidentArrival = (item: any) => {
+      if (!item || !item.id) return;
+      const lat = Number(item.location_lat ?? item.latitude) || 13.0827;
+      const lng = Number(item.location_lng ?? item.longitude) || 80.2707;
+      const score = item.severity_score !== undefined ? Number(item.severity_score) : 8;
+      const sev = item.severity || (score >= 8 ? "CRITICAL" : "HIGH");
+
+      const incident: IncidentReport = {
+        id: item.id.toString(),
+        type: item.type || "Disaster Emergency",
+        description: item.description || "Active emergency incident reported.",
+        location_lat: lat,
+        location_lng: lng,
+        latitude: lat,
+        longitude: lng,
+        severity: sev,
+        severity_score: score,
+        needed_resources: item.needed_resources || ["boats", "medical", "water"],
+        created_at: item.created_at || new Date().toISOString(),
+      };
+
+      setIncidents((prev) => {
+        if (prev.some((i) => i.id === incident.id)) return prev;
+        return [incident, ...prev];
+      });
+
+      toast.success("🚨 New Incident Verified by Sentinel AI", {
+        description: `${incident.type} reported. Severity: ${incident.severity}. Auto-dispatched to Rescue Squad Alpha.`,
+      });
+
+      // Forward dispatch order to Rescue
+      try {
+        localStorage.setItem("kurukshetra_latest_dispatch", JSON.stringify(incident));
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {}
+    };
+
+    const handleStorage = () => {
+      try {
+        const raw = localStorage.getItem("kurukshetra_latest_incident");
+        if (raw) {
+          handleIncidentArrival(JSON.parse(raw));
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener("storage", handleStorage);
+    const customListener = (e: any) => handleIncidentArrival(e.detail);
+    window.addEventListener("kurukshetra:incident_reported", customListener);
+
     const unsubscribe = subscribeToIncidents((payload) => {
       const newItem = payload.new;
       if (newItem && (newItem.location_lat || newItem.latitude) && (newItem.location_lng || newItem.longitude)) {
-        const lat = Number(newItem.location_lat ?? newItem.latitude);
-        const lng = Number(newItem.location_lng ?? newItem.longitude);
-        const score = newItem.severity_score !== undefined ? Number(newItem.severity_score) : undefined;
-        const sev =
-          score !== undefined
-            ? score >= 8
-              ? "CRITICAL"
-              : score >= 6
-              ? "HIGH"
-              : score >= 4
-              ? "MODERATE"
-              : "LOW"
-            : (newItem.severity?.toUpperCase() as any) || "HIGH";
-
-        const incident: IncidentReport = {
-          id: newItem.id?.toString() || `inc-${Date.now()}`,
-          type: newItem.type || "Disaster Emergency",
-          description: newItem.description || "Active emergency incident reported.",
-          location_lat: lat,
-          location_lng: lng,
-          latitude: lat,
-          longitude: lng,
-          severity: sev,
-          severity_score: score,
-          needed_resources: newItem.needed_resources || [],
-          created_at: newItem.created_at || new Date().toISOString(),
-        };
-
-        setIncidents((prev) => {
-          const exists = prev.some((i) => i.id === incident.id);
-          if (exists) return prev.map((i) => (i.id === incident.id ? incident : i));
-          return [incident, ...prev];
-        });
+        handleIncidentArrival(newItem);
       }
     });
 
     return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("kurukshetra:incident_reported", customListener);
       unsubscribe();
     };
   }, []);

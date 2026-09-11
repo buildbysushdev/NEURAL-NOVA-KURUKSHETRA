@@ -183,37 +183,90 @@ export default function RescueDashboardPage() {
   useEffect(() => {
     fetchTasks();
 
+    // Check localStorage for any recently submitted citizen reports or dispatches
+    try {
+      const localIncidents: any[] = JSON.parse(localStorage.getItem("citizen_submitted_incidents") || "[]");
+      if (localIncidents.length > 0) {
+        setTasks((prev) => {
+          const newTasks: RescueTask[] = localIncidents
+            .filter((l) => !prev.some((p) => p.id === l.id.toString()))
+            .map((d) => ({
+              id: d.id.toString(),
+              type: d.type || "Citizen Emergency SOS",
+              zone: "Assigned Sector",
+              location_name: d.description ? d.description.slice(0, 45) : "Disaster Coordinate",
+              description: d.description || "Active emergency dispatch.",
+              location_lat: Number(d.location_lat ?? d.latitude) || 13.0827,
+              location_lng: Number(d.location_lng ?? d.longitude) || 80.2707,
+              latitude: Number(d.location_lat ?? d.latitude) || 13.0827,
+              longitude: Number(d.location_lng ?? d.longitude) || 80.2707,
+              severity_score: d.severity_score || 8,
+              severity: d.severity || "CRITICAL",
+              status: "open",
+              needed_resources: d.needed_resources || ["boats", "medical"],
+              required_resources: d.needed_resources || ["boats", "medical"],
+              created_at: d.created_at || new Date().toISOString(),
+            }));
+          return [...newTasks, ...prev];
+        });
+      }
+    } catch (e) {}
+
+    const handleIncomingDispatch = (d: any) => {
+      if (!d || !d.id) return;
+      const newTask: RescueTask = {
+        id: d.id.toString(),
+        type: d.type || "Citizen Emergency SOS",
+        zone: "Assigned Sector",
+        location_name: d.description ? d.description.slice(0, 45) : "Disaster Coordinate",
+        description: d.description || "Active emergency dispatch from Sentinel AI.",
+        location_lat: Number(d.location_lat ?? d.latitude) || 13.0827,
+        location_lng: Number(d.location_lng ?? d.longitude) || 80.2707,
+        latitude: Number(d.location_lat ?? d.latitude) || 13.0827,
+        longitude: Number(d.location_lng ?? d.longitude) || 80.2707,
+        severity_score: d.severity_score || 8,
+        severity: d.severity || "CRITICAL",
+        status: "open",
+        needed_resources: d.needed_resources || ["boats", "medical"],
+        required_resources: d.needed_resources || ["boats", "medical"],
+        created_at: d.created_at || new Date().toISOString(),
+      };
+
+      setTasks((prev) => {
+        if (prev.some((t) => t.id === newTask.id)) return prev;
+        toast.error("🚨 IMMEDIATE RESCUE DISPATCH ALERT", {
+          description: `${newTask.type} at [${newTask.latitude?.toFixed(4)}, ${newTask.longitude?.toFixed(4)}]: ${newTask.description.slice(0, 50)}...`,
+          duration: 6000,
+        });
+        return [newTask, ...prev];
+      });
+    };
+
+    const handleStorage = () => {
+      try {
+        const raw = localStorage.getItem("kurukshetra_latest_incident") || localStorage.getItem("kurukshetra_latest_dispatch");
+        if (raw) {
+          handleIncomingDispatch(JSON.parse(raw));
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener("storage", handleStorage);
+    const customListener = (e: any) => handleIncomingDispatch(e.detail);
+    window.addEventListener("kurukshetra:incident_reported", customListener);
+
     const unsubscribe = subscribeToIncidents((payload) => {
       if (payload.eventType === "INSERT") {
         const d = payload.new;
         if (d && (d.location_lat || d.latitude)) {
-          const newTask: RescueTask = {
-            id: d.id?.toString() || `task-${Date.now()}`,
-            type: d.type || "Field Assignment",
-            zone: "Immediate Sector",
-            location_name: d.description ? d.description.slice(0, 40) : "Hazard Grid",
-            description: d.description || "Emergency dispatch assignment.",
-            location_lat: Number(d.location_lat ?? d.latitude) || 13.0827,
-            location_lng: Number(d.location_lng ?? d.longitude) || 80.2707,
-            latitude: Number(d.location_lat ?? d.latitude) || 13.0827,
-            longitude: Number(d.location_lng ?? d.longitude) || 80.2707,
-            severity_score: d.severity_score || 7,
-            severity: d.severity || "HIGH",
-            status: "open",
-            needed_resources: d.needed_resources || [],
-            required_resources: d.needed_resources || [],
-            created_at: d.created_at || new Date().toISOString(),
-          };
-
-          setTasks((prev) => [newTask, ...prev]);
-          toast.warning("🚨 New Mission Dispatched", {
-            description: `${newTask.type} - Severity ${newTask.severity_score}/10`,
-          });
+          handleIncomingDispatch(d);
         }
       }
     });
 
     return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("kurukshetra:incident_reported", customListener);
       unsubscribe();
     };
   }, []);

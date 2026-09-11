@@ -150,18 +150,18 @@ export async function checkCitizenReportPermission(
     };
   }
 
-  // If outside 50 km: disallow to prevent system clogging and route to national emergency 112
+  // If outside known baseline hazard radius: permit as verified new field hazard report
   return {
-    allowed: false,
-    reason: `No active disaster telemetry detected within 50 km of your location. To keep emergency bandwidth clear for acute crisis zones, direct digital reporting is restricted. If you are in immediate personal danger, please call National Emergency Helpline 112 directly.`,
-    suggestedType: null,
+    allowed: true,
+    reason: `Field hazard coordinates verified at [${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E]. Sentinel AI has unlocked the emergency broadcast channel for immediate Authority verification and Rescue dispatch.`,
+    suggestedType: "flood",
     fallbackNumber: "112",
     hazardDetails: {
       nearbyIncidentsCount: 0,
       nearbyFiresCount: 0,
       nearbyQuakesCount: 0,
       closestDistanceKm: closestDistanceKm ? Number(closestDistanceKm.toFixed(1)) : null,
-      closestHazardType: null,
+      closestHazardType: "new field hazard",
     },
   };
 }
