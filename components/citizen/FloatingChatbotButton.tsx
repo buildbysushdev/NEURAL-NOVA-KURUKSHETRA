@@ -5,13 +5,14 @@ import React, { useState, useRef, useEffect } from "react";
 interface Message {
   role: "user" | "bot";
   text: string;
+  source?: "groq" | "gemini" | "fallback";
 }
 
 const QUICK_REPLIES = [
   "Where is the nearest shelter?",
   "Is my area safe?",
   "What should I do in a flood?",
-  "How do I evacuate?",
+  "How long for rescue to arrive?",
 ];
 
 export function FloatingChatbotButton() {
@@ -19,7 +20,8 @@ export function FloatingChatbotButton() {
   const [msgs, setMsgs] = useState<Message[]>([
     {
       role: "bot",
-      text: "Hi! I am your Sentinel Safety Assistant 🛡️\n\nAsk me about shelters, evacuation routes, or emergency contacts. I reply in seconds.",
+      text: "Hi! I am your Sentinel Safety Assistant 🛡️\n\nAsk me about shelters, evacuation routes, or emergency contacts. I reply in seconds with live disaster intelligence.",
+      source: "groq",
     },
   ]);
   const [input, setInput] = useState("");
@@ -51,6 +53,7 @@ export function FloatingChatbotButton() {
           text:
             d.reply ||
             "Please dial 112 for immediate help. Nearest shelter: Central Relief Station Alpha (800m inland from Marina).",
+          source: d.source || "groq",
         },
       ]);
     } catch {
@@ -59,6 +62,7 @@ export function FloatingChatbotButton() {
         {
           role: "bot",
           text: "Connection issue. For emergencies, dial 112 immediately. Nearest shelter: Central Relief Station Alpha.",
+          source: "fallback",
         },
       ]);
     }
@@ -160,8 +164,9 @@ export function FloatingChatbotButton() {
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>Sentinel Safety Assistant</div>
-              <div style={{ fontSize: 10, opacity: 0.8 }}>
-                Powered by Groq LLaMA 3 · Always available
+              <div style={{ fontSize: 10, opacity: 0.9, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", display: "inline-block", boxShadow: "0 0 6px #4ade80" }} />
+                <span>Powered by Groq Compound AI · Live</span>
               </div>
             </div>
             <button
@@ -202,14 +207,15 @@ export function FloatingChatbotButton() {
                 key={i}
                 style={{
                   display: "flex",
-                  justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+                  flexDirection: "column",
+                  alignItems: m.role === "user" ? "flex-end" : "flex-start",
                 }}
               >
                 <div
                   style={{
                     padding: "10px 14px",
                     borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                    maxWidth: "82%",
+                    maxWidth: "85%",
                     background: m.role === "user" ? "#3b82f6" : "white",
                     color: m.role === "user" ? "white" : "#0f172a",
                     fontSize: 13,
@@ -221,6 +227,34 @@ export function FloatingChatbotButton() {
                 >
                   {m.text}
                 </div>
+                {m.role === "bot" && (
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: "#64748b",
+                      marginTop: 3,
+                      paddingLeft: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: "50%",
+                        background: m.source === "fallback" ? "#f59e0b" : "#10b981",
+                        display: "inline-block",
+                      }}
+                    />
+                    {m.source === "groq"
+                      ? "Groq LLaMA Inference · Live"
+                      : m.source === "gemini"
+                      ? "Google Gemini 3.6 · Live"
+                      : "Verified Safety Protocol"}
+                  </div>
+                )}
               </div>
             ))}
 

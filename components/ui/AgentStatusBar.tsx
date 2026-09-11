@@ -110,14 +110,14 @@ export function AgentStatusBar() {
                 className={`w-3 h-3 ${groqActive ? "text-cyan-400 animate-pulse" : "text-slate-500"}`}
                 strokeWidth={2}
               />
-              <span className="hidden sm:inline">Sentinel · Groq LLaMA 3.1</span>
+              <span className="hidden sm:inline">Sentinel · Groq AI</span>
               <span className="sm:hidden">Sentinel</span>
               <span className="font-semibold text-slate-200">{status.triageCount} triaged</span>
               <span className="hidden md:inline text-slate-500">·</span>
               <span className="hidden md:inline text-cyan-400">{status.lastTriageMs}ms</span>
             </div>
 
-            {/* Strategist Agent: Gemini 1.5 Flash */}
+            {/* Strategist Agent: Gemini 3.6 Flash */}
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-mono transition-all duration-300 ${
                 geminiActive
@@ -129,7 +129,7 @@ export function AgentStatusBar() {
                 className={`w-3 h-3 ${geminiActive ? "text-violet-400 animate-pulse" : "text-slate-500"}`}
                 strokeWidth={2}
               />
-              <span className="hidden sm:inline">Strategist · Gemini 1.5</span>
+              <span className="hidden sm:inline">Strategist · Gemini 3.6</span>
               <span className="sm:hidden">Strategist</span>
               <span className="font-semibold text-slate-200">{status.allocationCount} allocated</span>
               <span className="hidden md:inline text-slate-500">·</span>
