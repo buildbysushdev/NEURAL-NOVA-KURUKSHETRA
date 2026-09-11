@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     email TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL DEFAULT 'citizen' CHECK (role IN ('citizen', 'rescue', 'authority')),
     phone TEXT,
+    preferred_language TEXT NOT NULL DEFAULT 'en' CHECK (preferred_language IN ('en', 'hi')),
     location_json JSONB DEFAULT '{"lat": 13.0827, "lng": 80.2707, "address": "Chennai Central"}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -45,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.incidents (
     is_duplicate BOOLEAN NOT NULL DEFAULT false,
     duplicate_of_id UUID REFERENCES public.incidents(id) ON DELETE SET NULL,
     needed_resources TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    language TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'hi')),
     ai_analysis_json JSONB NOT NULL DEFAULT '{}'::jsonb, -- Raw AI inference payload & reasoning
     reported_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
@@ -228,12 +230,13 @@ WITH CHECK (true);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, role, phone)
+    INSERT INTO public.profiles (id, email, role, phone, preferred_language)
     VALUES (
         NEW.id,
         COALESCE(NEW.email, 'citizen@kurukshetra.org'),
         COALESCE(NEW.raw_user_meta_data->>'role', 'citizen'),
-        NEW.raw_user_meta_data->>'phone'
+        NEW.raw_user_meta_data->>'phone',
+        COALESCE(NEW.raw_user_meta_data->>'preferred_language', 'en')
     )
     ON CONFLICT (id) DO NOTHING;
     RETURN NEW;
