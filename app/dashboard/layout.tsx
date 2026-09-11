@@ -7,16 +7,16 @@
  * ==============================================================================
  * 
  * Responsibilities:
- * 1. Verifies user authentication session. If not authenticated, redirects to /login.
- * 2. Reads the user's role ('citizen', 'rescue', 'authority') from the 'profiles' table.
+ * 1. Verifies user authentication session (Supabase session or active local session).
+ * 2. Reads the user's role ('citizen', 'rescue', 'authority').
  * 3. Enforces role-based routing (e.g., citizen redirected to /dashboard/citizen).
- * 4. Displays unified top navigation with User Email, Role Badge, and Logout button.
+ * 4. Displays unified top navigation with User Email, Role Badge, Demo Role Switcher, and Logout button.
  */
 
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase, isConfigured, getUserRole, UserRole } from "@/lib/supabaseClient";
-import { ShieldAlert, Users, Radio, Activity, LogOut, Loader2, ChevronDown, Sparkles, Check, Globe } from "lucide-react";
+import { ShieldAlert, Users, Radio, Activity, LogOut, Loader2, ChevronDown, Sparkles, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
@@ -42,41 +42,71 @@ export default function DashboardLayout({
   useEffect(() => {
     async function checkAuthAndRole() {
       try {
+        // 1. If Supabase is live and configured, attempt Supabase session validation
         if (isConfigured) {
-          // 1. Fetch active session from Supabase
-          const { data: { session }, error } = await supabase.auth.getSession();
+          try {
+            const { data: { session }, error } = await supabase.auth.getSession();
 
-          if (error || !session?.user) {
-            // Unauthenticated: redirect to login
-            router.push("/login");
-            return;
+            if (!error && session?.user) {
+              const role = await getUserRole(session.user.id);
+              setUserRole(role);
+              setUserEmail(session.user.email || "");
+              localStorage.setItem("kurukshetra_active_role", role);
+              localStorage.setItem("kurukshetra_active_email", session.user.email || "");
+
+              if (pathname === "/dashboard" || pathname === "/dashboard/") {
+                router.push(`/dashboard/${role}`);
+              }
+              setLoading(false);
+              return;
+            }
+          } catch (supaErr) {
+            console.warn("Supabase session check error:", supaErr);
           }
+        }
 
-          // 2. Fetch role from 'profiles' table
-          const role = await getUserRole(session.user.id);
-          setUserRole(role);
-          setUserEmail(session.user.email || "");
+        // 2. Local session / demo mode check:
+        const savedRole =
+          (localStorage.getItem("kurukshetra_active_role") as UserRole) ||
+          (localStorage.getItem("kurukshetra_role") as UserRole);
 
-          // 3. Prevent cross-role snooping if desired, or redirect to user's assigned dashboard
-          const currentPath = pathname;
-          if (
-            currentPath === "/dashboard" ||
-            currentPath === "/dashboard/"
-          ) {
-            router.push(`/dashboard/${role}`);
-          }
-        } else {
-          // Fallback / evaluation mode when remote Supabase keys are not set
-          const savedRole = (localStorage.getItem("kurukshetra_active_role") as UserRole) || "authority";
-          const savedEmail = localStorage.getItem("kurukshetra_active_email") || "commander@kurukshetra.gov.in";
+        const savedEmail =
+          localStorage.getItem("kurukshetra_active_email") ||
+          (savedRole === "citizen"
+            ? "citizen@kurukshetra.gov.in"
+            : savedRole === "rescue"
+            ? "rescue@kurukshetra.gov.in"
+            : "commander@kurukshetra.gov.in");
 
+        if (savedRole) {
           setUserRole(savedRole);
           setUserEmail(savedEmail);
 
           if (pathname === "/dashboard" || pathname === "/dashboard/") {
             router.push(`/dashboard/${savedRole}`);
           }
+          setLoading(false);
+          return;
         }
+
+        // 3. Fallback for demo mode: if demo mode is enabled, auto-assign authority
+        if (isDemoMode) {
+          const defaultDemoRole: UserRole = "authority";
+          const defaultDemoEmail = "commander@kurukshetra.gov.in";
+          setUserRole(defaultDemoRole);
+          setUserEmail(defaultDemoEmail);
+          localStorage.setItem("kurukshetra_active_role", defaultDemoRole);
+          localStorage.setItem("kurukshetra_active_email", defaultDemoEmail);
+
+          if (pathname === "/dashboard" || pathname === "/dashboard/") {
+            router.push(`/dashboard/${defaultDemoRole}`);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Neither Supabase session nor saved local session found: redirect to login
+        router.push("/login");
       } catch (err) {
         console.error("Auth layout validation error:", err);
         router.push("/login");
@@ -86,7 +116,7 @@ export default function DashboardLayout({
     }
 
     checkAuthAndRole();
-  }, [pathname, router]);
+  }, [pathname, router, isDemoMode]);
 
   // Handle user logout
   const handleLogout = async () => {
@@ -94,19 +124,31 @@ export default function DashboardLayout({
       if (isConfigured) {
         await supabase.auth.signOut();
       }
-      localStorage.removeItem("kurukshetra_active_role");
-      localStorage.removeItem("kurukshetra_active_email");
-      router.push("/login");
     } catch (err) {
       console.error("Sign out error:", err);
+    } finally {
+      localStorage.removeItem("kurukshetra_active_role");
+      localStorage.removeItem("kurukshetra_active_email");
+      localStorage.removeItem("kurukshetra_role");
+      localStorage.removeItem("kurukshetra_user");
+      document.cookie = "kurukshetra_role=; path=/; max-age=0";
       router.push("/login");
     }
   };
 
   // Switch role immediately in demo mode
   const handleRoleSwitch = (targetRole: UserRole) => {
+    let emailForRole = "commander@kurukshetra.gov.in";
+    if (targetRole === "citizen") emailForRole = "citizen@kurukshetra.gov.in";
+    else if (targetRole === "rescue") emailForRole = "rescue@kurukshetra.gov.in";
+
     localStorage.setItem("kurukshetra_active_role", targetRole);
+    localStorage.setItem("kurukshetra_active_email", emailForRole);
+    localStorage.setItem("kurukshetra_role", targetRole);
+    document.cookie = `kurukshetra_role=${targetRole}; path=/; max-age=86400`;
+
     setUserRole(targetRole);
+    setUserEmail(emailForRole);
     setDemoMenuOpen(false);
     router.push(`/dashboard/${targetRole}`);
   };
