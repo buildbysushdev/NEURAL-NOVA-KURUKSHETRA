@@ -155,18 +155,20 @@ export default function DashboardLayout({
     router.push(`/dashboard/${targetRole}`);
   };
 
+  const isCitizen = pathname?.includes("/citizen");
+
   // Loading spinner while verifying credentials
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500 mb-3" />
-        <p className="text-xs font-mono uppercase tracking-widest text-slate-400">Verifying Tactical Session...</p>
+      <div className="min-h-screen bg-[#12161C] flex flex-col items-center justify-center text-[#F6F4EF]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F6F4EF] mb-3" strokeWidth={1.75} />
+        <p className="text-xs font-mono uppercase tracking-widest text-[#8A99AD]">Verifying Tactical Session...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className={`min-h-screen flex flex-col ${isCitizen ? "bg-[#F6F4EF] text-[#1A1A1A] font-public-sans" : "bg-[#12161C] text-[#F6F4EF] font-ibm-sans"}`}>
       {/* Topbar */}
       <AppTopbar
         userRole={userRole}
@@ -194,15 +196,17 @@ export default function DashboardLayout({
           title="Tactical Navigation"
           description="Emergency Response Switchboard"
         >
-          <div className="flex flex-col gap-3">
-            <p className="text-[11px] font-mono uppercase text-slate-400">Active Role: {userRole}</p>
+          <div className="flex flex-col gap-3 p-1">
+            <p className="text-[11px] font-mono uppercase text-[#8A99AD]">Active Role: {userRole}</p>
             <div className="flex flex-col gap-2">
               {(["citizen", "rescue", "authority"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => handleRoleSwitch(r)}
-                  className={`px-3 py-2 rounded-md text-xs text-left capitalize font-semibold ${
-                    userRole === r ? "bg-red-600 text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                  className={`px-3 py-2 rounded-sm text-xs text-left capitalize font-semibold border transition-colors ${
+                    userRole === r
+                      ? "bg-[#F6F4EF] text-[#12161C] border-[#F6F4EF]"
+                      : "bg-[#181E26] text-[#8A99AD] border-[#222933] hover:text-[#F6F4EF] hover:bg-[#12161C]"
                   }`}
                 >
                   {r} Dashboard
@@ -211,7 +215,7 @@ export default function DashboardLayout({
             </div>
             <button
               onClick={handleLogout}
-              className="mt-6 px-3 py-2 rounded-md text-xs text-red-400 bg-red-950/40 border border-red-900/60"
+              className="mt-6 px-3 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider text-[#F6F4EF] bg-[#791F1F] hover:bg-[#922626] border border-[#791F1F] transition-colors"
             >
               Sign Out
             </button>
@@ -224,7 +228,9 @@ export default function DashboardLayout({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="flex-1 min-w-0 overflow-y-auto bg-slate-950/60 p-4 sm:p-6 lg:p-8"
+          className={`flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 ${
+            isCitizen ? "bg-[#F6F4EF]" : "bg-[#12161C]"
+          }`}
         >
           <div className="max-w-7xl mx-auto space-y-6">
             {children}
@@ -232,7 +238,7 @@ export default function DashboardLayout({
         </motion.main>
       </div>
 
-      <Toaster richColors position="top-right" theme="dark" />
+      <Toaster richColors position="top-right" theme={isCitizen ? "light" : "dark"} />
     </div>
   );
 }

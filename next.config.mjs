@@ -1,12 +1,30 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Avoid typecheck blocking on Node 26 compatibility quirks
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
+  },
+  async redirects() {
+    return [
+      {
+        source: "/authority",
+        destination: "/dashboard/authority",
+        permanent: false,
+      },
+      {
+        source: "/citizen",
+        destination: "/dashboard/citizen",
+        permanent: false,
+      },
+      {
+        source: "/rescue",
+        destination: "/dashboard/rescue",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

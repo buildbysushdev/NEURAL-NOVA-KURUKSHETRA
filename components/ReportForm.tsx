@@ -338,68 +338,78 @@ export default function ReportForm({
   };
 
   return (
-    <Card className="border-slate-800 bg-slate-900/95 shadow-xl">
-      <CardHeader className="pb-3">
+    <Card className="border border-[#DED9CE] border-l-4 border-l-[#791F1F] bg-[#FFFFFF] text-[#1A1A1A] rounded-sm shadow-none">
+      <CardHeader className="pb-3 border-b border-[#DED9CE]">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+          <CardTitle className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A] flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-[#791F1F]" strokeWidth={1.75} />
             {t("report_incident")}
           </CardTitle>
 
           {/* Online / Offline Status Indicator */}
           {isOnline ? (
-            <span className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Online
+            <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase text-[#3B6D11] bg-[#F6F4EF] border border-[#DED9CE] px-2 py-0.5 rounded-sm">
+              <span className="dot-safe" />
+              TELEMETRY ONLINE
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-[11px] font-mono text-amber-400 bg-amber-950/60 border border-amber-800 px-2 py-0.5 rounded">
-              <WifiOff className="h-3 w-3" />
+            <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase text-[#854F0B] bg-[#F6F4EF] border border-[#DED9CE] px-2 py-0.5 rounded-sm">
+              <WifiOff className="h-3 w-3" strokeWidth={1.75} />
               {t("queued_offline")}
             </span>
           )}
         </div>
-        <CardDescription className="text-xs text-slate-400">
+        <CardDescription className="text-xs text-[#6B655B] mt-0.5">
           {t("report_description")}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4">
         {/* Offline Queued for Sync Banner */}
         {offlineQueueCount > 0 && (
-          <Alert variant="warning" className="border-amber-700/80 bg-amber-950/70">
-            <CloudUpload className="h-4 w-4 text-amber-400" />
-            <AlertTitle className="text-xs font-bold text-amber-300">
-              {t("queued_offline")} ({offlineQueueCount})
-            </AlertTitle>
-            <AlertDescription className="text-xs text-amber-200">
-              You are working in offline mode. Reports will automatically upload to Supabase when connectivity returns.
-            </AlertDescription>
-          </Alert>
+          <div className="border border-[#DED9CE] border-l-4 border-l-[#854F0B] bg-[#F6F4EF] p-3 text-xs text-[#1A1A1A]">
+            <div className="flex items-center gap-2 font-bold mb-0.5">
+              <CloudUpload className="h-3.5 w-3.5 text-[#854F0B]" strokeWidth={1.75} />
+              <span>{t("queued_offline")} ({offlineQueueCount} Cached Reports)</span>
+            </div>
+            <p className="text-[#6B655B]">
+              Operating in offline resilience mode. Reports will automatically upload when connectivity is restored.
+            </p>
+          </div>
         )}
 
         {/* Feedback Alert */}
         {feedback && (
-          <Alert
-            variant={feedback.type === "error" ? "destructive" : feedback.type === "queued" ? "warning" : "success"}
+          <div
+            className={`border border-[#DED9CE] border-l-4 p-3 text-xs rounded-sm ${
+              feedback.type === "error"
+                ? "border-l-[#791F1F] bg-[#F6F4EF]"
+                : feedback.type === "queued"
+                ? "border-l-[#854F0B] bg-[#F6F4EF]"
+                : "border-l-[#3B6D11] bg-[#F6F4EF]"
+            }`}
           >
-            {feedback.type === "error" && <AlertCircle className="h-4 w-4" />}
-            {feedback.type === "queued" && <CloudUpload className="h-4 w-4" />}
-            {feedback.type === "success" && <CheckCircle2 className="h-4 w-4" />}
-            <AlertTitle className="text-xs font-bold capitalize">{feedback.type}</AlertTitle>
-            <AlertDescription className="text-xs">{feedback.message}</AlertDescription>
-          </Alert>
+            <div className="flex items-center gap-2 font-bold mb-0.5">
+              {feedback.type === "error" && <AlertCircle className="h-3.5 w-3.5 text-[#791F1F]" strokeWidth={1.75} />}
+              {feedback.type === "queued" && <CloudUpload className="h-3.5 w-3.5 text-[#854F0B]" strokeWidth={1.75} />}
+              {feedback.type === "success" && <CheckCircle2 className="h-3.5 w-3.5 text-[#3B6D11]" strokeWidth={1.75} />}
+              <span className="capitalize">{feedback.type} Notification</span>
+            </div>
+            <p className="text-[#6B655B]">{feedback.message}</p>
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Disaster Type (Select) */}
           <div className="space-y-1">
-            <Label htmlFor="disasterType">{t("disaster_type")}</Label>
+            <Label htmlFor="disasterType" className="text-xs font-mono uppercase text-[#6B655B]">
+              {t("disaster_type")}
+            </Label>
             <select
               id="disasterType"
               value={disasterType}
               onChange={(e) => setDisasterType(e.target.value)}
-              className="w-full h-9 rounded-md border border-slate-800 bg-slate-950 px-3 py-1 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className="w-full h-9 rounded-sm border border-[#DED9CE] bg-[#F6F4EF]/50 px-3 py-1 text-xs text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]"
             >
               <option value="Flood">Flood / Water Surge</option>
               <option value="Fire">Fire / Transformer Burst</option>
@@ -413,32 +423,34 @@ export default function ReportForm({
 
           {/* Severity Select */}
           <div className="space-y-1">
-            <Label htmlFor="severity">Urgency Assessment</Label>
+            <Label htmlFor="severity" className="text-xs font-mono uppercase text-[#6B655B]">
+              Urgency Assessment
+            </Label>
             <select
               id="severity"
               value={severity}
               onChange={(e) => setSeverity(e.target.value as any)}
-              className="w-full h-9 rounded-md border border-slate-800 bg-slate-950 px-3 py-1 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className="w-full h-9 rounded-sm border border-[#DED9CE] bg-[#F6F4EF]/50 px-3 py-1 text-xs text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]"
             >
-              <option value="CRITICAL">Critical (Life Threat / Trapped Persons)</option>
-              <option value="HIGH">High (Immediate Property/Access Danger)</option>
-              <option value="MODERATE">Moderate (Rising Water / Utility Outage)</option>
-              <option value="LOW">Low (Precautionary / Blocked Lane)</option>
+              <option value="CRITICAL">Critical (Immediate Life Danger / Persons Trapped)</option>
+              <option value="HIGH">High (Rising Water / Structural Risk)</option>
+              <option value="MODERATE">Moderate (Power / Access Outage)</option>
+              <option value="LOW">Low (Blocked Access / Precautionary)</option>
             </select>
           </div>
 
           {/* Location: Browser navigator.geolocation auto-fill */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label>{t("gps_coordinates")}</Label>
+              <Label className="text-xs font-mono uppercase text-[#6B655B]">{t("gps_coordinates")}</Label>
               <button
                 type="button"
                 onClick={detectGeolocation}
                 disabled={locating}
-                className="text-[11px] font-mono text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                className="text-[11px] font-mono text-[#1A1A1A] hover:underline flex items-center gap-1 transition-colors"
               >
-                <Navigation className="h-3 w-3" />
-                {locating ? "Acquiring GPS..." : t("fetch_gps")}
+                <Navigation className="h-3 w-3" strokeWidth={1.75} />
+                {locating ? "Acquiring Coordinates..." : "Acquire GPS Coordinates"}
               </button>
             </div>
 
@@ -450,9 +462,9 @@ export default function ReportForm({
                   value={latitude}
                   onChange={(e) => setLatitude(e.target.value)}
                   required
-                  className="bg-slate-950 border-slate-800 text-xs font-mono pl-7"
+                  className="bg-[#F6F4EF]/50 border-[#DED9CE] text-[#1A1A1A] text-xs font-mono pl-7 rounded-sm focus-visible:ring-2 focus-visible:ring-[#1A1A1A]"
                 />
-                <MapPin className="h-3.5 w-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                <MapPin className="h-3.5 w-3.5 text-[#6B655B] absolute left-2.5 top-2.5" strokeWidth={1.75} />
               </div>
 
               <div className="relative">
@@ -462,16 +474,18 @@ export default function ReportForm({
                   value={longitude}
                   onChange={(e) => setLongitude(e.target.value)}
                   required
-                  className="bg-slate-950 border-slate-800 text-xs font-mono pl-7"
+                  className="bg-[#F6F4EF]/50 border-[#DED9CE] text-[#1A1A1A] text-xs font-mono pl-7 rounded-sm focus-visible:ring-2 focus-visible:ring-[#1A1A1A]"
                 />
-                <MapPin className="h-3.5 w-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                <MapPin className="h-3.5 w-3.5 text-[#6B655B] absolute left-2.5 top-2.5" strokeWidth={1.75} />
               </div>
             </div>
           </div>
 
           {/* Description (Textarea) */}
           <div className="space-y-1">
-            <Label htmlFor="description">{t("incident_details")}</Label>
+            <Label htmlFor="description" className="text-xs font-mono uppercase text-[#6B655B]">
+              {t("incident_details")}
+            </Label>
             <textarea
               id="description"
               rows={3}
@@ -479,17 +493,19 @@ export default function ReportForm({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
-              className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500 resize-none"
+              className="w-full rounded-sm border border-[#DED9CE] bg-[#F6F4EF]/50 px-3 py-2 text-xs text-[#1A1A1A] placeholder:text-[#6B655B] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A] resize-none"
             />
           </div>
 
-          {/* Photo (File Input) with Preview */}
+          {/* Photo File Input with Preview */}
           <div className="space-y-1">
-            <Label htmlFor="photo">Attach Photo Evidence (Optional)</Label>
+            <Label htmlFor="photo" className="text-xs font-mono uppercase text-[#6B655B]">
+              Attach Photo Evidence (Optional)
+            </Label>
             <div className="flex items-center gap-2">
-              <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-slate-700 hover:border-slate-500 rounded-md bg-slate-950 text-xs text-slate-300 cursor-pointer transition-colors w-full">
-                <Camera className="h-3.5 w-3.5 text-slate-400" />
-                <span>{photoPreview ? "Change Selected Photo" : "Upload Hazard Photo"}</span>
+              <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-[#DED9CE] hover:border-[#1A1A1A] rounded-sm bg-[#F6F4EF]/30 text-xs text-[#6B655B] hover:text-[#1A1A1A] cursor-pointer transition-colors w-full">
+                <Camera className="h-3.5 w-3.5 text-[#6B655B]" strokeWidth={1.75} />
+                <span>{photoPreview ? "Replace Selected Photo" : "Upload Sector Hazard Photo"}</span>
                 <input
                   id="photo"
                   type="file"
@@ -501,7 +517,7 @@ export default function ReportForm({
             </div>
 
             {photoPreview && (
-              <div className="relative mt-2 rounded-md overflow-hidden border border-slate-800 max-h-36">
+              <div className="relative mt-2 rounded-sm overflow-hidden border border-[#DED9CE] max-h-36">
                 <img
                   src={photoPreview}
                   alt="Hazard preview"
@@ -510,7 +526,7 @@ export default function ReportForm({
                 <button
                   type="button"
                   onClick={() => setPhotoPreview(null)}
-                  className="absolute top-1.5 right-1.5 bg-slate-950/80 text-white rounded px-1.5 py-0.5 text-[10px] hover:bg-red-950"
+                  className="absolute top-1.5 right-1.5 bg-[#1A1A1A]/80 text-[#F6F4EF] rounded px-1.5 py-0.5 text-[10px]"
                 >
                   Remove
                 </button>
@@ -518,23 +534,23 @@ export default function ReportForm({
             )}
           </div>
 
-          {/* Submit Button */}
-          <Button
+          {/* Primary Action Button (Specific Verb Phrase, Max 1 per screen) */}
+          <button
             type="submit"
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-5"
             disabled={submitting}
+            className="w-full h-10 rounded-sm bg-[#1A1A1A] text-[#F6F4EF] hover:bg-black font-semibold text-xs uppercase tracking-wider transition-colors disabled:opacity-40 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] flex items-center justify-center gap-2"
           >
             {submitting ? (
               <span className="flex items-center gap-1.5">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {isOnline ? "Transmitting to Dispatch..." : "Saving Offline..."}
+                <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} />
+                {isOnline ? "Transmitting Incident to Sentinel Dispatch..." : "Caching Report Locally..."}
               </span>
             ) : isOnline ? (
-              t("submit_report")
+              "Transmit Emergency Incident Report"
             ) : (
-              t("queued_offline")
+              "Cache Report for Offline Sync"
             )}
-          </Button>
+          </button>
         </form>
       </CardContent>
     </Card>

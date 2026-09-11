@@ -190,61 +190,59 @@ export default function InventoryTable() {
   ).length;
 
   return (
-    <Card className="border-border/60 bg-card/85 backdrop-blur-md shadow-xl overflow-hidden">
-      <CardHeader className="border-b border-border/40 pb-4">
+    <Card className="border border-[#222933] bg-[#181E26] text-[#F6F4EF] rounded-sm shadow-none overflow-hidden font-ibm-sans">
+      <CardHeader className="p-4 border-b border-[#222933]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <CardTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
-                <Package className="w-5 h-5 text-blue-400" />
-                Strategic Relief Inventory
+              <Package className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
+              <CardTitle className="text-xs font-bold uppercase tracking-wider font-mono text-[#F6F4EF]">
+                REGIONAL SUPPLY DEPOT INVENTORY
               </CardTitle>
 
               {lowStockCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  {lowStockCount} CRITICAL DEFICIT
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm font-ibm-mono text-[10px] uppercase text-[#791F1F] bg-[#12161C] border border-[#791F1F]">
+                  <span className="dot-critical" />
+                  {lowStockCount} DEFICIT ALERTS
                 </span>
               )}
             </div>
-            <CardDescription className="text-xs text-muted-foreground mt-1">
-              Live automated stockpile telemetry. Items falling below safe thresholds are highlighted in red.
+            <CardDescription className="text-xs text-[#8A99AD] mt-0.5">
+              Live automated stockpile telemetry. Items falling below quota are highlighted with severity indicators.
             </CardDescription>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground hidden md:inline">
-              Replenishment Auto-Order: <strong className="text-emerald-400">ACTIVE</strong>
-            </span>
+          <div className="flex items-center gap-2 font-ibm-mono text-[11px] text-[#8A99AD]">
+            <span>AUTO-DISPATCH: <strong className="text-[#3B6D11]">ACTIVE</strong></span>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs sm:text-sm">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-border/50 bg-muted/40 text-muted-foreground font-semibold uppercase text-[11px] tracking-wider">
-                <th className="py-3 px-4">Resource Item</th>
-                <th className="py-3 px-4">Category</th>
-                <th className="py-3 px-4">Available Stock</th>
-                <th className="py-3 px-4">Stock Level</th>
-                <th className="py-3 px-4">Allocated</th>
-                <th className="py-3 px-4">Threshold</th>
-                <th className="py-3 px-4 text-right">Quick Restock</th>
+              <tr className="border-b border-[#222933] bg-[#12161C] text-[#8A99AD] font-mono uppercase text-[10px] tracking-wider">
+                <th className="py-2.5 px-4">Resource Asset</th>
+                <th className="py-2.5 px-4">Category</th>
+                <th className="py-2.5 px-4">Available</th>
+                <th className="py-2.5 px-4">Stock Level</th>
+                <th className="py-2.5 px-4">Allocated</th>
+                <th className="py-2.5 px-4">Threshold</th>
+                <th className="py-2.5 px-4 text-right">Quota Control</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/30">
+            <tbody className="divide-y divide-[#222933]/60">
               {loading ? (
-                Array.from({ length: 5 }).map((_, idx) => (
+                Array.from({ length: 4 }).map((_, idx) => (
                   <tr key={idx} className="p-3">
-                    <td className="py-3 px-4"><Skeleton className="h-4 w-40" /></td>
-                    <td className="py-3 px-4"><Skeleton className="h-4 w-20" /></td>
-                    <td className="py-3 px-4"><Skeleton className="h-4 w-16" /></td>
-                    <td className="py-3 px-4"><Skeleton className="h-2 w-28 rounded-full" /></td>
-                    <td className="py-3 px-4"><Skeleton className="h-4 w-16" /></td>
-                    <td className="py-3 px-4"><Skeleton className="h-4 w-12" /></td>
-                    <td className="py-3 px-4 text-right"><Skeleton className="h-7 w-16 ml-auto rounded-md" /></td>
+                    <td className="py-3 px-4"><Skeleton className="h-4 w-36 bg-[#222933]" /></td>
+                    <td className="py-3 px-4"><Skeleton className="h-4 w-20 bg-[#222933]" /></td>
+                    <td className="py-3 px-4"><Skeleton className="h-4 w-16 bg-[#222933]" /></td>
+                    <td className="py-3 px-4"><Skeleton className="h-2 w-28 bg-[#222933]" /></td>
+                    <td className="py-3 px-4"><Skeleton className="h-4 w-16 bg-[#222933]" /></td>
+                    <td className="py-3 px-4"><Skeleton className="h-4 w-12 bg-[#222933]" /></td>
+                    <td className="py-3 px-4 text-right"><Skeleton className="h-6 w-16 ml-auto bg-[#222933]" /></td>
                   </tr>
                 ))
               ) : (
@@ -255,114 +253,98 @@ export default function InventoryTable() {
                   return (
                     <tr
                       key={item.id}
-                      className={`transition-colors hover:bg-muted/30 ${
-                        isCritical ? "bg-red-500/[0.07] hover:bg-red-500/[0.12]" : ""
+                      className={`transition-colors hover:bg-[#12161C]/60 ${
+                        isCritical ? "border-l-4 border-l-[#791F1F] bg-[#12161C]/30" : ""
                       }`}
                     >
-                    {/* Item Name */}
-                    <td className="py-3.5 px-4 font-semibold text-foreground">
-                      <div className="flex items-center gap-2">
-                        {getCategoryIcon(item.category)}
-                        <div>
-                          <div className="font-bold flex items-center gap-1.5">
-                            {item.name}
-                            {isCritical && (
-                              <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase text-red-400 bg-red-950/80 border border-red-800/80 px-1.5 py-0.2 rounded">
-                                <AlertOctagon className="w-3 h-3" />
-                                LOW STOCK
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            Unit: {item.unit} • Cap: {item.total_capacity.toLocaleString()}
+                      {/* Item Name */}
+                      <td className="py-3 px-4 font-semibold text-[#F6F4EF]">
+                        <div className="flex items-center gap-2">
+                          {getCategoryIcon(item.category)}
+                          <div>
+                            <div className="font-bold flex items-center gap-1.5">
+                              {item.name}
+                              {isCritical && (
+                                <span className="inline-flex items-center gap-1 font-ibm-mono text-[9px] uppercase text-[#791F1F] bg-[#12161C] border border-[#222933] px-1 py-0.2 rounded-sm">
+                                  <span className="dot-critical" />
+                                  LOW
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-ibm-mono text-[10px] text-[#8A99AD]">
+                              Unit: {item.unit} • Cap: {item.total_capacity.toLocaleString()}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Category */}
-                    <td className="py-3.5 px-4">
-                      <span className="capitalize text-xs font-medium px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground border border-border/50">
+                      {/* Category */}
+                      <td className="py-3 px-4 font-ibm-mono text-[10px] uppercase text-[#8A99AD]">
                         {item.category}
-                      </span>
-                    </td>
+                      </td>
 
-                    {/* Available Quantity - HIGHLIGHTED RED ON LOW STOCK */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-baseline gap-1">
-                        <span
-                          className={`text-base font-black ${
-                            isCritical ? "text-red-500 animate-pulse font-mono" : "text-foreground"
-                          }`}
-                        >
-                          {item.available_qty.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{item.unit}</span>
-                      </div>
-                    </td>
+                      {/* Available Quantity */}
+                      <td className="py-3 px-4 font-ibm-mono font-bold text-[#F6F4EF]">
+                        {item.available_qty.toLocaleString()} {item.unit}
+                      </td>
 
-                    {/* Progress Level */}
-                    <td className="py-3.5 px-4 min-w-[130px]">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className={isCritical ? "text-red-400 font-bold" : "text-muted-foreground"}>
-                            {percent}% Capacity
-                          </span>
+                      {/* Stock Level Bar */}
+                      <td className="py-3 px-4">
+                        <div className="w-32 space-y-1">
+                          <div className="flex justify-between font-ibm-mono text-[9px] text-[#8A99AD]">
+                            <span>{percent}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-[#12161C] border border-[#222933] rounded-sm overflow-hidden">
+                            <div
+                              className={`h-full ${
+                                isCritical
+                                  ? "bg-[#791F1F]"
+                                  : percent < 40
+                                  ? "bg-[#854F0B]"
+                                  : "bg-[#3B6D11]"
+                              }`}
+                              style={{ width: `${Math.min(100, percent)}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all duration-500 rounded-full ${
-                              isCritical
-                                ? "bg-red-500"
-                                : percent < 40
-                                ? "bg-amber-500"
-                                : "bg-emerald-500"
-                            }`}
-                            style={{ width: `${Math.min(100, percent)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Allocated Quantity */}
-                    <td className="py-3.5 px-4 font-mono text-muted-foreground">
-                      {item.allocated_qty.toLocaleString()} {item.unit}
-                    </td>
+                      {/* Allocated Quantity */}
+                      <td className="py-3 px-4 font-ibm-mono text-[#8A99AD]">
+                        {item.allocated_qty.toLocaleString()} {item.unit}
+                      </td>
 
-                    {/* Critical Threshold */}
-                    <td className="py-3.5 px-4">
-                      <span className="text-xs font-semibold text-muted-foreground">
+                      {/* Critical Threshold */}
+                      <td className="py-3 px-4 font-ibm-mono text-[10px] text-[#8A99AD]">
                         &lt; {item.critical_threshold} {item.unit}
-                      </span>
-                    </td>
+                      </td>
 
-                    {/* Quick Restock Adjusters */}
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="inline-flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => adjustStock(item.id, -25)}
-                          disabled={item.available_qty <= 0}
-                          className="h-7 w-7 border-border/60 hover:bg-muted"
-                          title="Deploy / Reduce Stock"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => adjustStock(item.id, 50)}
-                          className="h-7 w-7 border-border/60 hover:bg-muted text-emerald-400"
-                          title="Replenish +50"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }))}
+                      {/* Quick Restock Adjusters */}
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => adjustStock(item.id, -25)}
+                            disabled={item.available_qty <= 0}
+                            className="h-6 w-6 rounded-sm border border-[#222933] bg-[#12161C] hover:bg-[#222933] text-[#8A99AD] hover:text-[#F6F4EF] flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                            title="Deploy 25 Units"
+                          >
+                            <Minus className="w-3 h-3" strokeWidth={1.75} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => adjustStock(item.id, 50)}
+                            className="h-6 w-6 rounded-sm border border-[#222933] bg-[#12161C] hover:bg-[#222933] text-[#3B6D11] hover:text-white flex items-center justify-center transition-colors"
+                            title="Replenish 50 Units"
+                          >
+                            <Plus className="w-3 h-3" strokeWidth={1.75} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

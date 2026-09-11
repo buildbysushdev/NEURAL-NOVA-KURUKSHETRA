@@ -1,36 +1,44 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const Button = React.forwardRef(({ className, variant = "default", size = "default", ...props }, ref) => {
-  const variants = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-    destructive: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
-    outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    urgent: "bg-red-600 text-white hover:bg-red-700 font-semibold shadow-md shadow-red-950/40 animate-pulse",
-  };
+const Button = React.forwardRef(
+  ({ className, variant = "secondary", size = "default", ...props }, ref) => {
+    const variants = {
+      primary:
+        "bg-[#F6F4EF] text-[#12161C] hover:bg-white active:bg-[#E5E1D8] font-semibold border border-transparent shadow-none",
+      secondary:
+        "bg-transparent text-[#F6F4EF] border border-[#222933] hover:bg-[#1B222B] hover:border-[#384454] active:bg-[#141920]",
+      destructive:
+        "bg-[#791F1F] text-[#F6F4EF] border border-[#791F1F] hover:bg-[#922626] active:bg-[#681919]",
+      default:
+        "bg-[#F6F4EF] text-[#12161C] hover:bg-white active:bg-[#E5E1D8] font-semibold border border-transparent",
+      outline:
+        "bg-transparent text-[#F6F4EF] border border-[#222933] hover:bg-[#1B222B] hover:border-[#384454]",
+    };
 
-  const sizes = {
-    default: "h-9 px-4 py-2 text-sm",
-    sm: "h-8 rounded-md px-3 text-xs",
-    lg: "h-11 rounded-md px-8 text-base",
-    icon: "h-9 w-9",
-  };
+    const sizes = {
+      default: "h-9 px-4 py-2 text-xs uppercase tracking-wider font-semibold",
+      sm: "h-7 px-2.5 text-[11px] uppercase tracking-wider font-medium",
+      lg: "h-11 px-6 text-sm uppercase tracking-wider font-bold",
+      icon: "h-8 w-8 p-0",
+    };
 
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        className
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-});
+    return (
+      <button
+        className={cn(
+          "inline-flex items-center justify-center gap-2 rounded-sm select-none transition-colors duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6F4EF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#12161C]",
+          "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none",
+          variants[variant] || variants.secondary,
+          sizes[size],
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
 Button.displayName = "Button";
 
 export { Button };

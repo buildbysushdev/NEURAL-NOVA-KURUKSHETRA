@@ -3,71 +3,83 @@
 /**
  * ==============================================================================
  * KURUKSHETRA PS20 - AGENTIC DISASTER RELIEF
- * Citizen Dashboard (app/dashboard/citizen/page.tsx)
+ * Citizen Emergency Portal (/dashboard/citizen/page.tsx)
  * ==============================================================================
  * 
- * Includes:
- * 1. Big Safety Status Badge (Green "SAFE" / Red "DANGER") based on nearby hazards
- * 2. ReportForm component with offline queueing & GPS auto-fill
- * 3. AlertMap component with React Leaflet and Red Pins for high severity incidents
- * 4. Priority Emergency SOS Trigger
+ * Strict Institutional Design System:
+ * - Base: Warm off-white #F6F4EF, Text: Charcoal #1A1A1A
+ * - Typography: Public Sans for body text, IBM Plex Mono for metrics/coordinates
+ * - Severity Colors: ONLY as left-border strips & small status dots (no full background fills)
+ * - Persistent Active Disaster Warning Banner (dismissible, re-arms on severity increase)
+ * - Hero: Large Safety Status Indicator Card
+ * - Incident Reporting Form with GPS acquisition and photo evidence upload
+ * - Interactive Citizen Sentinel Chatbot (smart autoscroll, 3-dot typing indicator, hover timestamps)
+ * - Simplified Relief & Safe Zones Map
  */
 
 import React, { useState, useEffect } from "react";
 import ReportForm, { IncidentReport } from "@/components/ReportForm";
-import AlertMap, { MapIncident } from "@/components/AlertMap";
+import { CitizenChatbot } from "@/components/citizen/CitizenChatbot";
+import { ActiveDisasterBanner } from "@/components/citizen/ActiveDisasterBanner";
+import AlertMap from "@/components/AlertMap";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ShieldCheck, AlertOctagon, LifeBuoy, Radio, PhoneCall, CheckCircle } from "lucide-react";
+import {
+  ShieldCheck,
+  AlertOctagon,
+  LifeBuoy,
+  MapPin,
+  Send,
+  Radio,
+  PhoneCall,
+  CheckCircle2,
+  Navigation,
+  Clock,
+  Compass,
+  Home
+} from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function CitizenDashboardPage() {
-  // Citizen state - Default centered on Chennai Emergency Grid
-  const [nearbyCriticalCount, setNearbyCriticalCount] = useState<number>(2);
-  const [userLocation, setUserLocation] = useState<[number, number]>([13.0827, 80.2707]);
-  const [recentCitizenReports, setRecentCitizenReports] = useState<IncidentReport[]>([]);
-  const [sosActive, setSosActive] = useState<boolean>(false);
+  const { language, t } = useLanguage();
 
-  // Realtime subscription via lib/realtimeSubscriptions.ts
+  const [nearbyCriticalCount, setNearbyCriticalCount] = useState<number>(1);
+  const [activeZoneScore, setActiveZoneScore] = useState<number>(8);
+  const [userLocation, setUserLocation] = useState<[number, number]>([13.0827, 80.2707]);
+  const [recentReports, setRecentReports] = useState<IncidentReport[]>([]);
+  const [activeTab, setActiveTab] = useState<"report" | "chat" | "map">("report");
+
+  // Realtime subscription for incoming safety broadcasts
   useEffect(() => {
     const unsubscribe = subscribeToIncidents((payload) => {
       if (payload.eventType === "INSERT") {
         const item = payload.new;
-        if (item && (item.location_lat || item.latitude) && (item.location_lng || item.longitude)) {
+        if (item && (item.location_lat || item.latitude)) {
           const lat = Number(item.location_lat ?? item.latitude);
           const lng = Number(item.location_lng ?? item.longitude);
-          const score = item.severity_score !== undefined ? Number(item.severity_score) : undefined;
-          const sev = score !== undefined
-            ? score >= 8 ? "CRITICAL" : score >= 6 ? "HIGH" : score >= 4 ? "MODERATE" : "LOW"
-            : item.severity || "HIGH";
+          const score = item.severity_score !== undefined ? Number(item.severity_score) : 7;
 
           const report: IncidentReport = {
-            id: item.id?.toString() || `INC-${Math.random()}`,
-            type: item.type || "Hazard Alert",
-            description: item.description || "Active hazard reported in the sector.",
+            id: item.id?.toString() || `inc-${Date.now()}`,
+            type: item.type || "Hazard Notification",
+            description: item.description || "Active emergency coordinate.",
             location_lat: lat,
             location_lng: lng,
             latitude: lat,
             longitude: lng,
-            severity: sev,
+            severity: score >= 8 ? "CRITICAL" : score >= 6 ? "HIGH" : "MODERATE",
             severity_score: score,
             needed_resources: item.needed_resources || [],
-            created_at: item.created_at
+            created_at: item.created_at || new Date().toISOString(),
           };
 
-          setRecentCitizenReports((prev) => [report, ...prev]);
+          setRecentReports((prev) => [report, ...prev]);
 
-          if (report.severity === "CRITICAL" || report.severity === "HIGH") {
+          if (score >= 8) {
             setNearbyCriticalCount((c) => c + 1);
-            toast.error(`🚨 Emergency Hazard Broadcasted: ${report.type}`, {
-              description: report.description,
-              duration: 7000
-            });
-          } else {
-            toast.info(`⚠️ Advisory: ${report.type}`, {
-              description: report.description
-            });
+            setActiveZoneScore(score);
           }
         }
       }
@@ -78,161 +90,226 @@ export default function CitizenDashboardPage() {
     };
   }, []);
 
-  // Determine Safety Status: DANGER if critical incidents exist nearby, SAFE otherwise
-  const isDanger = nearbyCriticalCount > 0;
-
-  // Handle new incident report added by citizen
-  const handleNewReport = (newReport: IncidentReport) => {
-    setRecentCitizenReports((prev) => [newReport, ...prev]);
-  };
+  const isHazardActive = nearbyCriticalCount > 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
-      
-      {/* Top Banner: Big Safety Status Badge (Green "SAFE" / Red "DANGER") */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border bg-slate-900/90 shadow-xl transition-colors">
+    <div className="theme-citizen min-h-screen bg-[#F6F4EF] text-[#1A1A1A] font-public-sans pb-16">
+      <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* Big Safety Status Badge */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {isDanger ? (
-            <div className="flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-red-600/20 border-2 border-red-500 text-red-500 shadow-lg shadow-red-950/60 shrink-0 animate-pulse">
-              <AlertOctagon className="h-8 w-8 sm:h-9 sm:w-9" />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-emerald-600/20 border-2 border-emerald-500 text-emerald-400 shadow-lg shadow-emerald-950/60 shrink-0">
-              <ShieldCheck className="h-8 w-8 sm:h-9 sm:w-9" />
-            </div>
-          )}
+        {/* PERSISTENT ACTIVE DISASTER WARNING BANNER */}
+        {isHazardActive && (
+          <ActiveDisasterBanner
+            zoneName="Marina Waterfront Sector B // Storm Surge Warning"
+            severityLevel="critical"
+            severityScore={activeZoneScore}
+            advisoryText="High-tide inundation breaching lower roadways. Designated Safe Zone: Central Multi-Story Shelter Alpha (800m inland)."
+          />
+        )}
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase text-slate-400 font-semibold tracking-wider">
-                Your Sector Safety Status
-              </span>
-              <Badge
-                className={`font-mono font-bold text-xs uppercase px-2.5 py-0.5 ${
-                  isDanger
-                    ? "bg-red-600 text-white border-red-500 shadow-md shadow-red-950"
-                    : "bg-emerald-600 text-white border-emerald-500"
+        {/* HERO SECTION: Large Safety Status Indicator Card */}
+        <div
+          className={`border border-[#DED9CE] bg-[#FFFFFF] p-5 sm:p-6 rounded-sm border-l-4 ${
+            isHazardActive ? "border-l-[#791F1F]" : "border-l-[#3B6D11]"
+          }`}
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div
+                className={`w-12 h-12 rounded-sm flex items-center justify-center flex-shrink-0 ${
+                  isHazardActive
+                    ? "bg-[#F6F4EF] text-[#791F1F] border border-[#DED9CE]"
+                    : "bg-[#F6F4EF] text-[#3B6D11] border border-[#DED9CE]"
                 }`}
               >
-                {isDanger ? "DANGER • HIGH ALERT" : "SAFE • NORMAL"}
-              </Badge>
+                {isHazardActive ? (
+                  <AlertOctagon className="w-7 h-7" strokeWidth={1.75} />
+                ) : (
+                  <ShieldCheck className="w-7 h-7" strokeWidth={1.75} />
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={isHazardActive ? "dot-critical" : "dot-safe"} />
+                  <span className="font-ibm-mono text-xs uppercase tracking-widest text-[#6B655B]">
+                    CITIZEN TELEMETRY SECTOR: CHENNAI CENTRAL
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1A1A1A]">
+                  {isHazardActive
+                    ? "Active Alert: Elevate Precautionary Readiness"
+                    : "Your Sector is Classified Stable"}
+                </h2>
+                <p className="text-xs text-[#6B655B] mt-1 leading-relaxed">
+                  {isHazardActive
+                    ? "Automated Sentinel sensors have registered rising surge activity within 1.5 km of your location."
+                    : "All emergency barriers active. Potable water distribution and medical aid hubs operational."}
+                </p>
+              </div>
             </div>
 
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
-              {isDanger
-                ? "Active Critical Hazards Detected Within 2.5km"
-                : "No Immediate Threat Detected In Your Sector"}
-            </h2>
+            {/* Quick Action Verbs */}
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  toast.success("Emergency SOS Signal Transmitted", {
+                    description: "High-priority distress beacon routed to Rescue Squad Alpha.",
+                  });
+                }}
+                className="h-9 px-4 text-xs font-bold"
+              >
+                <Radio className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />
+                Broadcast Emergency SOS
+              </Button>
+            </div>
+          </div>
 
-            <p className="text-xs text-slate-400 max-w-xl">
-              {isDanger
-                ? "River level has crested safety barriers at Lower Basin. Evacuate ground floor levels and avoid Route 14 arterial bypass."
-                : "All local stormwater retention basins are nominal. Emergency communications channels remain on standby."}
-            </p>
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-[#DED9CE]">
+            <div>
+              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
+                Nearest Safe Depot
+              </span>
+              <span className="font-ibm-mono text-xs font-bold text-[#1A1A1A]">
+                Marina Central (0.8 km)
+              </span>
+            </div>
+            <div>
+              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
+                Local Threat Level
+              </span>
+              <span className="font-ibm-mono text-xs font-bold text-[#791F1F]">
+                SEV 8 // CRITICAL
+              </span>
+            </div>
+            <div>
+              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
+                Rescue Dispatch Status
+              </span>
+              <span className="font-ibm-mono text-xs font-bold text-[#3B6D11]">
+                SQUAD #4 EN ROUTE
+              </span>
+            </div>
+            <div>
+              <span className="font-ibm-mono text-[10px] uppercase text-[#6B655B] block">
+                Relief Kits Stocked
+              </span>
+              <span className="font-ibm-mono text-xs font-bold text-[#1A1A1A]">
+                3,000 Rations Ready
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Priority SOS Trigger Button */}
-        <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto">
-          <Button
-            size="lg"
-            variant="urgent"
-            onClick={() => setSosActive(!sosActive)}
-            className="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm py-6 px-6 shadow-xl shadow-red-950/60"
-          >
-            <LifeBuoy className="mr-2 h-5 w-5" />
-            {sosActive ? "SOS BEACON BROADCASTING" : "BROADCAST LIFE SOS"}
-          </Button>
-        </div>
-      </div>
-
-      {/* SOS Active Confirmation Notification */}
-      {sosActive && (
-        <div className="p-4 rounded-lg bg-red-950/90 border-2 border-red-600 text-red-200 text-xs flex items-center justify-between gap-3 shadow-lg animate-bounce">
-          <div className="flex items-center gap-2 font-bold font-mono">
-            <span className="h-2.5 w-2.5 rounded-full bg-white animate-ping" />
-            <span>SATELLITE EMERGENCY DISTRESS SIGNAL TRANSMITTED &bull; RESCUE BOAT DISPATCH NOTIFIED</span>
-          </div>
+        {/* TAB CONTROLS */}
+        <div className="flex items-center gap-1 border-b border-[#DED9CE] pb-2">
           <button
-            onClick={() => setSosActive(false)}
-            className="text-xs underline font-sans text-red-300 hover:text-white"
+            type="button"
+            onClick={() => setActiveTab("report")}
+            className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+              activeTab === "report"
+                ? "bg-[#1A1A1A] text-[#F6F4EF]"
+                : "text-[#6B655B] hover:text-[#1A1A1A] hover:bg-[#EBE7DF]"
+            }`}
           >
-            Dismiss
+            File Incident Report
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("chat")}
+            className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+              activeTab === "chat"
+                ? "bg-[#1A1A1A] text-[#F6F4EF]"
+                : "text-[#6B655B] hover:text-[#1A1A1A] hover:bg-[#EBE7DF]"
+            }`}
+          >
+            Sentinel Assistant Chatbot
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("map")}
+            className={`px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
+              activeTab === "map"
+                ? "bg-[#1A1A1A] text-[#F6F4EF]"
+                : "text-[#6B655B] hover:text-[#1A1A1A] hover:bg-[#EBE7DF]"
+            }`}
+          >
+            Safe Evacuation Zones
           </button>
         </div>
-      )}
 
-      {/* Main Grid: Form on Left, Live AlertMap on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Column (5 cols on desktop): Report Incident Form */}
-        <div className="lg:col-span-5 space-y-4">
-          <ReportForm onIncidentReported={handleNewReport} />
+        {/* TAB 1: Incident Reporting Form */}
+        {activeTab === "report" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-7">
+              <ReportForm onIncidentReported={(r) => setRecentReports((prev) => [r, ...prev])} />
+            </div>
 
-          {/* Quick Helplines Box */}
-          <div className="p-4 rounded-lg bg-slate-900/80 border border-slate-800 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-slate-300 font-semibold border-b border-slate-800 pb-2">
-              <span className="flex items-center gap-1.5 text-amber-400">
-                <PhoneCall className="h-4 w-4" />
-                Emergency Contact Desks
+            <div className="lg:col-span-5 space-y-4">
+              <div className="border border-[#DED9CE] bg-[#FFFFFF] p-4 rounded-sm border-l-4 border-l-[#3B6D11]">
+                <div className="flex items-center gap-2 mb-2">
+                  <Home className="w-4 h-4 text-[#3B6D11]" strokeWidth={1.75} />
+                  <h4 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A]">
+                    DESIGNATED SHELTER PROTOCOLS
+                  </h4>
+                </div>
+                <p className="text-xs text-[#4A4A4A] leading-relaxed">
+                  During flood surges, proceed immediately along high-ground corridors. Emergency personnel are stationed at Marina High School and Royapettah Community Center.
+                </p>
+                <div className="mt-3 pt-2 border-t border-[#DED9CE] text-[11px] font-mono text-[#6B655B] flex justify-between">
+                  <span>Helpline: 1070 (SDMA)</span>
+                  <span className="text-[#3B6D11] font-bold">24/7 ACTIVE</span>
+                </div>
+              </div>
+
+              {/* Citizen Chat Mini Preview */}
+              <div className="border border-[#DED9CE] bg-[#FFFFFF] p-4 rounded-sm">
+                <h4 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A] mb-2">
+                  NEED IMMEDIATE GUIDANCE?
+                </h4>
+                <p className="text-xs text-[#6B655B] mb-3">
+                  Ask our autonomous multi-lingual assistant for real-time supply allocations or status updates.
+                </p>
+                <Button
+                  variant="secondary"
+                  onClick={() => setActiveTab("chat")}
+                  className="w-full text-xs text-[#1A1A1A] border-[#DED9CE] hover:bg-[#F6F4EF]"
+                >
+                  Open Sentinel Chatbot
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: Citizen Sentinel Chatbot */}
+        {activeTab === "chat" && (
+          <div className="max-w-2xl mx-auto">
+            <CitizenChatbot />
+          </div>
+        )}
+
+        {/* TAB 3: Simplified Safe Zones Map */}
+        {activeTab === "map" && (
+          <div className="border border-[#DED9CE] bg-[#FFFFFF] p-4 rounded-sm space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#DED9CE]">
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-[#1A1A1A]" strokeWidth={1.75} />
+                <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-[#1A1A1A]">
+                  SIMPLIFIED LOCAL SAFE ZONES &amp; RELIEF HUBS
+                </h3>
+              </div>
+              <span className="font-ibm-mono text-[10px] text-[#3B6D11] font-bold">
+                SAFE ZONES GREEN // DANGER ZONES RED
               </span>
-              <span className="font-mono text-[10px] text-slate-500">Toll-Free 24/7</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-800/60">
-              <span className="text-slate-400">State Disaster Management</span>
-              <span className="font-mono text-slate-200 font-bold">1070</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-slate-800/60">
-              <span className="text-slate-400">Flood Inflatable Dispatch</span>
-              <span className="font-mono text-slate-200 font-bold">080-22967111</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-slate-400">Medical Ambulance Triage</span>
-              <span className="font-mono text-slate-200 font-bold">108</span>
+
+            <div className="h-[460px] w-full rounded-sm overflow-hidden border border-[#DED9CE]">
+              <AlertMap userLocation={userLocation} />
             </div>
           </div>
-        </div>
-
-        {/* Right Column (7 cols on desktop): Live React Leaflet Alerts Map */}
-        <div className="lg:col-span-7 space-y-4">
-          <AlertMap
-            userLocation={userLocation}
-            externalIncidents={recentCitizenReports.map((r) => ({
-              id: r.id || `INC-${Math.random()}`,
-              type: r.type,
-              description: r.description,
-              latitude: r.latitude,
-              longitude: r.longitude,
-              severity: r.severity,
-              status: r.is_offline_queued ? "Queued Offline" : "Submitted"
-            }))}
-          />
-
-          {/* Designated Evacuation Assembly Checkpoints */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-200">Highland Relief Center</span>
-                <span className="text-[10px] font-mono text-emerald-400 font-bold">2.4km Away</span>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Capacity: 2,500 &bull; Equipped with dry food supplies, portable generators, and trauma nurses.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-200">Central Polytechnic Safe Zone</span>
-                <span className="text-[10px] font-mono text-emerald-400 font-bold">3.8km Away</span>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Capacity: 1,200 &bull; High ground bypass route operational via Eastern Ring Road.
-              </p>
-            </div>
-          </div>
-        </div>
+        )}
 
       </div>
     </div>

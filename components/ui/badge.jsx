@@ -1,25 +1,32 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-function Badge({ className, variant = "default", ...props }) {
-  const variants = {
-    default: "border-transparent bg-primary text-primary-foreground",
-    secondary: "border-transparent bg-secondary text-secondary-foreground",
-    destructive: "border-transparent bg-red-950/80 text-red-400 border border-red-800/60",
-    warning: "border-transparent bg-amber-950/80 text-amber-400 border border-amber-800/60",
-    success: "border-transparent bg-emerald-950/80 text-emerald-400 border border-emerald-800/60",
-    outline: "text-foreground border border-border",
+function Badge({ className, variant = "default", children, ...props }) {
+  const dotColor = {
+    safe: "bg-[#3B6D11]",
+    watch: "bg-[#854F0B]",
+    critical: "bg-[#791F1F]",
+    default: "bg-[#8A99AD]",
+    secondary: "bg-[#8A99AD]",
+    outline: "bg-[#8A99AD]",
+    destructive: "bg-[#791F1F]",
   };
+
+  const hasStatusDot = variant === "safe" || variant === "watch" || variant === "critical" || variant === "destructive";
 
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-        variants[variant],
+        "inline-flex items-center gap-1.5 rounded-sm border border-[#222933] bg-[#12161C] px-2 py-0.5 font-ibm-mono text-[11px] uppercase tracking-wider text-[#F6F4EF]",
         className
       )}
       {...props}
-    />
+    >
+      {hasStatusDot && (
+        <span className={cn("inline-block w-1.5 h-1.5 rounded-full", dotColor[variant] || "bg-[#8A99AD]")} />
+      )}
+      <span>{children}</span>
+    </div>
   );
 }
 

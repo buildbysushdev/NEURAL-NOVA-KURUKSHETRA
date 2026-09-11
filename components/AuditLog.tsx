@@ -208,47 +208,39 @@ export default function AuditLog() {
   });
 
   return (
-    <Card className="border-border/60 bg-card/85 backdrop-blur-md shadow-xl flex flex-col h-full">
-      <CardHeader className="border-b border-border/40 pb-4">
-        <div className="flex items-center justify-between gap-3">
+    <Card className="border border-[#222933] bg-[#181E26] text-[#F6F4EF] rounded-sm flex flex-col h-full font-ibm-sans shadow-none">
+      <CardHeader className="p-4 border-b border-[#222933]">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30">
-              <Bot className="w-5 h-5" />
-            </div>
+            <Cpu className="w-4 h-4 text-[#8A99AD]" strokeWidth={1.75} />
             <div>
-              <CardTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
-                AI Agent Decision &amp; Allocation Audit Log
+              <CardTitle className="text-xs font-bold uppercase tracking-wider font-mono text-[#F6F4EF]">
+                AI AGENT AUDIT LOG TERMINAL
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Autonomous system trace with Manual Authority Override governance.
+              <CardDescription className="text-xs text-[#8A99AD]">
+                Autonomous multi-agent trace with Commander governance.
               </CardDescription>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                realtimeConnected
-                  ? "bg-emerald-950/60 text-emerald-400 border-emerald-800/60"
-                  : "bg-muted/50 text-muted-foreground border-border"
-              }`}
-            >
-              <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
-              <span>Realtime Audit Stream</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase bg-[#12161C] border border-[#222933] text-[#3B6D11]">
+              <span className="dot-safe" />
+              LIVE STREAM
             </span>
           </div>
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center gap-1.5 mt-3 pt-2 border-t border-border/30 overflow-x-auto">
+        <div className="flex items-center gap-1 mt-3 pt-2 border-t border-[#222933] overflow-x-auto">
           {["ALL", "ALLOCATION", "TRIAGE", "REROUTE", "EVACUATION"].map((cat) => (
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase transition-all ${
+              className={`px-2.5 py-1 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors ${
                 filterCategory === cat
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  ? "bg-[#F6F4EF] text-[#12161C] font-bold"
+                  : "bg-[#12161C] text-[#8A99AD] hover:text-[#F6F4EF] border border-[#222933]"
               }`}
             >
               {cat}
@@ -258,125 +250,121 @@ export default function AuditLog() {
       </CardHeader>
 
       {/* Scrolling Audit List */}
-      <CardContent className="p-0 flex-1 overflow-y-auto max-h-[560px] divide-y divide-border/30">
+      <CardContent className="p-0 flex-1 overflow-y-auto max-h-[520px] divide-y divide-[#222933]">
         {loading ? (
-          <div className="divide-y divide-border/30">
+          <div className="divide-y divide-[#222933]">
             {Array.from({ length: 4 }).map((_, idx) => (
-              <div key={idx} className="p-4 space-y-2">
+              <div key={idx} className="p-4 space-y-2 bg-[#181E26]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-52" />
-                    <Skeleton className="h-4 w-20 rounded" />
+                    <Skeleton className="h-4 w-4 rounded-sm bg-[#222933]" />
+                    <Skeleton className="h-4 w-52 bg-[#222933]" />
                   </div>
-                  <Skeleton className="h-7 w-28 rounded-md" />
+                  <Skeleton className="h-6 w-24 rounded-sm bg-[#222933]" />
                 </div>
-                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full bg-[#222933]/60" />
                 <div className="flex items-center gap-3 pt-1">
-                  <Skeleton className="h-3 w-28" />
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-28 bg-[#222933]" />
+                  <Skeleton className="h-3 w-20 bg-[#222933]" />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center p-12 text-muted-foreground text-xs">
-            No audit logs found for category {filterCategory}.
+          <div className="text-center p-12 text-[#8A99AD] text-xs font-mono">
+            No autonomous audit logs recorded for category {filterCategory}.
           </div>
         ) : (
-          filtered.map((log) => (
-            <div
-              key={log.id}
-              className="p-4 transition-colors hover:bg-muted/20 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
-            >
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1">
-                    <Cpu className="w-3.5 h-3.5 text-blue-400" />
-                    {log.action}
-                  </span>
+          filtered.map((log) => {
+            const isPending = log.status === "pending_review";
+            const isApproved = log.status === "approved";
+            const stripClass = isPending
+              ? "border-l-4 border-l-[#854F0B]"
+              : isApproved
+              ? "border-l-4 border-l-[#3B6D11]"
+              : "border-l-4 border-l-[#791F1F]";
 
-                  <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/30">
-                    {log.category}
-                  </span>
-
-                  {log.confidence_score && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                      {log.confidence_score.toFixed(1)}% AI Confidence
+            return (
+              <div
+                key={log.id}
+                className={`p-4 transition-colors hover:bg-[#12161C]/50 flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-[#181E26] ${stripClass}`}
+              >
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-[#F6F4EF] flex items-center gap-1">
+                      <Cpu className="w-3.5 h-3.5 text-[#8A99AD]" strokeWidth={1.75} />
+                      {log.action}
                     </span>
-                  )}
-                </div>
 
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {log.details || (log.details_json ? JSON.stringify(log.details_json) : "Autonomous agent operation logged.")}
-                </p>
+                    <span className="font-ibm-mono text-[10px] uppercase px-1.5 py-0.5 rounded-sm bg-[#12161C] text-[#8A99AD] border border-[#222933]">
+                      {log.category}
+                    </span>
 
-                {/* Structured details_json from Backend Contract */}
-                {log.details_json && Object.keys(log.details_json).length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {Object.entries(log.details_json).map(([k, v]) => (
-                      <span key={k} className="text-[10px] bg-secondary/80 text-secondary-foreground border border-border/50 px-1.5 py-0.5 rounded font-mono">
-                        <span className="text-muted-foreground">{k}:</span> {typeof v === "object" ? JSON.stringify(v) : String(v)}
+                    {log.confidence_score && (
+                      <span className="font-ibm-mono text-[10px] px-1.5 py-0.5 rounded-sm bg-[#12161C] text-[#3B6D11] border border-[#222933]">
+                        {log.confidence_score.toFixed(1)}% CONFIDENCE
                       </span>
-                    ))}
+                    )}
                   </div>
-                )}
 
-                <div className="flex items-center gap-3 text-[11px] text-muted-foreground pt-1">
-                  <span>Agent: <strong className="text-foreground/80">{log.agent_name}</strong></span>
-                  {log.affected_zone && (
-                    <>
-                      <span>•</span>
-                      <span>Zone: <strong className="text-foreground/80">{log.affected_zone}</strong></span>
-                    </>
+                  <p className="text-xs text-[#8A99AD] leading-relaxed">
+                    {log.details || (log.details_json ? JSON.stringify(log.details_json) : "Autonomous agent operation logged.")}
+                  </p>
+
+                  <div className="flex items-center gap-3 text-[11px] font-ibm-mono text-[#8A99AD] pt-1">
+                    <span>AGENT: <strong className="text-[#F6F4EF]">{log.agent_name}</strong></span>
+                    {log.affected_zone && (
+                      <>
+                        <span>•</span>
+                        <span>ZONE: <strong className="text-[#F6F4EF]">{log.affected_zone}</strong></span>
+                      </>
+                    )}
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" strokeWidth={1.75} />
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} UTC
+                    </span>
+                  </div>
+                </div>
+
+                {/* Status and Manual Authority Override Buttons */}
+                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-2 sm:pt-0">
+                  {isPending ? (
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleReject(log.id)}
+                        className="h-7 text-[10px] px-2"
+                        title="Reject AI Allocation"
+                      >
+                        Reject Allocation
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleApprove(log.id)}
+                        className="h-7 text-[10px] px-2.5"
+                        title="Approve AI Allocation"
+                      >
+                        Approve Allocation
+                      </Button>
+                    </div>
+                  ) : isApproved ? (
+                    <div className="inline-flex items-center gap-1 font-ibm-mono text-[10px] text-[#3B6D11] bg-[#12161C] border border-[#222933] px-2 py-0.5 rounded-sm">
+                      <CheckCircle2 className="w-3 h-3" strokeWidth={1.75} />
+                      <span>APPROVED</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 font-ibm-mono text-[10px] text-[#791F1F] bg-[#12161C] border border-[#222933] px-2 py-0.5 rounded-sm">
+                      <XCircle className="w-3 h-3" strokeWidth={1.75} />
+                      <span>OVERRIDDEN</span>
+                    </div>
                   )}
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
                 </div>
               </div>
-
-              {/* Status and Manual Authority Override Buttons */}
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-2 sm:pt-0">
-                {log.status === "pending_review" ? (
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleReject(log.id)}
-                      className="h-7 text-xs border-red-500/40 text-red-400 hover:bg-red-950/30 px-2"
-                      title="Reject AI Decision"
-                    >
-                      <XCircle className="w-3.5 h-3.5 mr-1" />
-                      Reject
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleApprove(log.id)}
-                      className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 font-bold"
-                      title="Approve AI Decision"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                      Approve
-                    </Button>
-                  </div>
-                ) : log.status === "approved" ? (
-                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-md">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>APPROVED</span>
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-red-400 bg-red-950/60 border border-red-800/60 px-2.5 py-1 rounded-md">
-                    <XCircle className="w-3.5 h-3.5" />
-                    <span>OVERRIDDEN</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </CardContent>
     </Card>

@@ -9,7 +9,7 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",
       screens: {
         "2xl": "1400px",
       },
@@ -30,8 +30,8 @@ module.exports = {
           foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#791F1F",
+          foreground: "#F6F4EF",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -49,14 +49,26 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        urgent: {
-          red: "#DC2626",
-          amber: "#D97706",
-          green: "#16A34A",
-          dark: "#0F172A",
-          surface: "#1E293B",
-          border: "#334155"
-        }
+        // Strict Design System:
+        authority: {
+          base: "#12161C",
+          text: "#F6F4EF",
+          card: "#181E26",
+          border: "#222933",
+          muted: "#8A99AD",
+        },
+        citizen: {
+          base: "#F6F4EF",
+          text: "#1A1A1A",
+          card: "#FFFFFF",
+          border: "#DED9CE",
+          muted: "#6B655B",
+        },
+        severity: {
+          safe: "#3B6D11",
+          watch: "#854F0B",
+          critical: "#791F1F",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -64,10 +76,13 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        "ibm-sans": ["var(--font-ibm-sans)", "sans-serif"],
+        "ibm-mono": ["var(--font-ibm-mono)", "monospace"],
+        "public-sans": ["var(--font-public-sans)", "sans-serif"],
+        sans: ["var(--font-ibm-sans)", "var(--font-public-sans)", "sans-serif"],
+        mono: ["var(--font-ibm-mono)", "monospace"],
       },
     },
   },
   plugins: [],
-}
+};
