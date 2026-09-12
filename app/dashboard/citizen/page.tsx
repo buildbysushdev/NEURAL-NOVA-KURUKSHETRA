@@ -444,6 +444,7 @@ export default function CitizenDashboardPage() {
           <div className="relative">
             <button
               type="button"
+              data-demo="walkie-tab"
               onClick={() => setActiveTab("walkie")}
               className={`w-full p-3.5 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
                 activeTab === "walkie"

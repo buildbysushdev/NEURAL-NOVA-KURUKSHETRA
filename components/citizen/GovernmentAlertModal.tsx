@@ -154,6 +154,7 @@ export function GovernmentAlertModal({
 
         <button
           type="button"
+          data-demo="eas-trigger"
           onClick={triggerSimulationModal}
           className="text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition shadow-sm flex items-center gap-1.5"
         >
@@ -247,6 +248,7 @@ export function GovernmentAlertModal({
               <div className="pt-2 space-y-2">
                 <button
                   type="button"
+                  data-demo="i-am-safe-btn"
                   onClick={handleConfirmSafe}
                   className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
                 >
