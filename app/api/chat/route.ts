@@ -205,7 +205,6 @@ Evacuate inland westward along **Anna Salai High Ridge**. Avoid Marina Promenade
     msg.includes("water") ||
     msg.includes("rain") ||
     msg.includes("submerg") ||
-    msg.includes("drown") ||
     msg.includes("flow")
   ) {
     return `🌊 **Flood & Waterlogging Emergency Protocols:**
