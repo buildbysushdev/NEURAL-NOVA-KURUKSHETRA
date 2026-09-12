@@ -10,6 +10,9 @@ interface StoredTransmission {
   durationMs: number;
   timestamp: string;
   receivedAt: string;
+  transcript?: string;          // ← NEW: speech-to-text result
+  transcriptConfidence?: number; // ← NEW: 0-1 confidence
+  isOffline?: boolean;          // ← NEW: was device offline when sent
 }
 
 const transmissions: StoredTransmission[] = [
@@ -19,6 +22,8 @@ const transmissions: StoredTransmission[] = [
     channel: "CH 7 • 462.7125 MHz",
     sector: "Marina Waterfront Sector B",
     durationMs: 3200,
+    transcript: "Help us please, water is rising. We are on the third floor of Building B-17.",
+    transcriptConfidence: 0.93,
     timestamp: new Date(Date.now() - 5 * 60 * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     receivedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
   },
@@ -28,6 +33,8 @@ const transmissions: StoredTransmission[] = [
     channel: "CH 7 • 462.7125 MHz",
     sector: "Marina Waterfront Sector B",
     durationMs: 2400,
+    transcript: "Squad Alpha en route. ETA 4 minutes. Stay on this channel.",
+    transcriptConfidence: 0.97,
     timestamp: new Date(Date.now() - 3 * 60 * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     receivedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
   },
@@ -43,6 +50,9 @@ export async function POST(req: NextRequest) {
       sector: body.sector || "Immediate Sector",
       audioUrl: body.audioUrl || "",
       durationMs: body.durationMs || 0,
+      transcript: body.transcript || "",
+      transcriptConfidence: body.transcriptConfidence || 0,
+      isOffline: body.isOffline || false,
       timestamp: body.timestamp || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       receivedAt: new Date().toISOString(),
     };
