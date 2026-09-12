@@ -271,6 +271,7 @@ export function FloatingChatbotButton() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
+          data-demo="chat-open"
           aria-label="Open Voice Safety Assistant"
           className="fixed bottom-20 right-5 z-50 w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-xl shadow-blue-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95 border-2 border-white"
         >
@@ -459,6 +460,7 @@ export function FloatingChatbotButton() {
 
               <input
                 type="text"
+                data-demo="chat-input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={isListening ? "Listening..." : "Type or speak emergency query..."}
@@ -468,6 +470,7 @@ export function FloatingChatbotButton() {
 
               <button
                 type="submit"
+                data-demo="chat-send"
                 disabled={!input.trim() || loading}
                 className="p-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white transition flex items-center justify-center shadow-md shadow-blue-600/20"
               >

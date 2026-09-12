@@ -109,8 +109,16 @@ export function ActiveDisasterBanner({
               {currentAdvisory}
             </p>
             {currentEvacuation && (
-              <div className="text-xs text-emerald-800 bg-emerald-50 px-2 py-1 rounded mt-1 border border-emerald-200 font-medium">
-                👉 <strong>Evacuation Corridor:</strong> {currentEvacuation}
+              <div className="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded mt-1.5 border border-emerald-200 font-medium flex items-center justify-between gap-2 flex-wrap">
+                <span>👉 <strong>Evacuation Corridor:</strong> {currentEvacuation}</span>
+                <button
+                  type="button"
+                  data-demo="offline-route"
+                  onClick={() => toast.success("Offline Route Locked", { description: "Navigation corridor cached in local memory." })}
+                  className="px-2 py-0.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-mono text-[10px] font-bold transition"
+                >
+                  Get Offline Evacuation Route
+                </button>
               </div>
             )}
           </div>

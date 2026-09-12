@@ -10,6 +10,7 @@ import { RichAlertCard, RichAlertIncident } from "@/components/notifications/Ric
 import WalkieTalkie from "@/components/WalkieTalkie";
 import LocalAIMeshSOS from "@/components/citizen/LocalAIMeshSOS";
 import { CitizenChatbot } from "@/components/citizen/CitizenChatbot";
+import CitizenDemoActor from "@/components/demo/CitizenDemoActor";
 import { generateFallbackAnalysis } from "@/lib/agents/analyst";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
 import { toast } from "sonner";
@@ -178,6 +179,7 @@ export default function CitizenDashboardPage() {
 
   return (
     <div className="theme-citizen min-h-screen bg-[#F6F4EF] text-[#1A1A1A] font-public-sans pb-28">
+      <CitizenDemoActor />
       {/* Mobile-Friendly App Container */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-4 space-y-5">
         

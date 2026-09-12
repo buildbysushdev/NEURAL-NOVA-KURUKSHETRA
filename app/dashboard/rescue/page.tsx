@@ -47,6 +47,7 @@ import { RescueInventoryManager } from "@/components/rescue/RescueInventoryManag
 import { RescueAIChatbot } from "@/components/rescue/RescueAIChatbot";
 import WalkieTalkie from "@/components/WalkieTalkie";
 import { AIIncidentClusterPanel } from "@/components/rescue/AIIncidentClusterPanel";
+import RescueDemoActor from "@/components/demo/RescueDemoActor";
 
 const INITIAL_RESCUE_TASKS: RescueTask[] = [
   {
@@ -333,6 +334,7 @@ export default function RescueDashboardPage() {
 
   return (
     <div className="space-y-6 text-slate-100 font-ibm-sans pb-24 relative">
+      <RescueDemoActor />
       
       {/* 1. Live Authority Incoming Dispatch Banner with Coordinates */}
       <IncomingDispatchBanner

@@ -189,6 +189,7 @@ export default function TaskCard({
       <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
         <button
           type="button"
+          data-demo="rescue-navigate"
           onClick={handleOpenGoogleMaps}
           className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-medium text-slate-300 transition flex items-center gap-1.5"
         >
@@ -200,6 +201,7 @@ export default function TaskCard({
           {!isResolved && !isInProgress && (
             <button
               type="button"
+              data-demo="rescue-accept"
               disabled={loadingAction === "accept"}
               onClick={() => handleAction("accept")}
               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-1.5 disabled:opacity-60"
@@ -218,6 +220,7 @@ export default function TaskCard({
           {isInProgress && (
             <button
               type="button"
+              data-demo="rescue-resolve"
               disabled={loadingAction === "complete"}
               onClick={() => handleAction("complete")}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5 disabled:opacity-60"

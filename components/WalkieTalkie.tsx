@@ -475,6 +475,7 @@ export default function WalkieTalkie({
       <div className="mb-4 flex flex-col items-center">
         <button
           type="button"
+          data-demo="walkie-ptt"
           onMouseDown={(e) => startTransmission(e)}
           onMouseUp={(e) => stopTransmission(e)}
           onMouseLeave={(e) => stopTransmission(e)}
