@@ -38,6 +38,75 @@ function formatInline(text: string) {
   });
 }
 
+function getClientEmergencyAnswer(query: string): string {
+  const q = query.toLowerCase();
+
+  // Battery / Power / Dead Mobile / How to communicate
+  if (
+    q.includes("battery") ||
+    q.includes("power") ||
+    q.includes("charg") ||
+    q.includes("dead") ||
+    q.includes("no battery") ||
+    q.includes("phone") ||
+    q.includes("mobile") ||
+    q.includes("communicat")
+  ) {
+    return `🔋 **Dead Battery & Emergency Communication Without Mobile:**
+
+⚡ **How to Signal Rescuers When Your Phone is Dead:**
+1. **Auditory Signals (Whistle / Bang):**
+   - Sound travels 3x farther than shouting. Blow 3 short blasts on a whistle or bang a metal spoon/pipe against a wall 3 times every 15 minutes (International SOS pattern).
+2. **Visual Signaling (Roof & Balcony):**
+   - Hang a bright cloth, white bedsheet, or colored tarp from your roof or upper window.
+   - At night, reflect light or flash any available torch 3 times toward rescue boats or helicopters.
+3. **Write Coordinates on Roof / Windows:**
+   - Use chalk, lipstick, or spray paint to write on roof/terrace: *"HELP - 3 PEOPLE - 2ND FLOOR"*.
+4. **LoRa 868MHz Mesh / Walkie-Talkie Channel:**
+   - If someone in your apartment has a walkie-talkie, tune to **VHF Channel 7 (462.7125 MHz)** — NDRF Squad Alpha monitoring frequency.
+5. **Conserve Any Remaining Device Charge:**
+   - If phone has even 2% left, send a single SMS with your exact building name and floor to a relative before it dies. SMS takes <1 millisecond of signal.`;
+  }
+
+  // Flood / Water / Storm
+  if (q.includes("flood") || q.includes("water") || q.includes("rain") || q.includes("submerg") || q.includes("drown")) {
+    return `🌊 **Flood & Rising Water Emergency Measures:**
+1. **Move to Upper Floors:** Do not stay on ground floors. Take drinking water, medications, and dry blankets to 2nd floor or roof.
+2. **Turn Off Mains Breaker:** Submerged sockets can electrify floodwater. Kill the main electrical switch immediately.
+3. **Never Walk or Drive in Flood Water:** Just 15 cm of flowing water can sweep an adult off their feet.
+4. **Emergency Extraction:** If water reaches 1.5m, wave a bright cloth from the balcony to flag NDRF Zodiac boats.`;
+  }
+
+  // Food / Rations / Water
+  if (q.includes("food") || q.includes("water") || q.includes("drink") || q.includes("ration") || q.includes("hungry") || q.includes("eat")) {
+    return `💧 **Drinking Water & Food Distribution Hubs:**
+1. **Central Relief Station Alpha** (800m inland from Marina Beach) has 5,000L of potable drinking water and 3,000 ration packs ready for immediate distribution.
+2. **Royapettah Civil Relief Post** (1.2km inland) provides boiled water and hot meals.
+3. **Purification at Home:** If trapped, boil tap water vigorously for 3 minutes, or add 2 drops of standard 5% chlorine bleach per liter of clear water and wait 30 minutes.`;
+  }
+
+  // Shelter / Evacuation / Where to go
+  if (q.includes("shelter") || q.includes("where") || q.includes("route") || q.includes("go") || q.includes("evacuat") || q.includes("camp")) {
+    return `📍 **Safe Evacuation Corridors & Shelters:**
+1. **Central Relief Station Alpha:** 800m inland at Anna Salai junction. Elevated terrain above 4.5m flood mark. Medical staff on site.
+2. **Royapettah Civil Relief Post:** 1.2km inland near Government Hospital.
+3. **Evacuation Route:** Proceed strictly inland via Anna Salai high ground. Avoid Kamaraj Salai and coastal underpasses due to 1.4m inundation.`;
+  }
+
+  // Medical / First Aid / Injury
+  if (q.includes("medic") || q.includes("doctor") || q.includes("injur") || q.includes("bleed") || q.includes("wound") || q.includes("pain")) {
+    return `🏥 **Emergency Medical & First Aid Guidance:**
+1. **Bleeding:** Apply firm, continuous pressure with a clean cloth directly on the wound for 10 minutes. Elevate limb above heart level.
+2. **Hypothermia / Wet Clothes:** Remove soaked clothing immediately. Wrap patient in dry sheets, plastic bags, or emergency foil blankets.
+3. **Paramedic Triage Dispatch:** Call **108** for ambulance boat/vehicle triage, or **112** for unified emergency dispatch.`;
+  }
+
+  return `🛡️ **Sentinel Emergency Response Guidance:**
+- 📍 **Nearest Safe Shelter:** Central Relief Station Alpha (800m inland via Anna Salai corridor).
+- ⚡ **Critical Action:** Stay on high ground, disconnect electrical mains, and conserve all supplies.
+- 📞 **Official Emergency Helplines:** **112** (National Emergency) | **108** (Ambulance) | **1070** (State Disaster Operations).`;
+}
+
 function FormattedMessage({ text }: { text: string }) {
   const lines = text.split("\n");
   return (
@@ -280,9 +349,16 @@ export function FloatingChatbotButton() {
         }),
       });
       const d = await r.json();
-      const reply =
-        d.reply ||
-        "📍 Nearest Shelter: Central Relief Station Alpha (800m inland from Marina Beach). For immediate extraction, dial 112 or 108.";
+      let reply = d.reply;
+      // If server returned the canned generic greeting for a specific question, use our smart client emergency knowledge engine
+      if (!reply || reply.includes("Sentinel Emergency Disaster Guidance:") || reply.includes("Nearest Safe Haven: Central Relief Station")) {
+        const specificAnswer = getClientEmergencyAnswer(userText);
+        if (specificAnswer && !specificAnswer.includes("Nearest Safe Shelter: Central Relief Station Alpha (800m inland via Anna Salai corridor)")) {
+          reply = specificAnswer;
+        } else if (!reply) {
+          reply = specificAnswer;
+        }
+      }
 
       setMsgs((m) => [
         ...m,
@@ -296,8 +372,7 @@ export function FloatingChatbotButton() {
       // Speak response aloud
       speakText(reply);
     } catch {
-      const fallbackMsg =
-        "📍 Nearest Safe Shelter: Central Relief Station Alpha (800m inland from Marina Beach). Evacuate west along Anna Salai corridor. For emergency ambulance or boat extraction, call 112 or 108.";
+      const fallbackMsg = getClientEmergencyAnswer(userText);
       setMsgs((m) => [
         ...m,
         {
