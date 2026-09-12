@@ -322,7 +322,7 @@ export default function WalkieTalkie({
     return "";
   };
 
-  // Web Speech API with mobile resilience
+  // Web Speech API — proper accumulation of finalized + interim words
   const startSpeechRecognition = useCallback(() => {
     if (typeof window === "undefined") return;
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -330,56 +330,65 @@ export default function WalkieTalkie({
 
     try {
       transcriptAccumRef.current = "";
+      let finalizedText = ""; // Accumulates ALL finalized segments
+
       const recognition = new SpeechRec();
-      recognition.lang = "en-IN";
+      recognition.lang = "en-US"; // en-US has broader support than en-IN
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
       recognition.onresult = (event: any) => {
-        let interim = "";
-        let final = "";
+        let interimText = "";
+        // Rebuild finalized from scratch each event to avoid duplication
+        let rebuiltFinal = "";
         for (let i = 0; i < event.results.length; i++) {
           const r = event.results[i];
           if (r.isFinal) {
-            final += r[0].transcript + " ";
+            rebuiltFinal += r[0].transcript + " ";
             const conf = r[0].confidence;
             if (conf) setLastConfidence(Math.round(conf * 100));
           } else {
-            interim += r[0].transcript;
+            interimText += r[0].transcript;
           }
         }
-        const accumulated = (final || interim).trim();
-        transcriptAccumRef.current = accumulated;
-        setLiveTranscript(accumulated);
+        finalizedText = rebuiltFinal;
+        const display = (finalizedText + interimText).trim();
+        transcriptAccumRef.current = display;
+        setLiveTranscript(display);
       };
 
       recognition.onerror = (e: any) => {
-        console.warn("[STT] Non-fatal SpeechRecognition status:", e?.error);
+        // Ignore no-speech & aborted — auto-restart on aborted for continuous feel
+        if (e?.error === "aborted" || e?.error === "no-speech") return;
+        console.warn("[STT] error:", e?.error);
       };
 
       recognition.onend = () => {
-        if (transcriptAccumRef.current) {
-          setLastTranscript(transcriptAccumRef.current);
+        // Auto-restart if still transmitting (browser ends recognition after silence)
+        const t = transcriptAccumRef.current.trim();
+        if (t) setLastTranscript(t);
+        // Restart recognition if still holding PTT
+        if (recognitionRef.current !== null) {
+          try { recognition.start(); } catch {}
         }
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
-      console.warn("[STT] Speech recognition init note:", err);
+      console.warn("[STT] init:", err);
     }
   }, []);
 
   const stopSpeechRecognition = useCallback(() => {
-    try {
-      recognitionRef.current?.stop();
-    } catch {}
-    recognitionRef.current = null;
+    const rec = recognitionRef.current;
+    recognitionRef.current = null; // null FIRST so onend restart loop exits
+    try { rec?.stop(); } catch {}
     setTimeout(() => {
       const t = transcriptAccumRef.current.trim();
       if (t) setLastTranscript(t);
-    }, 250);
+    }, 300);
   }, []);
 
   // Live Audio VU Meter for visual proof on phones
@@ -564,22 +573,7 @@ export default function WalkieTalkie({
       stopTransmission();
     }, 5000);
 
-    // ── INSTANT TRANSCRIPT: Always show a realistic demo transcript immediately ──
-    // This ensures transcript is visible even without mic / speech recognition
-    const autoText =
-      role === "citizen"
-        ? "Help! Flood water rising rapidly. We are trapped on Floor 3 of Building B-17. Need rescue boat immediately!"
-        : "NDRF Squad Alpha to base — en route to Sector B. ETA 4 minutes. All units on standby.";
-    let charIdx = 0;
-    transcriptAccumRef.current = "";
-    const typeInterval = setInterval(() => {
-      charIdx = Math.min(charIdx + 10, autoText.length);
-      const partial = autoText.slice(0, charIdx);
-      transcriptAccumRef.current = partial;
-      setLiveTranscript(partial);
-      if (charIdx >= autoText.length) clearInterval(typeInterval);
-    }, 100);
-    (window as any).__autoTranscriptInterval = typeInterval;
+    // Speech recognition starts below — transcript is LIVE from your voice
 
     // 1. Cross-Platform getUserMedia without rigid constraints
     let stream: MediaStream | null = null;
