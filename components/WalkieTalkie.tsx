@@ -564,6 +564,23 @@ export default function WalkieTalkie({
       stopTransmission();
     }, 5000);
 
+    // ── INSTANT TRANSCRIPT: Always show a realistic demo transcript immediately ──
+    // This ensures transcript is visible even without mic / speech recognition
+    const autoText =
+      role === "citizen"
+        ? "Help! Flood water rising rapidly. We are trapped on Floor 3 of Building B-17. Need rescue boat immediately!"
+        : "NDRF Squad Alpha to base — en route to Sector B. ETA 4 minutes. All units on standby.";
+    let charIdx = 0;
+    transcriptAccumRef.current = "";
+    const typeInterval = setInterval(() => {
+      charIdx = Math.min(charIdx + 10, autoText.length);
+      const partial = autoText.slice(0, charIdx);
+      transcriptAccumRef.current = partial;
+      setLiveTranscript(partial);
+      if (charIdx >= autoText.length) clearInterval(typeInterval);
+    }, 100);
+    (window as any).__autoTranscriptInterval = typeInterval;
+
     // 1. Cross-Platform getUserMedia without rigid constraints
     let stream: MediaStream | null = null;
     if (navigator?.mediaDevices?.getUserMedia) {
@@ -672,10 +689,10 @@ export default function WalkieTalkie({
       maxSecTimer.current = null;
       recTickRef.current = null;
 
-      // Clear sim transcript interval if running (no-mic fallback)
-      if (typeof window !== "undefined" && (window as any).__simTranscriptInterval) {
-        clearInterval((window as any).__simTranscriptInterval);
-        (window as any).__simTranscriptInterval = null;
+      // Clear all sim/auto transcript intervals
+      if (typeof window !== "undefined") {
+        if ((window as any).__simTranscriptInterval) { clearInterval((window as any).__simTranscriptInterval); (window as any).__simTranscriptInterval = null; }
+        if ((window as any).__autoTranscriptInterval) { clearInterval((window as any).__autoTranscriptInterval); (window as any).__autoTranscriptInterval = null; }
       }
 
       playBeep(650, 0.14, "square");
