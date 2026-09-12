@@ -207,6 +207,30 @@ export default function LocalAIMeshSOS() {
     try {
       localStorage.setItem("last_mesh_cluster_data", JSON.stringify(meshClusterData));
       window.dispatchEvent(new CustomEvent("mesh_sos_transmitted", { detail: meshClusterData }));
+
+      const meshIncident = {
+        id: `MESH-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        type: parsedPacket.incidentType || "Mesh SOS: Trap & Hazard",
+        description: `🚨 [84-byte LoRa Mesh SOS] ${inputText} (Delivered via P2P BLE/LoRa Hop #04 to Rescue)`,
+        location_lat: 13.0544,
+        location_lng: 80.2818,
+        latitude: 13.0544,
+        longitude: 80.2818,
+        severity: parsedPacket.severity || "CRITICAL",
+        severity_score: parsedPacket.severityScore || 9.5,
+        needed_resources: parsedPacket.request || ["fire_tender", "o2_kits"],
+        created_at: new Date().toISOString(),
+        building: parsedPacket.building,
+        floor: parsedPacket.floor,
+        location_name: "Building B-17, Marina Waterfront Zone B",
+      };
+
+      localStorage.setItem("kurukshetra_latest_incident", JSON.stringify(meshIncident));
+      const existing = JSON.parse(localStorage.getItem("citizen_submitted_incidents") || "[]");
+      existing.unshift(meshIncident);
+      localStorage.setItem("citizen_submitted_incidents", JSON.stringify(existing.slice(0, 50)));
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("kurukshetra:incident_reported", { detail: meshIncident }));
       
       await fetch("/api/mesh/sos", {
         method: "POST",

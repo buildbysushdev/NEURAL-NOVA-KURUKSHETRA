@@ -33,11 +33,20 @@ export function ActiveDisasterBanner({
       } catch (e) {}
     };
 
+    const handleCustom = (e: any) => {
+      if (e.detail) {
+        setLiveAlert(e.detail);
+        setDismissed(false);
+      }
+    };
+
     syncAlert();
     window.addEventListener("storage", syncAlert);
-    const timer = setInterval(syncAlert, 2500);
+    window.addEventListener("emergency_alert_broadcast", handleCustom);
+    const timer = setInterval(syncAlert, 2000);
     return () => {
       window.removeEventListener("storage", syncAlert);
+      window.removeEventListener("emergency_alert_broadcast", handleCustom);
       clearInterval(timer);
     };
   }, []);

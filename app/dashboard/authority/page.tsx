@@ -43,6 +43,7 @@ import {
   Brain,
   Cpu,
   BellRing,
+  CheckCircle2,
 } from "lucide-react";
 import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
 import { HistoricalChecklistPanel } from "@/components/authority/HistoricalChecklistPanel";
@@ -171,6 +172,7 @@ export default function AuthorityDashboardPage() {
   const [incidentError, setIncidentError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState<boolean>(false);
   const [simulationModalOpen, setSimulationModalOpen] = useState<boolean>(false);
+  const [latestCitizenVoice, setLatestCitizenVoice] = useState<any>(null);
 
   // Tactical Right Column Tab Selector (Simulator, Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
   const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
@@ -258,7 +260,7 @@ export default function AuthorityDashboardPage() {
   useEffect(() => {
     fetchIncidents();
 
-    // Check localStorage for any recently submitted citizen reports
+    // Check localStorage for any recently submitted citizen reports & voice distress
     try {
       const localIncidents: IncidentReport[] = JSON.parse(localStorage.getItem("citizen_submitted_incidents") || "[]");
       if (localIncidents.length > 0) {
@@ -266,6 +268,10 @@ export default function AuthorityDashboardPage() {
           const newOnes = localIncidents.filter((l) => !prev.some((p) => p.id === l.id));
           return [...newOnes, ...prev];
         });
+      }
+      const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
+      if (voiceRaw) {
+        setLatestCitizenVoice(JSON.parse(voiceRaw));
       }
     } catch (e) {}
 
@@ -312,12 +318,27 @@ export default function AuthorityDashboardPage() {
         if (raw) {
           handleIncidentArrival(JSON.parse(raw));
         }
+        const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
+        if (voiceRaw) {
+          setLatestCitizenVoice(JSON.parse(voiceRaw));
+        }
       } catch (e) {}
+    };
+
+    const handleVoiceTransmitted = (e: any) => {
+      if (e.detail) {
+        setLatestCitizenVoice(e.detail);
+        toast.error("🚨 LIVE CITIZEN VOICE SOS INTERCEPTED", {
+          description: `Voice transmission detected from ${e.detail?.location?.locationName || "Sector B"}. Pinned to Tactical Map.`,
+          duration: 7000,
+        });
+      }
     };
 
     window.addEventListener("storage", handleStorage);
     const customListener = (e: any) => handleIncidentArrival(e.detail);
     window.addEventListener("kurukshetra:incident_reported", customListener);
+    window.addEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
 
     const unsubscribe = subscribeToIncidents((payload) => {
       const newItem = payload.new;
@@ -329,6 +350,7 @@ export default function AuthorityDashboardPage() {
     return () => {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("kurukshetra:incident_reported", customListener);
+      window.removeEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
       unsubscribe();
     };
   }, []);
@@ -570,6 +592,107 @@ export default function AuthorityDashboardPage() {
           }
         />
       </div>
+ 
+      {/* Real-time Citizen Voice SOS Intercept Card */}
+      {latestCitizenVoice && (
+        <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-r from-amber-950/50 via-[#0B0F17] to-red-950/40 p-5 backdrop-blur-xl shadow-2xl space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-500/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400">
+                <Radio className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full bg-red-600/30 border border-red-500/50 text-red-300 font-mono text-[10px] font-bold animate-pulse">
+                    🎙️ LIVE CITIZEN VOICE SOS INTERCEPT
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
+                    {latestCitizenVoice.channel || "CH 7 • 462.7125 MHz"}
+                  </span>
+                  <span className="text-xs font-mono text-slate-400">
+                    {latestCitizenVoice.timestamp || "Just now"}
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mt-1">
+                  Distress Call Intercepted from {latestCitizenVoice.location?.locationName || "Marina Sector B"}
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const dispatchIncident = {
+                    id: `voice-auth-${Date.now()}`,
+                    type: "Citizen Voice SOS (Authority Ratified)",
+                    zone: "Zone B - Marina Waterfront",
+                    description: `Authority Priority Dispatch: Voice SOS from ${latestCitizenVoice.location?.locationName || "Sector B"} (${latestCitizenVoice.location?.building || "B-17"}). Immediate extraction authorized.`,
+                    location_lat: latestCitizenVoice.location?.lat || 13.0544,
+                    location_lng: latestCitizenVoice.location?.lng || 80.2818,
+                    latitude: latestCitizenVoice.location?.lat || 13.0544,
+                    longitude: latestCitizenVoice.location?.lng || 80.2818,
+                    severity: "CRITICAL" as const,
+                    severity_score: 9.8,
+                    needed_resources: ["rescue_boats", "medical_kits", "paramedics"],
+                    created_at: new Date().toISOString(),
+                  };
+                  setIncidents((prev) => [dispatchIncident, ...prev]);
+                  try {
+                    localStorage.setItem("kurukshetra_latest_dispatch", JSON.stringify(dispatchIncident));
+                    window.dispatchEvent(new Event("storage"));
+                  } catch (e) {}
+                  toast.success("🚨 COMMAND DISPATCH TRANSMITTED TO SQUAD ALPHA", {
+                    description: `Orders confirmed for coordinates [${(latestCitizenVoice.location?.lat || 13.0544).toFixed(4)}, ${(latestCitizenVoice.location?.lng || 80.2818).toFixed(4)}].`,
+                  });
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 transition flex items-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Authorize Immediate Squad Alpha Dispatch</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
+              <span className="text-[10px] font-mono uppercase text-slate-400">GPS Origin Coordinates</span>
+              <div className="text-xs font-mono font-bold text-amber-300">
+                {(latestCitizenVoice.location?.lat || 13.0544).toFixed(4)}° N, {(latestCitizenVoice.location?.lng || 80.2818).toFixed(4)}° E
+              </div>
+              <a
+                href={`https://www.google.com/maps?q=${latestCitizenVoice.location?.lat || 13.0544},${latestCitizenVoice.location?.lng || 80.2818}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] text-blue-400 hover:underline flex items-center gap-1 font-mono pt-1"
+              >
+                Open in Google Maps →
+              </a>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
+              <span className="text-[10px] font-mono uppercase text-slate-400">Landmark &amp; Floor Elevation</span>
+              <div className="text-xs font-semibold text-slate-200">
+                {latestCitizenVoice.location?.building || "Tactical Sector 01"}
+              </div>
+              <div className="text-[11px] text-slate-400">
+                Floor: {latestCitizenVoice.location?.floor || "Ground Level"}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
+              <span className="text-[10px] font-mono uppercase text-slate-400">Audio Distress Intercept</span>
+              {latestCitizenVoice.audioUrl ? (
+                <audio controls src={latestCitizenVoice.audioUrl} className="w-full h-8 mt-1" />
+              ) : (
+                <div className="text-xs text-slate-400 flex items-center gap-2 pt-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  Voice Synthesized Buffer Intercepted
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 5 & 6. Middle Section: Map + Telemetry + AI System Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

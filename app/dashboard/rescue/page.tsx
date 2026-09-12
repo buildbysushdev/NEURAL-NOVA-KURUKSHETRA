@@ -109,6 +109,7 @@ export default function RescueDashboardPage() {
   const [isOnDuty, setIsOnDuty] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory" | "radio" | "clusters">("missions");
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
+  const [latestCitizenVoice, setLatestCitizenVoice] = useState<any>(null);
 
   // Load duty state from localStorage on mount & listen to tab changes
   useEffect(() => {
@@ -210,6 +211,11 @@ export default function RescueDashboardPage() {
           return [...newTasks, ...prev];
         });
       }
+
+      const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
+      if (voiceRaw) {
+        setLatestCitizenVoice(JSON.parse(voiceRaw));
+      }
     } catch (e) {}
 
     const handleIncomingDispatch = (d: any) => {
@@ -248,12 +254,27 @@ export default function RescueDashboardPage() {
         if (raw) {
           handleIncomingDispatch(JSON.parse(raw));
         }
+        const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
+        if (voiceRaw) {
+          setLatestCitizenVoice(JSON.parse(voiceRaw));
+        }
       } catch (e) {}
+    };
+
+    const handleVoiceTransmitted = (e: any) => {
+      if (e.detail) {
+        setLatestCitizenVoice(e.detail);
+        toast.error("🚨 LIVE CITIZEN VOICE SOS RECEIVED", {
+          description: `Voice broadcast from ${e.detail?.location?.locationName || "Sector B"} (${e.detail?.location?.building || "Building B-17"}). Coords locked.`,
+          duration: 7000,
+        });
+      }
     };
 
     window.addEventListener("storage", handleStorage);
     const customListener = (e: any) => handleIncomingDispatch(e.detail);
     window.addEventListener("kurukshetra:incident_reported", customListener);
+    window.addEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
 
     const unsubscribe = subscribeToIncidents((payload) => {
       if (payload.eventType === "INSERT") {
@@ -267,6 +288,7 @@ export default function RescueDashboardPage() {
     return () => {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("kurukshetra:incident_reported", customListener);
+      window.removeEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
       unsubscribe();
     };
   }, []);
@@ -454,6 +476,111 @@ export default function RescueDashboardPage() {
       {/* Tab 1: Missions Queue */}
       {activeTab === "missions" && (
         <div className="space-y-4">
+          {/* Authority Live Tactical Dispatch Banner */}
+          <IncomingDispatchBanner onInspectTerrain={() => setActiveTab("terrain")} />
+
+          {/* Real-time Citizen Voice SOS Banner */}
+          {latestCitizenVoice && (
+            <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-r from-amber-950/50 via-[#0F172A] to-amber-950/40 p-5 backdrop-blur-xl shadow-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400">
+                    <Radio className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-600/30 border border-red-500/50 text-red-300 font-mono text-[10px] font-bold animate-pulse">
+                        LIVE CITIZEN VOICE SOS
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
+                        {latestCitizenVoice.channel || "CH 7 • 462.7125 MHz"}
+                      </span>
+                      <span className="text-xs font-mono text-slate-400">
+                        {latestCitizenVoice.timestamp || "Just now"}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-white mt-1">
+                      Emergency Voice Distress from {latestCitizenVoice.location?.locationName || "Marina Sector B"}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const taskId = `task-voice-${Date.now()}`;
+                      const newTask: RescueTask = {
+                        id: taskId,
+                        type: "Citizen Voice SOS",
+                        zone: "Zone B - Marina Waterfront",
+                        location_name: latestCitizenVoice.location?.locationName || "Marina Sector B",
+                        description: `Voice Distress: Immediate assistance requested at ${latestCitizenVoice.location?.locationName || "Marina Sector B"} (${latestCitizenVoice.location?.building || "B-17"}, ${latestCitizenVoice.location?.floor || "Floor 3"}).`,
+                        location_lat: latestCitizenVoice.location?.lat || 13.0544,
+                        location_lng: latestCitizenVoice.location?.lng || 80.2818,
+                        latitude: latestCitizenVoice.location?.lat || 13.0544,
+                        longitude: latestCitizenVoice.location?.lng || 80.2818,
+                        severity: "CRITICAL",
+                        severity_score: 9.8,
+                        status: "in_progress",
+                        needed_resources: ["rescue_boats", "medical_kits", "paramedics"],
+                        required_resources: ["rescue_boats", "medical_kits", "paramedics"],
+                        created_at: new Date().toISOString(),
+                      };
+                      setTasks((prev) => [newTask, ...prev.filter((t) => t.id !== taskId)]);
+                      toast.success("🚨 SQUAD ALPHA EN ROUTE TO VOICE SOS", {
+                        description: `Dispatched to [${newTask.latitude.toFixed(4)}, ${newTask.longitude.toFixed(4)}] (${latestCitizenVoice.location?.building || "Building B-17"}). Telemetry synced.`,
+                      });
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 transition flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Dispatch Squad Alpha Here</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Coordinates, Landmark, and Audio row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-400">GPS Origin Coordinates</span>
+                  <div className="text-xs font-mono font-bold text-amber-300">
+                    {(latestCitizenVoice.location?.lat || 13.0544).toFixed(4)}° N, {(latestCitizenVoice.location?.lng || 80.2818).toFixed(4)}° E
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps?q=${latestCitizenVoice.location?.lat || 13.0544},${latestCitizenVoice.location?.lng || 80.2818}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-blue-400 hover:underline flex items-center gap-1 font-mono pt-1"
+                  >
+                    Open in Google Maps →
+                  </a>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-400">Landmark &amp; Floor Elevation</span>
+                  <div className="text-xs font-bold text-slate-100">
+                    {latestCitizenVoice.location?.building || "Building B-17 (Flat 304)"}, {latestCitizenVoice.location?.floor || "Floor 3"}
+                  </div>
+                  <div className="text-[10px] font-mono text-emerald-400">
+                    Above 1.4m standing water floodline
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-400">Offline Mesh Audio Stream</span>
+                  {latestCitizenVoice.audioUrl ? (
+                    <audio src={latestCitizenVoice.audioUrl} controls className="w-full h-8 mt-1" />
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-amber-300 font-mono pt-1">
+                      <Radio className="w-3.5 h-3.5 animate-pulse text-amber-400" />
+                      <span>Encapsulated Opus/16kHz Mesh Packet</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Sub-filters for tasks */}
           <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-white/[0.06]">
             <div className="flex items-center gap-1.5">

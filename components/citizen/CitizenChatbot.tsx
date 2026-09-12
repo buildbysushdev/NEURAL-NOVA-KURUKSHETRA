@@ -65,57 +65,69 @@ export function CitizenChatbot() {
     setInputText("");
     setIsTyping(true);
 
-    // Call grounded Sentinel chatbot agent
-    setTimeout(async () => {
-      try {
-        const nearbyZonesData = [
-          {
-            id: "depot-alpha",
-            name: "Central Logistics Hub Alpha",
-            type: "relieff_depot",
-            distance_km: 0.8,
-            available_supplies: {
-              drinking_water: "5,000 Liters",
-              ration_packs: "3,000 Kits",
-            },
+    // Call real Groq / Sentinel AI chat API with grounded fallback
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "citizen",
+          message: cleanText,
+          language: language || "en",
+        }),
+      });
+
+      const data = await res.json();
+      const reply = data.reply || "Nearest shelter is Central Relief Station Alpha (800m inland from Marina Beach). Dial 112 for emergency response.";
+
+      const aiMsg: ChatMessage = {
+        id: `msg-${Date.now() + 1}`,
+        sender: "assistant",
+        text: reply,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (err) {
+      // Offline / Grounded fallback
+      const nearbyZonesData = [
+        {
+          id: "depot-alpha",
+          name: "Central Logistics Hub Alpha",
+          type: "relief_depot",
+          distance_km: 0.8,
+          available_supplies: {
+            drinking_water: "5,000 Liters",
+            ration_packs: "3,000 Kits",
           },
-          {
-            id: "shelter-beta",
-            name: "Royapettah Multi-Story Evacuation Shelter",
-            type: "shelter",
-            distance_km: 1.4,
-            available_supplies: {
-              emergency_beds: "450 Units",
-              medical_kits: "120 Kits",
-            },
+        },
+        {
+          id: "shelter-beta",
+          name: "Royapettah Multi-Story Evacuation Shelter",
+          type: "shelter",
+          distance_km: 1.4,
+          available_supplies: {
+            emergency_beds: "450 Units",
+            medical_kits: "120 Kits",
           },
-        ];
+        },
+      ];
 
-        const answer = await queryCitizenChatbot(cleanText, {
-          language: language as "en" | "hi",
-          nearbyZones: nearbyZonesData,
-        });
+      const answer = await queryCitizenChatbot(cleanText, {
+        language: language as "en" | "hi",
+        nearbyZones: nearbyZonesData,
+      });
 
-        const aiMsg: ChatMessage = {
-          id: `msg-${Date.now() + 1}`,
-          sender: "assistant",
-          text: answer.reply,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-
-        setMessages((prev) => [...prev, aiMsg]);
-      } catch (err) {
-        const fallbackMsg: ChatMessage = {
-          id: `msg-${Date.now() + 1}`,
-          sender: "assistant",
-          text: "Unable to assess this report right now, please retry",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-        setMessages((prev) => [...prev, fallbackMsg]);
-      } finally {
-        setIsTyping(false);
-      }
-    }, 800);
+      const fallbackMsg: ChatMessage = {
+        id: `msg-${Date.now() + 1}`,
+        sender: "assistant",
+        text: answer.reply,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, fallbackMsg]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (

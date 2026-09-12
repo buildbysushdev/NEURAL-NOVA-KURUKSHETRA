@@ -192,6 +192,56 @@ export default function WalkieTalkie({
     }
   };
 
+  const syncCitizenVoiceToEmergencyGrid = (p: WalkieTransmission) => {
+    if (p.role !== "citizen") return;
+    const voiceIncident = {
+      id: `VOICE-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      type: "Citizen Voice SOS",
+      description: `🚨 Emergency Voice Distress (${p.channel}): Assistance requested at ${p.location?.locationName || "Marina Sector B"} (${p.location?.building || "B-17"}, ${p.location?.floor || "Floor 3"}). Audio transmission recorded.`,
+      latitude: p.location?.lat || 13.0544,
+      longitude: p.location?.lng || 80.2818,
+      location_lat: p.location?.lat || 13.0544,
+      location_lng: p.location?.lng || 80.2818,
+      severity: "CRITICAL" as const,
+      severity_score: 9,
+      status: "open",
+      needed_resources: ["rescue_boats", "medical_kits", "paramedics"],
+      audio_url: p.audioUrl || undefined,
+      created_at: new Date().toISOString(),
+      location_name: p.location?.locationName,
+      building: p.location?.building,
+      floor: p.location?.floor,
+    };
+
+    try {
+      localStorage.setItem("kurukshetra_latest_incident", JSON.stringify(voiceIncident));
+      const existing = JSON.parse(localStorage.getItem("citizen_submitted_incidents") || "[]");
+      existing.unshift(voiceIncident);
+      localStorage.setItem("citizen_submitted_incidents", JSON.stringify(existing.slice(0, 50)));
+      localStorage.setItem("latest_citizen_voice_cry", JSON.stringify(p));
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("kurukshetra:incident_reported", { detail: voiceIncident }));
+      window.dispatchEvent(new CustomEvent("kurukshetra:voice_transmitted", { detail: p }));
+    } catch (storageErr) {}
+
+    fetch("/api/incidents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: `Citizen Voice SOS (${p.channel})`,
+        description: `Voice Distress: Immediate assistance requested at ${p.location?.locationName || "Marina Sector B"} (${p.location?.building || "B-17"}, ${p.location?.floor || "Floor 3"}).`,
+        category: "Citizen Voice SOS",
+        latitude: p.location?.lat || 13.0544,
+        longitude: p.location?.lng || 80.2818,
+        estimated_people_count: 4,
+      }),
+    }).catch(() => {});
+
+    toast.success("Voice SOS Sent to Rescue & Authority", {
+      description: `GPS coordinates & audio routed to NDRF Squad Alpha and Authority War Room.`,
+    });
+  };
+
   const startTransmission = async (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
@@ -257,6 +307,8 @@ export default function WalkieTalkie({
           window.dispatchEvent(new Event("storage"));
         } catch (e) {}
 
+        syncCitizenVoiceToEmergencyGrid(payload);
+
         // Send to backend API
         fetch("/api/walkie", {
           method: "POST",
@@ -314,6 +366,8 @@ export default function WalkieTalkie({
         localStorage.setItem("last_walkie_tx", JSON.stringify(payload));
         window.dispatchEvent(new Event("storage"));
       } catch (e) {}
+
+      syncCitizenVoiceToEmergencyGrid(payload);
 
       setTimeout(() => setStatusText("STANDBY"), 1500);
       onTransmit?.(payload);

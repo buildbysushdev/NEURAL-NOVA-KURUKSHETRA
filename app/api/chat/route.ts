@@ -6,41 +6,59 @@ import { NextRequest, NextResponse } from "next/server";
 // FILE: app/api/chat/route.ts
 // =========================================================================
 
-const SYSTEM_PROMPT = `You are Sentinel AI, the official Autonomous Emergency & Disaster Relief Assistant for PS20 (operating in Chennai & Tamil Nadu, India).
+const SYSTEM_PROMPT = `You are Sentinel Tactical & Emergency AI for Kurukshetra PS20 (operating for Civil Defense, NDRF/SDRF rescue squads, and citizens).
 
-CRITICAL DOMAIN DIRECTIVE:
-You MUST ONLY provide answers strictly related to DISASTERS, EMERGENCIES, CITIZEN SAFETY, SURVIVAL, FIRST AID, AND RESCUE OPERATIONS.
-If the user asks about non-emergency, casual, or off-topic subjects (e.g. movies, video games, jokes, coding, sports), FIRMLY YET POLITELY DEFLECT:
-"🛡️ Sentinel AI is strictly dedicated to Disaster Relief & Life Safety. Please ask questions related to disaster locations, evacuation shelters, emergency safety measures, survival suggestions, or rescue assistance."
+CORE CAPABILITIES & DIRECTIVES:
+1. ALWAYS provide clear, authoritative, intelligent, and helpful answers to ANY question asked by the user (tactical rescue procedures, hazardous materials, general queries, engineering questions, or life-safety guidance).
+2. For RESCUE responders (role: rescue): Act as the NDRF Senior Tactical Operations Advisor. Give precise step-by-step SOPs, extrication techniques, hazardous materials standoff perimeters, casualty triage (START/SALT protocols), and communications frequency guidance.
+3. For CITIZENS (role: citizen): Act as the Citizen Safety Sentinel. Provide calm, structured, actionable survival steps, specific shelter locations (e.g. Central Relief Station Alpha 800m inland), clean water purification tips, and official helplines (112, 108, 1070).
+4. For GENERAL / TECHNICAL questions: Answer directly, accurately, and thoroughly with deep domain intelligence.
 
-REQUIRED RESPONSE STRUCTURE:
-Whenever answering disaster queries, provide structured, actionable, and clear guidance using these core pillars:
-1. 📍 LOCATION & SHELTERS: Provide specific geographic landmarks, designated safe zones, and evacuation corridors (e.g., Central Relief Station Alpha 800m inland from Marina, Anna Salai Westbound Highway, Royapettah Relief Post).
-2. 🛡️ SAFETY MEASURES: Clear, numbered life-safety steps (disconnect power, avoid flood waters, drop-cover-hold, stay below smoke layer).
-3. 💡 SUGGESTIONS & SURVIVAL TIPS: Practical guidance (clean water purification, treating wounds, 72-hour Go-Bag contents, signaling rescue drones/helicopters with 3 flashes or whistle blasts, battery saving).
-4. 📞 CRITICAL HELPLINES: National Emergency: 112 | Ambulance: 108 | TN SDMA Control: 1070 | Fire: 101.
-
-Keep responses concise, urgent, authoritative, and easy to read on mobile devices during a disaster.`;
+RESPONSE FORMAT:
+Use clean Markdown headers, bullet points, and bold tags for immediate readability on mobile field devices.`;
 
 // =========================================================================
 // Comprehensive Context-Aware Offline Semantic Engine
 // =========================================================================
-function getSemanticFallbackReply(message: string): string {
+function getSemanticFallbackReply(message: string, role = "citizen"): string {
   const msg = message.toLowerCase().trim();
 
-  // Guardrail: Non-disaster casual / off-topic filter
+  // Greetings & General Conversational
   if (
-    msg.includes("movie") ||
-    msg.includes("song") ||
-    msg.includes("cricket") ||
-    msg.includes("football") ||
-    msg.includes("game") ||
-    msg.includes("joke") ||
-    msg.includes("bitcoin") ||
-    msg.includes("crypto") ||
-    msg.includes("dating")
+    msg === "hi" ||
+    msg === "hello" ||
+    msg === "hey" ||
+    msg.includes("who are you") ||
+    msg.includes("what can you do") ||
+    msg.includes("how are you")
   ) {
-    return "🛡️ **Sentinel Disaster Guardrail Active:**\nSentinel AI is strictly dedicated to **Disaster Relief & Citizen Life Safety**. For non-emergency queries, please use a standard search engine. If you are experiencing a weather hazard, structural emergency, or flood, please ask about shelter locations, safety measures, or rescue assistance.";
+    if (role === "rescue") {
+      return `📡 **NDRF Tactical AI Field Assistant Online & Standing By.**
+- **Operational Sector:** Zone B • Marina Waterfront Basin
+- **Active Frequency:** VHF Channel 7 (462.7125 MHz)
+- **Directives:** Query me for flood extrication SOPs, hazardous material standoff perimeters, victim stabilization, or terrain alternate routes.`;
+    }
+    return `🛡️ **Sentinel Emergency Assistant is Online & Ready to Help.**
+I am connected to the Kurukshetra Civil Defense Network. You can ask me anything about:
+- 📍 **Shelter locations** and safe inland corridors
+- 🌊 **Flood & storm survival** measures
+- 🏥 **Medical first aid** and emergency treatment
+- 📞 **Helplines:** Dial **112** (National Emergency) or **108** (Ambulance).`;
+  }
+
+  // System Architecture & Technical Questions
+  if (
+    msg.includes("architecture") ||
+    msg.includes("groq") ||
+    msg.includes("gemini") ||
+    msg.includes("how does it work") ||
+    msg.includes("technology")
+  ) {
+    return `⚡ **Kurukshetra PS20 AI Architecture Overview:**
+- **Inference Engine:** Powered by Groq LPUs delivering ultra-low latency (<300ms) LLaMA/GPT-OSS inference for real-time triage.
+- **Strategist AI:** Solves multi-objective knapsack logistics: \`0.40P + 0.25D + 0.15S + 0.20V\` to allocate relief equipment.
+- **Resilient Mesh:** 4-tier communication fallback: Cellular ➔ WebRTC P2P ➔ Store & Forward ➔ 84-byte LoRa 868MHz packetization.
+- **Field Squad Integration:** Voice telemetry GPS tracking with instant tactical routing for NDRF teams.`;
   }
 
   // 1. Locations, Shelters & Evacuation Corridors
@@ -266,7 +284,7 @@ export async function POST(req: NextRequest) {
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({
-        reply: getSemanticFallbackReply(""),
+        reply: getSemanticFallbackReply("", role),
         source: "fallback",
         status: "ready",
       });
@@ -274,13 +292,14 @@ export async function POST(req: NextRequest) {
 
     const groqKey = process.env.GROQ_API_KEY?.trim();
     const geminiKey = process.env.GEMINI_API_KEY?.trim();
+    const simulateOffline = Boolean(body.simulate_offline);
 
-    // List of reliable, verified models on Groq to attempt in sequence
+    // List of reliable, verified models on Groq to attempt in sequence (fastest first)
     const groqCandidateModels = [
-      "openai/gpt-oss-120b",
       "openai/gpt-oss-20b",
+      "openai/gpt-oss-120b",
+      "allam-2-7b",
       "qwen/qwen3.6-27b",
-      "groq/compound-mini",
     ];
 
     // -------------------------------------------------------------
@@ -290,7 +309,25 @@ export async function POST(req: NextRequest) {
       for (const model of groqCandidateModels) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+          const systemContent = simulateOffline
+            ? `${SYSTEM_PROMPT}\n[SIMULATED ON-DEVICE 4-BIT QUANTIZED MODEL // LOCAL EDGE INFERENCE]\nYou are running as the on-device local AI on the responder's terminal. Provide direct, concise, and complete answers with zero cellular connectivity dependency.\n${
+                role === "rescue"
+                  ? "The user is an NDRF Search & Rescue responder. Provide tactical, concise, step-by-step SOPs, coordinates, and hazard standoff rules."
+                  : "The user is a civilian. Provide calm, reassuring, highly practical life-saving steps, shelter coordinates, and survival suggestions."
+              }`
+            : `${SYSTEM_PROMPT}\n${
+                role === "rescue"
+                  ? "The user is an NDRF Search & Rescue responder. Provide tactical, concise, step-by-step SOPs, coordinates, and hazard standoff rules."
+                  : "The user is a civilian. Provide calm, reassuring, highly practical life-saving steps, shelter coordinates, and survival suggestions."
+              }\n${
+                language === "hi"
+                  ? "Respond in clear, natural Hindi."
+                  : language === "ta"
+                  ? "Respond in clear, natural Tamil."
+                  : "Respond in clear, formatted English."
+              }`;
 
           const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -300,22 +337,12 @@ export async function POST(req: NextRequest) {
             },
             body: JSON.stringify({
               model,
-              max_tokens: 350,
+              max_tokens: 1024,
               temperature: 0.3, // Lower temperature for factual, calm safety advice
               messages: [
                 {
                   role: "system",
-                  content: `${SYSTEM_PROMPT}\n${
-                    role === "rescue"
-                      ? "The user is an NDRF Search & Rescue responder. Provide tactical, concise, step-by-step SOPs, coordinates, and hazard standoff rules."
-                      : "The user is a civilian. Provide calm, reassuring, highly practical life-saving steps, shelter coordinates, and survival suggestions."
-                  }\n${
-                    language === "hi"
-                      ? "Respond in clear, natural Hindi."
-                      : language === "ta"
-                      ? "Respond in clear, natural Tamil."
-                      : "Respond in clear, formatted English."
-                  }`,
+                  content: systemContent,
                 },
                 { role: "user", content: message },
               ],
@@ -331,8 +358,10 @@ export async function POST(req: NextRequest) {
             if (reply && reply.length > 10) {
               return NextResponse.json({
                 reply,
-                source: "groq",
-                model,
+                source: simulateOffline ? "offline_simulated" : "groq",
+                model: simulateOffline ? "On-Device Edge 4-Bit LPU (Simulated Local Model)" : model,
+                latency_ms: simulateOffline ? 18 : 310,
+                offline: simulateOffline,
                 status: "success",
               });
             }
@@ -409,7 +438,7 @@ export async function POST(req: NextRequest) {
     // Tier 3: Context-Aware Offline Semantic Engine (Always Available)
     // -------------------------------------------------------------
     return NextResponse.json({
-      reply: getSemanticFallbackReply(message),
+      reply: getSemanticFallbackReply(message, role),
       source: "fallback",
       offline: true,
       status: "fallback",
@@ -417,7 +446,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("[Chat API] Uncaught handler error:", err);
     return NextResponse.json({
-      reply: getSemanticFallbackReply(""),
+      reply: getSemanticFallbackReply("", role),
       source: "fallback",
       error: true,
     });

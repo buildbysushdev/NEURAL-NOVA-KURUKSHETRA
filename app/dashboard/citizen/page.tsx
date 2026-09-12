@@ -9,6 +9,7 @@ import AlertMap from "@/components/AlertMap";
 import { RichAlertCard, RichAlertIncident } from "@/components/notifications/RichAlertCard";
 import WalkieTalkie from "@/components/WalkieTalkie";
 import LocalAIMeshSOS from "@/components/citizen/LocalAIMeshSOS";
+import { CitizenChatbot } from "@/components/citizen/CitizenChatbot";
 import { generateFallbackAnalysis } from "@/lib/agents/analyst";
 import { subscribeToIncidents } from "@/lib/realtimeSubscriptions";
 import { toast } from "sonner";
@@ -103,7 +104,7 @@ export default function CitizenDashboardPage() {
   const { language } = useLanguage();
 
   const [userLocation] = useState<[number, number]>([13.0544, 80.2818]);
-  const [activeTab, setActiveTab] = useState<"safety" | "shelters" | "report" | "helplines" | "relief" | "walkie">("safety");
+  const [activeTab, setActiveTab] = useState<"safety" | "shelters" | "report" | "helplines" | "relief" | "walkie" | "chat">("safety");
   const [isMarkedSafe, setIsMarkedSafe] = useState(false);
   const [recentReports, setRecentReports] = useState<IncidentReport[]>([]);
 
@@ -123,6 +124,7 @@ export default function CitizenDashboardPage() {
         else if (tab === "shelters" || tab === "map") setActiveTab("shelters");
         else if (tab === "helplines") setActiveTab("helplines");
         else if (tab === "relief") setActiveTab("relief");
+        else if (tab === "chat" || tab === "help") setActiveTab("chat");
         else if (tab === "safety" || !tab) setActiveTab("safety");
       }
     };
@@ -932,6 +934,22 @@ export default function CitizenDashboardPage() {
                 sector="Marina Waterfront Sector B"
                 channel="CH 7 • 462.7125 MHz"
               />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: CITIZEN SENTINEL AI CHATBOT */}
+        {activeTab === "chat" && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2 text-slate-900 font-bold font-mono text-sm">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <span>Sentinel AI Emergency Support Assistant</span>
+              </div>
+              <p className="text-xs text-slate-600 mb-4">
+                Ask any questions about verified shelter locations, flood safety measures, medical emergency aid, or evacuation assistance. Powered by Groq Ultra-Low Latency AI with complete offline fallback.
+              </p>
+              <CitizenChatbot />
             </div>
           </div>
         )}

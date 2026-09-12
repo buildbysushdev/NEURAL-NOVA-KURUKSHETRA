@@ -24,9 +24,18 @@ import { FloatingChatbotButton } from "@/components/citizen/FloatingChatbotButto
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function CitizenShell({ children }: { children: React.ReactNode }) {
+function CitizenShell({
+  children,
+  onRoleSwitch,
+  onLogout,
+}: {
+  children: React.ReactNode;
+  onRoleSwitch: (role: UserRole) => void;
+  onLogout: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
+  const [showPersonaMenu, setShowPersonaMenu] = useState(false);
 
   const tabs = [
     { href: "/dashboard/citizen", label: "🏠", text: "Home" },
@@ -51,7 +60,7 @@ function CitizenShell({ children }: { children: React.ReactNode }) {
           top: 0,
           zIndex: 50,
           height: 56,
-          background: "rgba(255,255,255,0.92)",
+          background: "rgba(255,255,255,0.94)",
           borderBottom: "1px solid #E2D9C8",
           backdropFilter: "blur(12px)",
           display: "flex",
@@ -80,42 +89,173 @@ function CitizenShell({ children }: { children: React.ReactNode }) {
           </div>
           <div style={{ fontSize: 10, color: "#64748b" }}>Citizen Safety Portal</div>
         </div>
-        <a
-          href="tel:112"
-          style={{
-            marginLeft: "auto",
-            padding: "6px 14px",
-            borderRadius: 20,
-            background: "#ef4444",
-            color: "white",
-            fontWeight: 700,
-            fontSize: 11,
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
-          📞 112
-        </a>
-        <button
-          onClick={() => {
-            localStorage.clear();
-            router.push("/login");
-          }}
-          style={{
-            marginLeft: 8,
-            background: "none",
-            border: "1px solid #E2D9C8",
-            borderRadius: 8,
-            padding: "4px 10px",
-            fontSize: 10,
-            color: "#64748b",
-            cursor: "pointer",
-          }}
-        >
-          Switch
-        </button>
+
+        {/* Right side: 112 Call + Persona Switcher & Sign Out */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <a
+            href="tel:112"
+            style={{
+              padding: "6px 14px",
+              borderRadius: 20,
+              background: "#ef4444",
+              color: "white",
+              fontWeight: 700,
+              fontSize: 11,
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            📞 112
+          </a>
+
+          {/* Persona Switcher & Sign Out Dropdown */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowPersonaMenu((v) => !v)}
+              style={{
+                background: "#ffffff",
+                border: "1px solid #D6CEBE",
+                borderRadius: 20,
+                padding: "5px 12px",
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#334155",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              }}
+            >
+              <span>👤 Citizen</span>
+              <span style={{ fontSize: 9 }}>▾</span>
+            </button>
+
+            {showPersonaMenu && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  marginTop: 6,
+                  width: 220,
+                  background: "#ffffff",
+                  border: "1px solid #E2D9C8",
+                  borderRadius: 14,
+                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                  padding: "8px",
+                  zIndex: 100,
+                }}
+              >
+                <div style={{ padding: "4px 8px", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Switch Operational Persona
+                </div>
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onRoleSwitch("citizen");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "#FEF2F2",
+                    color: "#DC2626",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    cursor: "pointer",
+                    marginBottom: 2,
+                  }}
+                >
+                  <span>🛡️ Citizen Portal</span>
+                  <span style={{ fontSize: 10 }}>Active</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onRoleSwitch("rescue");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#334155",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    marginBottom: 2,
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "#F1F5F9")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span>🚁 Rescue Squad Alpha</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onRoleSwitch("authority");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#334155",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    marginBottom: 6,
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "#F1F5F9")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span>🏛️ Authority Command HQ</span>
+                </button>
+                <div style={{ height: 1, background: "#E2D9C8", margin: "4px 0" }} />
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onLogout();
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#EF4444",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: "pointer",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "#FEE2E2")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span>🚪 Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* Main content */}
@@ -175,13 +315,16 @@ function CitizenShell({ children }: { children: React.ReactNode }) {
 function RescueShell({
   children,
   userEmail,
+  onRoleSwitch,
   onLogout,
 }: {
   children: React.ReactNode;
   userEmail: string;
+  onRoleSwitch: (role: UserRole) => void;
   onLogout: () => void;
 }) {
   const router = useRouter();
+  const [showPersonaMenu, setShowPersonaMenu] = useState(false);
 
   return (
     <div
@@ -279,21 +422,150 @@ function RescueShell({
             ON DUTY
           </div>
 
-          {/* Switch Portal */}
-          <button
-            onClick={() => router.push("/dashboard/authority")}
-            style={{
-              padding: "5px 12px",
-              borderRadius: 8,
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#94a3b8",
-              fontSize: 10,
-              cursor: "pointer",
-            }}
-          >
-            Switch Portal
-          </button>
+          {/* Persona Switcher & Sign Out Dropdown for Rescue */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowPersonaMenu((v) => !v)}
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(245,158,11,0.35)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#FCD34D",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span>🚁 Rescue Lead</span>
+              <span style={{ fontSize: 9 }}>▾</span>
+            </button>
+
+            {showPersonaMenu && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  marginTop: 6,
+                  width: 220,
+                  background: "#0F172A",
+                  border: "1px solid rgba(245,158,11,0.35)",
+                  borderRadius: 14,
+                  boxShadow: "0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.5)",
+                  padding: "8px",
+                  zIndex: 100,
+                }}
+              >
+                <div style={{ padding: "4px 8px", fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Switch Field Persona
+                </div>
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onRoleSwitch("rescue");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "rgba(245,158,11,0.15)",
+                    color: "#FBBF24",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    cursor: "pointer",
+                    marginBottom: 2,
+                  }}
+                >
+                  <span>🚁 Rescue Squad Alpha</span>
+                  <span style={{ fontSize: 10 }}>Active</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onRoleSwitch("authority");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#E2E8F0",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    marginBottom: 2,
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span>🏛️ Authority Command HQ</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onRoleSwitch("citizen");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#E2E8F0",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    marginBottom: 6,
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span>🛡️ Citizen Portal</span>
+                </button>
+                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
+                <button
+                  onClick={() => {
+                    setShowPersonaMenu(false);
+                    onLogout();
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#F87171",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: "pointer",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.1)")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span>🚪 Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -429,7 +701,9 @@ export default function DashboardLayout({
     try {
       if (isConfigured && supabase) await supabase.auth.signOut();
     } catch {}
-    localStorage.clear();
+    localStorage.removeItem("kurukshetra_active_role");
+    localStorage.removeItem("kurukshetra_active_email");
+    localStorage.removeItem("kurukshetra_role");
     document.cookie = "kurukshetra_role=; path=/; max-age=0";
     router.push("/login");
   };
@@ -467,7 +741,7 @@ export default function DashboardLayout({
   // ── CITIZEN: completely separate shell ────────────────────────────────────
   if (pathname?.includes("/citizen")) {
     return (
-      <CitizenShell>
+      <CitizenShell onRoleSwitch={handleRoleSwitch} onLogout={handleLogout}>
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: 8 }}
@@ -483,7 +757,11 @@ export default function DashboardLayout({
   // ── RESCUE: separate amber ops shell ─────────────────────────────────────
   if (pathname?.includes("/rescue")) {
     return (
-      <RescueShell userEmail={userEmail} onLogout={handleLogout}>
+      <RescueShell
+        userEmail={userEmail}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+      >
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: 8 }}

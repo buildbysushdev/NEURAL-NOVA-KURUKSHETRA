@@ -39,14 +39,85 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   isAlert?: boolean;
+  source?: string;
+  model?: string;
+}
+
+function formatInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={idx} className="font-bold text-white">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function FormattedMessage({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("# ")) {
+          return (
+            <h3 key={i} className="font-bold text-sm text-amber-300 mt-1">
+              {trimmed.replace(/^#\s*/, "")}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h4 key={i} className="font-bold text-xs text-amber-200 mt-1">
+              {trimmed.replace(/^##\s*/, "")}
+            </h4>
+          );
+        }
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h5 key={i} className="font-semibold text-xs text-slate-200 mt-0.5">
+              {trimmed.replace(/^###\s*/, "")}
+            </h5>
+          );
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          return (
+            <div key={i} className="flex items-start gap-1.5 pl-1">
+              <span className="text-amber-400 mt-0.5">•</span>
+              <span className="flex-1">{formatInline(trimmed.replace(/^[-*]\s*/, ""))}</span>
+            </div>
+          );
+        }
+        if (/^\d+\.\s/.test(trimmed)) {
+          return (
+            <div key={i} className="flex items-start gap-1.5 pl-1">
+              <span className="text-amber-400 font-mono text-[10px]">
+                {trimmed.match(/^\d+\./)?.[0]}
+              </span>
+              <span className="flex-1">{formatInline(trimmed.replace(/^\d+\.\s*/, ""))}</span>
+            </div>
+          );
+        }
+        if (!trimmed) {
+          return <div key={i} className="h-1" />;
+        }
+        return <p key={i}>{formatInline(line)}</p>;
+      })}
+    </div>
+  );
 }
 
 const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: "init-1",
     sender: "bot",
-    text: "NDRF Tactical Field AI online. Monitoring emergency frequencies and satellite feeds. Ask me for SOPs, hazardous standoff perimeters, or alternative route calculations.",
-    timestamp: "10:00 AM",
+    text: "NDRF Tactical AI Field Assistant online. VHF Channel 7 linked. Ready to assist with hazardous material standoff perimeters, swiftwater rescue SOPs, and casualty triage.",
+    timestamp: "12:00",
+    source: "groq",
   },
 ];
 
@@ -57,6 +128,7 @@ export function RescueAIChatbot() {
   const [loading, setLoading] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [listening, setListening] = useState(false);
+  const [isOfflineSimulation, setIsOfflineSimulation] = useState(false);
   const [latestAlert, setLatestAlert] = useState<any>(null);
   const [hasUnreadAlert, setHasUnreadAlert] = useState(false);
 
@@ -189,7 +261,9 @@ export function RescueAIChatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           role: "rescue",
-          message: `You are Tactical AI for an NDRF Search and Rescue squad in Chennai. Provide concise, step-by-step tactical SOP, safety procedures, or coordinate advice for: ${query}. Focus on responder safety, extrication protocols, and clear actions.`,
+          message: query.trim(),
+          language: "en",
+          simulate_offline: isOfflineSimulation,
         }),
       });
 
@@ -200,6 +274,8 @@ export function RescueAIChatbot() {
         id: `bot-${Date.now()}`,
         sender: "bot",
         text: botReply,
+        source: data.source || (isOfflineSimulation ? "offline_simulated" : "groq"),
+        model: data.model,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
@@ -211,6 +287,7 @@ export function RescueAIChatbot() {
         sender: "bot",
         text: "Tactical radio link degraded. Standard SOP: Maintain high ground, do not enter electrified standing water, and coordinate with squad lead via VHF Channel 4.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        source: "fallback",
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
@@ -266,12 +343,33 @@ export function RescueAIChatbot() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 </h4>
                 <span className="text-[10px] font-mono text-slate-400">
-                  Groq LLaMA 3.3 · Voice Enabled
+                  {isOfflineSimulation ? "Offline Local Edge Model" : "Groq Ultra LPU Inference"}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Interactive Offline AI Simulation Toggle */}
+              <button
+                onClick={() => {
+                  const nextVal = !isOfflineSimulation;
+                  setIsOfflineSimulation(nextVal);
+                  toast.info(nextVal ? "Simulate Offline AI: ACTIVE" : "Groq Live Cloud AI: ACTIVE", {
+                    description: nextVal
+                      ? "Zero cellular connection simulated. Running on-device edge model inference."
+                      : "Connected to live Groq LPU cluster.",
+                  });
+                }}
+                title="Toggle Offline AI Simulation"
+                className={`px-2 py-1 rounded-lg border text-[10px] font-mono font-bold transition flex items-center gap-1 ${
+                  isOfflineSimulation
+                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                    : "bg-blue-500/20 border-blue-500/40 text-blue-300"
+                }`}
+              >
+                <span>{isOfflineSimulation ? "🟢 OFFLINE" : "⚡ LIVE"}</span>
+              </button>
+
               <button
                 onClick={() => setVoiceEnabled(!voiceEnabled)}
                 title={voiceEnabled ? "Mute Voice Audio" : "Enable Voice Audio"}
@@ -325,18 +423,38 @@ export function RescueAIChatbot() {
                       : "bg-white/[0.05] border border-white/[0.08] text-slate-200 rounded-bl-none"
                   }`}
                 >
-                  <p className="whitespace-pre-line">{msg.text}</p>
+                  <FormattedMessage text={msg.text} />
                 </div>
-                <span className="text-[9px] font-mono text-slate-500 mt-1 px-1">
-                  {msg.timestamp}
-                </span>
+                <div className="flex items-center gap-2 mt-1 px-1">
+                  <span className="text-[9px] font-mono text-slate-500">
+                    {msg.timestamp}
+                  </span>
+                  {msg.sender === "bot" && (
+                    <span className="text-[9px] font-mono text-slate-400 flex items-center gap-1">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          msg.source === "offline_simulated"
+                            ? "bg-emerald-400"
+                            : "bg-blue-400"
+                        }`}
+                      />
+                      {msg.source === "offline_simulated"
+                        ? "Offline Edge (0ms Net)"
+                        : "Groq LPU"}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
 
             {loading && (
               <div className="flex items-center gap-2 text-amber-400 text-xs font-mono p-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Synthesizing tactical measure...</span>
+                <span>
+                  {isOfflineSimulation
+                    ? "Evaluating on-device local LPU SOP..."
+                    : "Querying Groq Tactical LPU..."}
+                </span>
               </div>
             )}
 

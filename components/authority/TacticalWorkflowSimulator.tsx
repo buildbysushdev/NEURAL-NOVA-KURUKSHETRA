@@ -135,10 +135,37 @@ export function TacticalWorkflowSimulator() {
     },
   ];
 
+  const broadcastScenarioAlertToCitizens = (scen: ScenarioDef, customMsg?: string) => {
+    const alertPayload = {
+      id: `ALERT-${scen.id}-${Date.now()}`,
+      title: scen.title,
+      zone: scen.zone,
+      severity: scen.severity >= 8.5 ? "CRITICAL" : "HIGH",
+      severityScore: scen.severity,
+      situationReport: customMsg || scen.description,
+      evacuationCorridor: `Designated safe haven corridor active for ${scen.zone}. Evacuate towards Central Relief Station Alpha (800m inland). Follow marshaled beacons.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      source: "Authority Master Command (CAP Sentinel)",
+      coordinates: scen.hazardType === "flood" ? "13.0544° N, 80.2818° E" : scen.hazardType === "fire" ? "13.1025° N, 80.2985° E" : "13.0827° N, 80.2707° E",
+      shelters: ["Central Relief Station Alpha", "Royapettah Civil Post", "Saidapet Camp"],
+      onsetETA: "IMMEDIATE EVACUATION DIRECTIVE",
+      allocatedSquads: `NDRF Squad Alpha mobilized with ${Object.entries(scen.requiredFleet).map(([k, v]) => `${v} ${k}`).join(", ")}`,
+    };
+
+    try {
+      localStorage.setItem("latest_public_emergency_alert", JSON.stringify(alertPayload));
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("emergency_alert_broadcast", { detail: alertPayload }));
+    } catch (e) {}
+  };
+
   const handleStartSimulation = () => {
     setIsSimulating(true);
     setCurrentStage(1);
     setPipelineLogs([]);
+
+    // Immediately notify citizen portal of active emergency incident
+    broadcastScenarioAlertToCitizens(selectedScenario);
 
     const timestamp = () => new Date().toLocaleTimeString("en-US", { hour12: false });
 
@@ -184,13 +211,14 @@ export function TacticalWorkflowSimulator() {
       setCurrentStage(4);
     }, 2000);
 
-    // Step 4: Ratification
+    // Step 4: Ratification & Live CAP Broadcast
     setTimeout(() => {
+      broadcastScenarioAlertToCitizens(selectedScenario, `RATIFIED ORDER: Evacuate ${selectedScenario.zone}. High-ground route open.`);
       setPipelineLogs((prev) => [
         ...prev,
         {
           stage: 4,
-          message: `🛡️ Authority Commander ratified emergency response order. CAP digital broadcast sent to 1,420 civil devices.`,
+          message: `🛡️ Authority Commander ratified emergency response order. CAP digital broadcast sent to ${selectedScenario.civiliansAtRisk.toLocaleString()} civil devices.`,
           time: timestamp(),
           tag: "COMMAND",
         },
@@ -224,8 +252,9 @@ export function TacticalWorkflowSimulator() {
   };
 
   const handleTriggerCAPBroadcast = () => {
+    broadcastScenarioAlertToCitizens(selectedScenario);
     toast.error("🚨 EMERGENCY CIVIL ALERT BROADCAST (CAP)", {
-      description: `Disaster Stage ${threatStage} Alert broadcasted to all citizens in ${selectedScenario.zone}. Safe haven route: Central Relief Station Alpha.`,
+      description: `Disaster Stage ${threatStage} Alert broadcasted to all citizens in ${selectedScenario.zone}. Active alert updated in Citizen Portal.`,
     });
   };
 
@@ -327,6 +356,10 @@ export function TacticalWorkflowSimulator() {
                   setSelectedScenario(scen);
                   setCurrentStage(0);
                   setPipelineLogs([]);
+                  broadcastScenarioAlertToCitizens(scen);
+                  toast.info(`Scenario Selected: ${scen.title}`, {
+                    description: `Evacuation route and hazard level synchronized to Citizen Portal.`,
+                  });
                 }}
                 className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between relative overflow-hidden ${
                   isSelected

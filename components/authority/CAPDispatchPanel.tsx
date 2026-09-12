@@ -48,8 +48,28 @@ export function CAPDispatchPanel() {
       });
       const data = await res.json();
       setLastResult(data);
+
+      const alertPayload = {
+        id: `CAP-${data.identifier || Date.now()}`,
+        title: headline,
+        zone: areaDesc,
+        severity: urgency.toUpperCase(),
+        severityScore: urgency === "critical" ? 9.5 : urgency === "high" ? 8 : 6,
+        situationReport: message,
+        evacuationCorridor: `Emergency evacuation route active for ${areaDesc}. Proceed to nearest high ground or relief shelter.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        source: "NDMA CAP v1.2 Gateway",
+        coordinates: "13.0544° N, 80.2818° E",
+        onsetETA: "IMMEDIATE BROADCAST",
+      };
+      try {
+        localStorage.setItem("latest_public_emergency_alert", JSON.stringify(alertPayload));
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new CustomEvent("emergency_alert_broadcast", { detail: alertPayload }));
+      } catch (e) {}
+
       toast.success("Triple-Channel Broadcast Dispatched", {
-        description: `Transmitted: In-App Alert, SMS Gateway Log, Voice IVR, and CAP Identifier ${data.identifier}.`,
+        description: `Transmitted: In-App Alert, SMS Gateway Log, Voice IVR, and CAP Identifier ${data.identifier}. Alert live on Citizen Portal.`,
       });
     } catch (err: any) {
       toast.error("Dispatch Failed", { description: err.message });

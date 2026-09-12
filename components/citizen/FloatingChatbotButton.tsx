@@ -21,7 +21,75 @@ import {
 interface Message {
   role: "user" | "bot";
   text: string;
-  source?: "groq" | "gemini" | "fallback";
+  source?: "groq" | "gemini" | "fallback" | "offline_simulated";
+}
+
+function formatInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={idx} className="font-bold text-slate-900">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function FormattedMessage({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("# ")) {
+          return (
+            <h3 key={i} className="font-bold text-sm text-blue-700 mt-1">
+              {trimmed.replace(/^#\s*/, "")}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h4 key={i} className="font-bold text-xs text-blue-600 mt-1">
+              {trimmed.replace(/^##\s*/, "")}
+            </h4>
+          );
+        }
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h5 key={i} className="font-semibold text-xs text-slate-800 mt-0.5">
+              {trimmed.replace(/^###\s*/, "")}
+            </h5>
+          );
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          return (
+            <div key={i} className="flex items-start gap-1.5 pl-1">
+              <span className="text-blue-500 mt-0.5">•</span>
+              <span className="flex-1 text-slate-800">{formatInline(trimmed.replace(/^[-*]\s*/, ""))}</span>
+            </div>
+          );
+        }
+        if (/^\d+\.\s/.test(trimmed)) {
+          return (
+            <div key={i} className="flex items-start gap-1.5 pl-1">
+              <span className="text-blue-600 font-mono text-[10px]">
+                {trimmed.match(/^\d+\./)?.[0]}
+              </span>
+              <span className="flex-1 text-slate-800">{formatInline(trimmed.replace(/^\d+\.\s*/, ""))}</span>
+            </div>
+          );
+        }
+        if (!trimmed) {
+          return <div key={i} className="h-1" />;
+        }
+        return <p key={i} className="text-slate-800">{formatInline(line)}</p>;
+      })}
+    </div>
+  );
 }
 
 const QUICK_REPLIES = [
@@ -34,6 +102,7 @@ const QUICK_REPLIES = [
 
 export function FloatingChatbotButton() {
   const [open, setOpen] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [msgs, setMsgs] = useState<Message[]>([
     {
       role: "bot",
@@ -156,7 +225,12 @@ export function FloatingChatbotButton() {
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, language: "en", role: "citizen" }),
+        body: JSON.stringify({
+          message: userText,
+          language: "en",
+          role: "citizen",
+          simulate_offline: isOfflineMode,
+        }),
       });
       const d = await r.json();
       const reply =
@@ -168,7 +242,7 @@ export function FloatingChatbotButton() {
         {
           role: "bot",
           text: reply,
-          source: d.source || "groq",
+          source: d.source || (isOfflineMode ? "offline_simulated" : "groq"),
         },
       ]);
 
@@ -222,7 +296,7 @@ export function FloatingChatbotButton() {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
                 <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
-                  <span>Groq AI Engine</span>
+                  <span>{isOfflineMode ? "Offline Edge Model (Simulated)" : "Groq AI Engine"}</span>
                   {isSpeaking && (
                     <span className="text-cyan-400 font-medium flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
@@ -234,6 +308,20 @@ export function FloatingChatbotButton() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Interactive Offline AI Simulation Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsOfflineMode(!isOfflineMode)}
+                title="Toggle Offline AI Simulation"
+                className={`px-2 py-1 rounded-lg border text-[10px] font-mono font-bold transition flex items-center gap-1 ${
+                  isOfflineMode
+                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                    : "bg-blue-500/20 border-blue-500/40 text-blue-300"
+                }`}
+              >
+                <span>{isOfflineMode ? "🟢 OFFLINE" : "⚡ LIVE"}</span>
+              </button>
+
               {/* Voice Output Toggle */}
               <button
                 type="button"
@@ -283,13 +371,15 @@ export function FloatingChatbotButton() {
                       : "bg-white text-slate-800 border border-slate-200/80 rounded-tl-none"
                   }`}
                 >
-                  <p className="whitespace-pre-line">{m.text}</p>
+                  <FormattedMessage text={m.text} />
                 </div>
                 {m.role === "bot" && (
                   <div className="flex items-center gap-1.5 text-[9px] text-slate-400 mt-1 pl-1 font-mono">
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        m.source === "groq"
+                        m.source === "offline_simulated"
+                          ? "bg-emerald-500"
+                          : m.source === "groq"
                           ? "bg-emerald-500"
                           : m.source === "gemini"
                           ? "bg-blue-500"
@@ -297,7 +387,9 @@ export function FloatingChatbotButton() {
                       }`}
                     />
                     <span>
-                      {m.source === "groq"
+                      {m.source === "offline_simulated"
+                        ? "Offline Edge (0ms Net)"
+                        : m.source === "groq"
                         ? "Groq Live AI · 240ms"
                         : m.source === "gemini"
                         ? "Gemini 3.6 · Live"
