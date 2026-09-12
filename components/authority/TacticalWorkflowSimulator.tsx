@@ -164,6 +164,15 @@ export function TacticalWorkflowSimulator() {
     setCurrentStage(1);
     setPipelineLogs([]);
 
+    // Trigger full multi-portal sync (Supabase DB + Realtime WebSockets)
+    fetch("/api/simulate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scenario: selectedScenario.hazardType === "fire" ? "red-inferno" : "blue-flood",
+      }),
+    }).catch((e) => console.warn("TacticalWorkflowSimulator API error:", e));
+
     // Immediately notify citizen portal of active emergency incident
     broadcastScenarioAlertToCitizens(selectedScenario);
 

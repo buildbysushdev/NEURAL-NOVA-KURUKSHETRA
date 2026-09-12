@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Map,
@@ -12,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
+  Zap,
 } from "lucide-react";
 import { UserRole } from "@/lib/supabaseClient";
 
@@ -29,32 +29,63 @@ export function AppSidebar({
   setCollapsed,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const role = userRole || "authority";
 
-  const navItems = [
+  // Scroll to a section ID on the authority page
+  const scrollToSection = (sectionId: string) => {
+    // If not on authority page, navigate there first then scroll
+    if (!pathname?.includes("/authority")) {
+      router.push(`/dashboard/authority`);
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 600);
+      return;
+    }
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // Also dispatch a custom event so the page can react (switch tabs etc.)
+    window.dispatchEvent(new CustomEvent("authority_nav", { detail: sectionId }));
+  };
+
+  type NavItem = {
+    label: string;
+    icon: React.FC<{ className?: string }>;
+    href?: string;
+    sectionId?: string;
+    active: boolean;
+    badge?: string;
+    badgeColor?: string;
+  };
+
+  const navItems: NavItem[] = [
     {
-      label: "Dashboard",
+      label: "Command HQ",
       icon: LayoutDashboard,
-      href: `/dashboard/${role}`,
-      active: pathname === `/dashboard/${role}` || pathname === "/dashboard",
+      href: `/dashboard/authority`,
+      active: pathname === `/dashboard/authority` || pathname === "/dashboard",
       badge: "Live",
+      badgeColor: "emerald",
     },
     {
       label: "Tactical Map",
       icon: Map,
-      href: `/dashboard/authority#map-section`,
+      sectionId: "map-section",
       active: false,
     },
     {
       label: "Resources",
       icon: Package,
-      href: `/dashboard/authority#inventory-section`,
+      sectionId: "inventory-section",
       active: false,
     },
     {
       label: "AI Audit Trail",
       icon: ScrollText,
-      href: `/dashboard/authority#audit-section`,
+      sectionId: "audit-section",
       active: false,
     },
     {
@@ -63,11 +94,12 @@ export function AppSidebar({
       href: `/dashboard/test`,
       active: pathname === "/dashboard/test",
       badge: "9/9",
+      badgeColor: "blue",
     },
     {
       label: "Settings",
       icon: Settings,
-      href: `/dashboard/${role}`,
+      href: `/dashboard/authority`,
       active: false,
     },
   ];
@@ -102,12 +134,21 @@ export function AppSidebar({
       <nav className="flex flex-col gap-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          return (
-            <Link
+          const isActive = item.active;
+
+          const handleClick = (e: React.MouseEvent) => {
+            if (item.sectionId) {
+              e.preventDefault();
+              scrollToSection(item.sectionId);
+            }
+          };
+
+          return item.sectionId ? (
+            <button
               key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group ${
-                item.active
+              onClick={handleClick}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group text-left w-full ${
+                isActive
                   ? "bg-white/[0.08] text-slate-100 shadow-lg shadow-black/20 font-medium"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
               }`}
@@ -115,18 +156,55 @@ export function AppSidebar({
             >
               <Icon
                 className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${
-                  item.active
+                  isActive
                     ? "text-blue-400"
                     : "text-slate-400 group-hover:text-slate-300"
                 }`}
               />
               {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
               {!collapsed && item.badge && (
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-500/20 text-emerald-400 animate-pulse font-mono">
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md font-mono ${
+                    item.badgeColor === "blue"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : "bg-emerald-500/20 text-emerald-400 animate-pulse"
+                  }`}
+                >
                   {item.badge}
                 </span>
               )}
-            </Link>
+            </button>
+          ) : (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group ${
+                isActive
+                  ? "bg-white/[0.08] text-slate-100 shadow-lg shadow-black/20 font-medium"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+              title={collapsed ? item.label : undefined}
+            >
+              <Icon
+                className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${
+                  isActive
+                    ? "text-blue-400"
+                    : "text-slate-400 group-hover:text-slate-300"
+                }`}
+              />
+              {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+              {!collapsed && item.badge && (
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md font-mono ${
+                    item.badgeColor === "blue"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : "bg-emerald-500/20 text-emerald-400 animate-pulse"
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
+            </a>
           );
         })}
       </nav>
@@ -152,7 +230,7 @@ export function AppSidebar({
               onClick={() => onRoleSwitch("rescue")}
               className={`flex-1 text-xs py-1.5 rounded-lg transition font-medium ${
                 role === "rescue"
-                  ? "bg-blue-500/20 text-blue-300 shadow-sm"
+                  ? "bg-amber-500/20 text-amber-300 shadow-sm"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]"
               }`}
             >
@@ -169,8 +247,17 @@ export function AppSidebar({
               HQ
             </button>
           </div>
+
+          {/* Quick status row */}
+          <div className="mt-3 flex items-center gap-1.5 px-2">
+            <Zap className="h-3 w-3 text-amber-400" />
+            <span className="text-[10px] text-slate-500 font-mono">
+              {role === "authority" ? "Command Center" : role === "rescue" ? "Field Console" : "Citizen Portal"}
+            </span>
+          </div>
         </div>
       )}
     </aside>
   );
 }
+

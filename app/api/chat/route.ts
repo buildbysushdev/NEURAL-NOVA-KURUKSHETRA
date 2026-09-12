@@ -276,11 +276,12 @@ Ask me about specific shelter locations, evacuation corridors, flood precautions
 // POST Handler: Multi-Model AI Waterfall (Groq -> Gemini -> Semantic Engine)
 // =========================================================================
 export async function POST(req: NextRequest) {
+  let role = "citizen";
   try {
     const body = await req.json().catch(() => ({}));
     const message = body.message || "";
     const language = body.language || "en";
-    const role = body.role || "citizen";
+    role = body.role || "citizen";
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({

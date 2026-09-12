@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { FeatureInfoTooltip } from "@/components/ui/FeatureInfoTooltip";
+import { useIncidentsLive, useNotificationsLive } from "@/hooks/useDemoSync";
 
 interface ShelterInfo {
   id: string;
@@ -109,6 +110,36 @@ export default function CitizenDashboardPage() {
   const [isMarkedSafe, setIsMarkedSafe] = useState(false);
   const [recentReports, setRecentReports] = useState<IncidentReport[]>([]);
 
+  // Live Multi-Portal Synchronization
+  const { incidents: liveIncidents, critical: liveCritical } = useIncidentsLive();
+  const { notifications: liveNotifications, topAlert } = useNotificationsLive();
+
+  const topIncident = liveCritical[0] || liveIncidents[0] || null;
+
+  const alertZoneName = topAlert
+    ? topAlert.title
+    : topIncident
+    ? `${String(topIncident.type).replace(/_/g, " ").toUpperCase()} // SECTOR ALERT`
+    : "Marina Waterfront Sector B // Threat Monitoring";
+
+  const alertAdvisory = topAlert
+    ? topAlert.message
+    : topIncident
+    ? topIncident.description
+    : "Active environmental monitoring enabled. Automated sensors connected to Civil Defense Command.";
+
+  const alertSeverityLevel: "critical" | "watch" | "safe" = topAlert
+    ? topAlert.urgency === "critical"
+      ? "critical"
+      : topAlert.urgency === "warning"
+      ? "watch"
+      : "safe"
+    : topIncident && topIncident.severity_score >= 8
+    ? "critical"
+    : "watch";
+
+  const alertSeverityScore = topIncident?.severity_score ?? (topAlert?.urgency === "critical" ? 9 : 8);
+
   // Check saved citizen safety status & sync URL tab param
   useEffect(() => {
     try {
@@ -152,30 +183,36 @@ export default function CitizenDashboardPage() {
 
   // Enriched Hazard Telemetry powered by Analyst Agent
   const activeRichIncident: RichAlertIncident = useMemo(() => {
+    const inc = topIncident;
+    const type = inc?.type || "flood";
+    const desc =
+      inc?.description ||
+      "High-tide storm surge breached coastal seawall along Marina Beach; lower roadways experiencing rapid inundation.";
+    const locName = inc?.location_name || "Marina Waterfront Sector B // Chennai Central";
+    const sev = inc?.severity_score || 8;
+
     const analysis = generateFallbackAnalysis({
-      incidentId: "CITIZEN-SURGE-ZONE-B",
-      type: "flood",
-      description:
-        "High-tide storm surge breached coastal seawall along Marina Beach; lower roadways experiencing rapid inundation.",
-      location: { lat: userLocation[0], lng: userLocation[1] },
-      locationName: "Marina Waterfront Sector B // Chennai Central",
-      severityScore: 8,
+      incidentId: inc?.id || "CITIZEN-SURGE-ZONE-B",
+      type: type,
+      description: desc,
+      location: { lat: inc?.location_lat || userLocation[0], lng: inc?.location_lng || userLocation[1] },
+      locationName: locName,
+      severityScore: sev,
     });
 
     return {
-      id: "CITIZEN-SURGE-ZONE-B",
-      type: "Storm Surge & Coastal Inundation",
-      location_name: "Marina Waterfront Sector B // Chennai Central",
-      description:
-        "Automated coastal gauge sensors recorded sea surge water level at 2.4m. Inundation encroaching onto Kamaraj Salai corridor.",
-      severity_score: 8,
+      id: inc?.id || "CITIZEN-SURGE-ZONE-B",
+      type: `${String(type).replace(/_/g, " ").toUpperCase()}`,
+      location_name: locName,
+      description: desc,
+      severity_score: sev,
       enriched_data: analysis.enriched_data,
       prediction_data: analysis.prediction_data,
       impact_data: analysis.impact_data,
       recommended_actions: analysis.recommended_actions,
-      created_at: new Date().toISOString(),
+      created_at: inc?.created_at || new Date().toISOString(),
     };
-  }, [userLocation]);
+  }, [userLocation, topIncident]);
 
   return (
     <div className="theme-citizen min-h-screen bg-[#F6F4EF] text-[#1A1A1A] font-public-sans pb-28">
@@ -244,12 +281,12 @@ export default function CitizenDashboardPage() {
           onRequestRescue={() => setIsMarkedSafe(false)}
         />
 
-        {/* Dynamic Warning Banner */}
+        {/* Dynamic Warning Banner connected to Live Sync */}
         <ActiveDisasterBanner
-          zoneName="Marina Waterfront Sector B // Storm Surge Warning"
-          severityLevel="critical"
-          severityScore={8}
-          advisoryText="High-tide sea surge at 2.4m. Coastal roadways experiencing rapid inundation. Safe shelter: Central Relief Station Alpha (800m inland via Anna Salai corridor)."
+          zoneName={alertZoneName}
+          severityLevel={alertSeverityLevel}
+          severityScore={alertSeverityScore}
+          advisoryText={alertAdvisory}
         />
 
         {/* App-Style Main Quick Navigation Buttons (6 Big Tactile Tabs with Info Badges) */}
@@ -566,6 +603,84 @@ export default function CitizenDashboardPage() {
 
               </div>
             </div>
+
+            {/* Realtime Incident & Squad Response Mission Feed */}
+            {liveIncidents.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 font-mono">
+                      Live Incident Grid &amp; Field Squad Response
+                    </h3>
+                    <FeatureInfoTooltip
+                      title="Realtime Multi-Portal Incident Stream"
+                      description="Synchronized live with NDRF / SDRF field rescue units and Civil Defense Command war room."
+                      useCase="Check whether rescue teams have accepted your sector mission or cleared the hazard."
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Realtime Sync Live
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {liveIncidents.slice(0, 4).map((inc) => {
+                    const isIncResolved = inc.status === "resolved";
+                    const isIncEnRoute = inc.status === "in_progress";
+
+                    return (
+                      <div
+                        key={inc.id}
+                        className={`rounded-2xl border p-4 bg-white shadow-sm transition-all ${
+                          isIncResolved
+                            ? "border-emerald-200 bg-emerald-50/40"
+                            : isIncEnRoute
+                            ? "border-blue-300 bg-blue-50/30"
+                            : "border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-xs font-bold capitalize text-slate-900 truncate">
+                            {String(inc.type).replace(/_/g, " ")}
+                          </span>
+                          <span
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase border ${
+                              isIncResolved
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                : isIncEnRoute
+                                ? "bg-blue-100 text-blue-800 border-blue-200 animate-pulse"
+                                : "bg-red-100 text-red-800 border-red-200"
+                            }`}
+                          >
+                            {isIncResolved
+                              ? "RESOLVED / SECURED"
+                              : isIncEnRoute
+                              ? "HELP ON THE WAY (EN ROUTE)"
+                              : `SEV ${inc.severity_score}/10 · OPEN`}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                          {inc.description}
+                        </p>
+
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+                          <span>{inc.location_name || "Sector Coordinate"}</span>
+                          <span className="font-semibold">
+                            {isIncResolved
+                              ? "✅ Field Squad Cleared"
+                              : isIncEnRoute
+                              ? "🚑 Squad En Route"
+                              : "⚠️ Pending Dispatch"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Analyst Agent Physics & Inundation Telemetry */}
             <div className="space-y-2">

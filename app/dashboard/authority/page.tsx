@@ -340,6 +340,54 @@ export default function AuthorityDashboardPage() {
     window.addEventListener("kurukshetra:incident_reported", customListener);
     window.addEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
 
+    let broadcastChannel: any = null;
+    if (supabase) {
+      broadcastChannel = supabase
+        .channel("kurukshetra-realtime-sync")
+        .on("broadcast", { event: "scenario_simulated" }, (payload: any) => {
+          if (payload?.payload?.incidents) {
+            const incoming: IncidentReport[] = payload.payload.incidents.map((d: any) => ({
+              id: d.id?.toString(),
+              type: d.type || "Hazard Incident",
+              description: d.description || "Active emergency coordinate.",
+              location_lat: Number(d.location_lat ?? d.latitude) || 13.0827,
+              location_lng: Number(d.location_lng ?? d.longitude) || 80.2707,
+              latitude: Number(d.location_lat ?? d.latitude) || 13.0827,
+              longitude: Number(d.location_lng ?? d.longitude) || 80.2707,
+              severity: d.severity || (d.severity_score >= 8 ? "CRITICAL" : "HIGH"),
+              severity_score: d.severity_score || 8,
+              needed_resources: d.needed_resources || ["boats", "medical"],
+              created_at: d.created_at || new Date().toISOString(),
+            }));
+            setIncidents((prev) => {
+              const existingIds = new Set(incoming.map((i: any) => i.id));
+              return [...incoming, ...prev.filter((p) => !existingIds.has(p.id))];
+            });
+            toast.success("🚨 Simulation Broadcast Received", {
+              description: `Scenario: ${payload.payload.scenario}. Updated tactical map & GIS vectors.`,
+            });
+          }
+        })
+        .on("broadcast", { event: "rescue_status_updated" }, (payload: any) => {
+          const p = payload?.payload;
+          if (p?.incidentId && p?.status) {
+            setIncidents((prev) =>
+              prev.map((i) => (i.id === p.incidentId ? { ...i, status: p.status } : i))
+            );
+            if (p.status === "resolved") {
+              toast.success("✅ Mission Resolved by Rescue Squad", {
+                description: `Field team completed mission for incident #${p.incidentId.slice(0, 8)}. Resources freed for reallocation.`,
+              });
+            } else if (p.status === "in_progress") {
+              toast.info("🚑 Rescue Squad En Route", {
+                description: `Mission accepted by field team for incident #${p.incidentId.slice(0, 8)}.`,
+              });
+            }
+          }
+        })
+        .subscribe();
+    }
+
     const unsubscribe = subscribeToIncidents((payload) => {
       const newItem = payload.new;
       if (newItem && (newItem.location_lat || newItem.latitude) && (newItem.location_lng || newItem.longitude)) {
@@ -351,6 +399,7 @@ export default function AuthorityDashboardPage() {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("kurukshetra:incident_reported", customListener);
       window.removeEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
+      if (broadcastChannel && supabase) supabase.removeChannel(broadcastChannel);
       unsubscribe();
     };
   }, []);
@@ -359,13 +408,14 @@ export default function AuthorityDashboardPage() {
   const handleSimulateDisaster = async () => {
     setSimulating(true);
     try {
-      const res = await fetch("/api/demo/simulate-disaster", {
+      const res = await fetch("/api/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario: "blue-flood" }),
       });
 
       const data = await res.json();
-      const rawIncidents = data.simulated_incidents || data.incidents;
+      const rawIncidents = data.data?.incidents || data.simulated_incidents || data.incidents;
 
       if (data.success && rawIncidents && Array.isArray(rawIncidents)) {
         const mapped: IncidentReport[] = rawIncidents.map((d: any) => ({
@@ -391,7 +441,7 @@ export default function AuthorityDashboardPage() {
 
         setIncidents((prev) => [...mapped, ...prev]);
         toast.success("Simulation Wave Dispatched", {
-          description: "5 multi-zone disaster clusters injected into tactical map.",
+          description: "Multi-zone disaster clusters injected into tactical map and synchronized across all portals.",
         });
       }
     } catch (err) {

@@ -291,7 +291,7 @@ export async function allocateResourcesWithGemini(params: {
   required_resources?: any;
   demanded_quantities?: Record<string, number>;
 }): Promise<any> {
-  const dummyIncident: Incident = {
+  const dummyIncident: any = {
     id: params.incident_id,
     title: `${params.incident_type.toUpperCase()} Zone Crisis`,
     description: `Disaster wave active in sector. Severity: ${params.incident_severity}`,
@@ -310,7 +310,7 @@ export async function allocateResourcesWithGemini(params: {
     created_at: new Date().toISOString(),
   };
 
-  const defaultDepots: Depot[] = [
+  const defaultDepots: any[] = [
     {
       id: "depot-1",
       name: "Central Forward Depot",
@@ -331,7 +331,7 @@ export async function allocateResourcesWithGemini(params: {
     },
   ];
 
-  const defaultResources: ResourceItem[] = [
+  const defaultResources: any[] = [
     {
       id: "res-1",
       depot_id: "depot-1",
@@ -362,9 +362,9 @@ export async function allocateResourcesWithGemini(params: {
   ];
 
   const plan = await optimizeAllocationWithGemini(
-    dummyIncident,
-    defaultDepots,
-    defaultResources
+    dummyIncident as any,
+    defaultDepots as any,
+    defaultResources as any
   );
   return plan;
 }

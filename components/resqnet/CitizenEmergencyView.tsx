@@ -237,7 +237,7 @@ export function CitizenEmergencyView({
                 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                 : "bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse"
             }`}>
-              {lastRoute?.status || (isOnline ? "DELIVERED" : "STORED_LOCALLY")}
+              {(lastRoute as any)?.status || lastRoute?.status_text || (isOnline ? "DELIVERED" : "STORED_LOCALLY")}
             </span>
           </div>
 

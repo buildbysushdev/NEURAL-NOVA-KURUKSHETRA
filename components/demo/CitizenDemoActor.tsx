@@ -16,7 +16,7 @@ export default function CitizenDemoActor() {
       if (state.step !== 'citizen-ops') return;
 
       console.log('[CitizenDemoActor] Activated for scenario:', state.scenario);
-      await wait(1000);
+      await wait(2000);
       if (unmounted) return;
 
       // 1) Open chatbot if floating button exists
@@ -30,7 +30,7 @@ export default function CitizenDemoActor() {
         try {
           chatBtn.click();
         } catch (e) {}
-        await wait(700);
+        await wait(1200);
         chatBtn.classList.remove('demo-click-flash');
       }
 
@@ -65,7 +65,7 @@ export default function CitizenDemoActor() {
             sendBtn.click();
           } catch (e) {}
         }
-        await wait(2200);
+        await wait(3200);
       }
 
       if (unmounted) return;
@@ -81,7 +81,7 @@ export default function CitizenDemoActor() {
         try {
           routeBtn.click();
         } catch (e) {}
-        await wait(1000);
+        await wait(1800);
         routeBtn.classList.remove('demo-click-flash');
       }
 
@@ -94,12 +94,12 @@ export default function CitizenDemoActor() {
       if (ptt) {
         ptt.classList.add('demo-click-flash');
         ptt.dispatchEvent(new Event('mousedown', { bubbles: true }));
-        await wait(1000);
+        await wait(1800);
         ptt.dispatchEvent(new Event('mouseup', { bubbles: true }));
         ptt.classList.remove('demo-click-flash');
       }
 
-      await wait(1000);
+      await wait(1800);
       if (unmounted) return;
 
       // 5) Advance demo state back to Authority Command HQ

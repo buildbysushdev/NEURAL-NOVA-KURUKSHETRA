@@ -13,6 +13,8 @@ import {
   Sparkles,
   Minus,
   Maximize2,
+  AlertTriangle,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -22,6 +24,44 @@ import {
   wait,
   type DemoScenario,
 } from '@/lib/demo/demoOrchestrator';
+
+// ─── Supply Redirect Logic ────────────────────────────────────────────────────
+type SupplyZone = {
+  id: string;
+  name: string;
+  stock: number;
+};
+
+const DEMO_SUPPLY_ZONES: SupplyZone[] = [
+  { id: 'zone-a', name: 'Marina North Depot', stock: 40 },
+  { id: 'zone-b', name: 'Coastal Relief Hub', stock: 120 },
+  { id: 'zone-c', name: 'Emergency Warehouse B', stock: 200 },
+  { id: 'zone-d', name: 'Southern Staging Point', stock: 180 },
+];
+
+function getSupplyAllocation(
+  requiredUnits: number,
+  preferredZoneId: string
+): { zone: SupplyZone; redirected: boolean; reason?: string } {
+  const preferred = DEMO_SUPPLY_ZONES.find((z) => z.id === preferredZoneId);
+  if (preferred && preferred.stock >= requiredUnits) {
+    return { zone: preferred, redirected: false };
+  }
+  const alternative = DEMO_SUPPLY_ZONES
+    .filter((z) => z.id !== preferredZoneId && z.stock >= requiredUnits)
+    .sort((a, b) => b.stock - a.stock)[0];
+  if (alternative) {
+    return {
+      zone: alternative,
+      redirected: true,
+      reason: preferred
+        ? `${preferred.name} has only ${preferred.stock} units (need ${requiredUnits})`
+        : 'Primary zone unavailable',
+    };
+  }
+  const fallback = [...DEMO_SUPPLY_ZONES].sort((a, b) => b.stock - a.stock)[0];
+  return { zone: fallback, redirected: true, reason: 'All primary zones low — consolidated dispatch' };
+}
 
 type Step = {
   id: string;
@@ -44,8 +84,12 @@ export default function AutoDemoPlayer({
   const [isMinimized, setIsMinimized] = useState(false);
   const [scenario, setScenario] = useState<DemoScenario | null>(null);
   const [stepIndex, setStepIndex] = useState(-1);
+  const [totalSteps, setTotalSteps] = useState(5);
   const [logs, setLogs] = useState<string[]>([]);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [supplyRedirectInfo, setSupplyRedirectInfo] = useState<{
+    from: string; to: string; reason: string;
+  } | null>(null);
   const stopRef = useRef(false);
 
   const log = (msg: string) => {
@@ -55,7 +99,7 @@ export default function AutoDemoPlayer({
       minute: '2-digit',
       second: '2-digit',
     });
-    setLogs((p) => [`[${time}] ${msg}`, ...p].slice(0, 16));
+    setLogs((p) => [`[${time}] ${msg}`, ...p].slice(0, 22));
   };
 
   const speak = (text: string) => {
@@ -63,7 +107,7 @@ export default function AutoDemoPlayer({
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.05;
+      utterance.rate = 0.92; // Slightly slower for clarity
       utterance.pitch = 1.0;
       window.speechSynthesis.speak(utterance);
     } catch {}
@@ -71,7 +115,7 @@ export default function AutoDemoPlayer({
 
   const go = async (path: string) => {
     router.push(path);
-    await wait(1400); // let page mount
+    await wait(2800); // Longer wait — let page fully mount before actors run
     if (typeof window !== 'undefined' && window.location.pathname !== path) {
       window.location.href = path;
     }
@@ -110,7 +154,8 @@ export default function AutoDemoPlayer({
         setTimeout(() => {
           setRunning(false);
           clearDemoState();
-        }, 5000);
+          setSupplyRedirectInfo(null);
+        }, 7000);
       }
     };
 
@@ -122,10 +167,10 @@ export default function AutoDemoPlayer({
   const buildBlueFloodSteps = (): Step[] => [
     {
       id: 'boot',
-      title: 'Arm multi-agent war room',
+      title: '🟢 Arm multi-agent war room',
       detail: 'Sentinel + Analyst + Strategist online',
-      durationMs: 1000,
-      speechText: 'Arming multi-agent war room. Sentinel, Analyst, and Strategist online.',
+      durationMs: 3500,
+      speechText: 'Arming multi-agent war room. Sentinel, Analyst, and Strategist are now online and monitoring all coastal sensors.',
       run: async () => {
         setDemoState({
           active: true,
@@ -136,14 +181,18 @@ export default function AutoDemoPlayer({
         });
         log('🟢 Pipeline armed: Sentinel & Strategist online');
         if (onSwitchTab) onSwitchTab('simulator');
+        await wait(1400);
+        log('📡 Satellite uplink established — USGS stream active');
+        await wait(900);
+        log('🤖 AI Allocation Engine warm-up complete');
       },
     },
     {
       id: 'simulate',
-      title: 'Inject Marina flood cluster',
-      detail: 'Authority simulate endpoint + map markers',
-      durationMs: 1800,
-      speechText: 'Injecting coastal flash flood cluster along Marina waterfront.',
+      title: '🚨 Inject Marina flood cluster',
+      detail: '4 zones detected — severity mapped on authority dashboard',
+      durationMs: 5000,
+      speechText: 'Injecting coastal flash flood cluster. Four distress zones detected along Marina waterfront with varying severity levels.',
       run: async () => {
         setDemoState({
           active: true,
@@ -153,21 +202,70 @@ export default function AutoDemoPlayer({
           logs: ['🚨 Flood simulation fired. NASA FIRMS and USGS telemetry synced.'],
         });
         log('🚨 Flood simulation fired');
+        await wait(700);
         try {
-          await fetch('/api/demo/simulate-disaster', { method: 'POST' });
+          await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario: 'blue-flood' }),
+          });
         } catch {}
+        await wait(500);
         const btn = document.querySelector('[data-demo="simulate-btn"]') as HTMLElement | null;
         btn?.click();
+        await wait(800);
+        log('📍 Zone A: Marina North — CRITICAL (storm surge 2.4m)');
+        await wait(700);
+        log('📍 Zone B: Coastal Colony — HIGH (1.8m surge, 340 displaced)');
+        await wait(700);
+        log('📍 Zone C: Fishermen Harbour — MEDIUM (evacuation in progress)');
+        await wait(700);
+        log('📍 Zone D: Relief Camp Alpha — LOW (needs supply coordination)');
         if (onRefresh) onRefresh();
       },
     },
     {
-      id: 'approve',
-      title: 'Human-in-loop approval',
-      detail: 'Commander ratifies AI allocation',
-      durationMs: 1500,
-      speechText: 'Commander ratifies AI tactical resource allocation.',
+      id: 'supply-check',
+      title: '📦 AI supply prioritization',
+      detail: 'Zone A depleted → AI redirects to nearest alternative depot',
+      durationMs: 4000,
+      speechText: 'Running AI supply allocation engine. Zone A shows depleted stock. System automatically redirects to the nearest alternative depot — saving significant transit time versus fresh allocation.',
       run: async () => {
+        log('📦 Checking inventory across all 4 supply zones...');
+        await wait(1400);
+        const alloc = getSupplyAllocation(80, 'zone-a');
+        await wait(900);
+        if (alloc.redirected) {
+          const redirectData = {
+            from: 'Marina North Depot (Zone A)',
+            to: alloc.zone.name,
+            reason: alloc.reason || 'Stock exhausted',
+          };
+          setSupplyRedirectInfo(redirectData);
+          log(`⚠️ Zone A DEPLETED — ${alloc.reason}`);
+          await wait(700);
+          log(`↪️ AI REDIRECT → ${alloc.zone.name} (${alloc.zone.stock} units available)`);
+          await wait(500);
+          toast.warning('⚠️ Supply Redirect Triggered', {
+            description: `${redirectData.from} is depleted. AI rerouted to ${redirectData.to} — saves ~38 min vs fresh allocation.`,
+            duration: 6000,
+          });
+        } else {
+          log('✅ Zone A stock sufficient — direct dispatch confirmed');
+        }
+        await wait(700);
+        log('🤖 Priority order: Zone A → B → C → D (severity × resource gap)');
+      },
+    },
+    {
+      id: 'approve',
+      title: '✅ Human-in-loop approval',
+      detail: 'Commander reviews + ratifies AI allocation plan',
+      durationMs: 4500,
+      speechText: 'Commander reviewing the AI tactical resource allocation plan. Human oversight confirmed before dispatch is authorized.',
+      run: async () => {
+        log('⏳ Presenting AI allocation plan to Incident Commander...');
+        await wait(1800);
         setDemoState({
           active: true,
           scenario: 'blue-flood',
@@ -175,18 +273,24 @@ export default function AutoDemoPlayer({
           updatedAt: Date.now(),
           logs: ['✅ Allocation approved by Incident Commander.'],
         });
-        log('✅ Tactical allocation approved');
+        await wait(700);
+        log('✅ Commander APPROVED tactical allocation');
+        await wait(400);
         const btn = document.querySelector('[data-demo="approve-btn"]') as HTMLElement | null;
         btn?.click();
+        await wait(900);
+        log('📋 Audit trail logged — human approval timestamp: ' + new Date().toLocaleTimeString());
       },
     },
     {
       id: 'to-rescue',
-      title: 'Shift to Rescue Portal',
-      detail: 'Handing mission cards to field squads',
-      durationMs: 1000,
-      speechText: 'Routing dispatch orders to Rescue Squad Alpha field console.',
+      title: '➡️ Handoff to Rescue Portal',
+      detail: 'Mission cards dispatched to Rescue Squad Alpha',
+      durationMs: 3200,
+      speechText: 'Routing dispatch orders to Rescue Squad Alpha field console. Field units will now receive their mission cards.',
       run: async () => {
+        log('📡 Broadcasting mission orders to Rescue Squad Alpha...');
+        await wait(1200);
         setDemoState({
           active: true,
           scenario: 'blue-flood',
@@ -194,7 +298,8 @@ export default function AutoDemoPlayer({
           updatedAt: Date.now(),
           logs: ['➡️ Routing to Rescue console'],
         });
-        log('➡️ Routing to Rescue Squad console');
+        await wait(600);
+        log('➡️ Navigating to Rescue Squad console...');
         await go('/dashboard/rescue');
       },
     },
@@ -203,10 +308,10 @@ export default function AutoDemoPlayer({
   const buildRedInfernoSteps = (): Step[] => [
     {
       id: 'boot',
-      title: 'Thermal crisis mode',
-      detail: 'FIRMS hotspot + hospital risk cone',
-      durationMs: 1000,
-      speechText: 'Thermal crisis mode activated. Toxic smoke plume model engaged.',
+      title: '🔥 Thermal crisis mode',
+      detail: 'FIRMS hotspot + hospital exclusion cone activated',
+      durationMs: 3500,
+      speechText: 'Thermal crisis mode activated. Industrial chemical fire detected. Toxic smoke plume dispersion model now engaged.',
       run: async () => {
         setDemoState({
           active: true,
@@ -217,14 +322,18 @@ export default function AutoDemoPlayer({
         });
         log('🔥 Red Inferno armed');
         if (onSwitchTab) onSwitchTab('simulator');
+        await wait(1400);
+        log('🌫️ Toxic plume model — wind NE @ 22 km/h, spread radius: 4km');
+        await wait(900);
+        log('🏥 Hospital exclusion cone calculated — 2km radius St. Mary');
       },
     },
     {
       id: 'simulate',
-      title: 'Inject industrial fire wave',
-      detail: 'Fire + toxic plume scenario',
-      durationMs: 1800,
-      speechText: 'Injecting industrial chemical fire with toxic smoke cone.',
+      title: '🚨 Inject industrial fire wave',
+      detail: '4 zones — fire + toxic plume + hospital risk',
+      durationMs: 5000,
+      speechText: 'Injecting industrial chemical fire scenario. Four zones affected — active fire, toxic exposure, hospital risk, and secondary ignition.',
       run: async () => {
         setDemoState({
           active: true,
@@ -234,25 +343,68 @@ export default function AutoDemoPlayer({
           logs: ['🚨 Chemical fire simulation fired'],
         });
         log('🚨 Chemical fire simulation fired');
+        await wait(700);
         try {
-          await fetch('/api/demo/simulate-disaster', {
+          await fetch('/api/simulate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scenario: 'red-inferno' }),
           });
         } catch {}
+        await wait(500);
         const btn = document.querySelector('[data-demo="simulate-btn"]') as HTMLElement | null;
         btn?.click();
+        await wait(800);
+        log('🔥 Zone 1: Industrial Sector — CRITICAL (active chemical fire)');
+        await wait(700);
+        log('🌫️ Zone 2: Downwind Residential — HIGH (toxic CO₂ exposure)');
+        await wait(700);
+        log('🏥 Zone 3: St. Mary Hospital — MEDIUM (evacuation advisory)');
+        await wait(700);
+        log('🧯 Zone 4: Chemical Plant B — HIGH (secondary ignition risk)');
         if (onRefresh) onRefresh();
       },
     },
     {
-      id: 'approve',
-      title: 'Authorize multi-team package',
-      detail: 'Fire tender + HAZMAT + hospital exclusion',
-      durationMs: 1500,
-      speechText: 'Authorizing multi-agency HAZMAT response and hospital exclusion.',
+      id: 'supply-check',
+      title: '📦 HAZMAT supply prioritization',
+      detail: 'SCBA kit depot exhausted → AI redirects to nearest alternative',
+      durationMs: 4000,
+      speechText: 'Running HAZMAT supply allocation. Checking SCBA kits and chemical neutralizer stocks. Primary depot exhausted — AI rerouting to nearest alternative.',
       run: async () => {
+        log('📦 Checking HAZMAT inventory across depots...');
+        await wait(1400);
+        const alloc = getSupplyAllocation(60, 'zone-a');
+        await wait(900);
+        if (alloc.redirected) {
+          const redirectData = {
+            from: 'Marina North Depot (HAZMAT Primary)',
+            to: alloc.zone.name,
+            reason: alloc.reason || 'HAZMAT stock exhausted',
+          };
+          setSupplyRedirectInfo(redirectData);
+          log(`⚠️ HAZMAT depot EXHAUSTED — ${alloc.reason}`);
+          await wait(700);
+          log(`↪️ AI REDIRECT → ${alloc.zone.name} (${alloc.zone.stock} units available)`);
+          await wait(500);
+          toast.warning('⚠️ HAZMAT Supply Redirect', {
+            description: `Primary depot depleted. AI rerouted SCBA kits to ${alloc.zone.name} — saves ~25 min vs fresh allocation.`,
+            duration: 6000,
+          });
+        }
+        await wait(700);
+        log('🤖 HAZMAT priority: Chemical Plant B > Industrial > Residential');
+      },
+    },
+    {
+      id: 'approve',
+      title: '✅ Authorize multi-team HAZMAT package',
+      detail: 'Fire tender + HAZMAT team + hospital exclusion zone',
+      durationMs: 4500,
+      speechText: 'Commander authorizing multi-agency HAZMAT response. Fire tender plus three SCBA teams plus hospital exclusion zone confirmed.',
+      run: async () => {
+        log('⏳ Commander reviewing multi-agency HAZMAT package...');
+        await wait(1800);
         setDemoState({
           active: true,
           scenario: 'red-inferno',
@@ -260,18 +412,24 @@ export default function AutoDemoPlayer({
           updatedAt: Date.now(),
           logs: ['✅ Multi-team HAZMAT dispatch approved'],
         });
-        log('✅ Multi-team HAZMAT dispatch approved');
+        await wait(700);
+        log('✅ Multi-team HAZMAT dispatch APPROVED');
+        await wait(400);
         const btn = document.querySelector('[data-demo="approve-btn"]') as HTMLElement | null;
         btn?.click();
+        await wait(900);
+        log('📋 HAZMAT approval logged — fire tender + 3 SCBA teams dispatched');
       },
     },
     {
       id: 'to-rescue',
-      title: 'Shift to Rescue Portal',
-      detail: 'Field units receive inferno tasks',
-      durationMs: 1000,
-      speechText: 'Dispatching tactical fire and rescue units.',
+      title: '➡️ Handoff to Rescue Portal',
+      detail: 'HAZMAT tasks dispatched to Rescue field console',
+      durationMs: 3200,
+      speechText: 'Dispatching tactical fire and rescue units to the field console. Rescue Squad Alpha now receives HAZMAT mission cards.',
       run: async () => {
+        log('📡 Broadcasting HAZMAT orders to Rescue Squad Alpha...');
+        await wait(1200);
         setDemoState({
           active: true,
           scenario: 'red-inferno',
@@ -279,7 +437,8 @@ export default function AutoDemoPlayer({
           updatedAt: Date.now(),
           logs: ['➡️ Routing to Rescue console'],
         });
-        log('➡️ Routing to Rescue console');
+        await wait(600);
+        log('➡️ Navigating to Rescue console...');
         await go('/dashboard/rescue');
       },
     },
@@ -291,22 +450,31 @@ export default function AutoDemoPlayer({
     setScenario(type);
     setStepIndex(-1);
     setLogs([]);
+    setSupplyRedirectInfo(null);
 
     const steps = type === 'blue-flood' ? buildBlueFloodSteps() : buildRedInfernoSteps();
+    setTotalSteps(steps.length);
     log(`▶ ${type === 'blue-flood' ? 'Operation Blue Flood' : 'Operation Red Inferno'} launched`);
+    await wait(600); // Short breath before starting
 
     for (let i = 0; i < steps.length; i++) {
       if (stopRef.current) break;
       setStepIndex(i);
-      log(`→ ${steps[i].title}`);
+      log(`→ Step ${i + 1}/${steps.length}: ${steps[i].title}`);
       if (steps[i].speechText) speak(steps[i].speechText!);
+      // Announce step to audience via toast
+      toast.info(`Step ${i + 1}/${steps.length}`, {
+        description: steps[i].detail,
+        duration: 3000,
+      });
+      await wait(1500); // Pre-step pause — lets presenter explain what's about to happen
       try {
         await steps[i].run();
       } catch (e) {
         console.error(e);
         log(`⚠ step error: ${steps[i].id}`);
       }
-      await wait(steps[i].durationMs);
+      await wait(steps[i].durationMs); // Post-step hold — audience can clearly see what changed
     }
   };
 
@@ -314,6 +482,7 @@ export default function AutoDemoPlayer({
     stopRef.current = true;
     setRunning(false);
     clearDemoState();
+    setSupplyRedirectInfo(null);
     log('■ Demo stopped');
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -455,6 +624,13 @@ export default function AutoDemoPlayer({
         {/* Action Trigger Cards (When Idle) */}
         {!running && (
           <div className="mb-3 space-y-2">
+            <div className="flex items-start gap-2 rounded-xl border border-violet-500/20 bg-violet-500/5 p-2 mb-1">
+              <Sparkles className="h-3 w-3 text-violet-400 mt-0.5 shrink-0" />
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                Runs <strong className="text-slate-300">step-by-step with pauses</strong> so you can explain each action. Supply redirect included.
+              </p>
+            </div>
+
             <button
               onClick={() => run('blue-flood')}
               className="flex w-full items-center justify-between rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-[#0E1B31] to-cyan-950/30 hover:border-blue-500/60 p-3 text-left transition shadow-md group"
@@ -469,7 +645,7 @@ export default function AutoDemoPlayer({
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Authority → Rescue → Citizen → Closed Loop
+                  Authority → Supply Redirect → Rescue → Citizen → Closed Loop
                 </p>
               </div>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 group-hover:bg-blue-400 text-white shadow-md shadow-blue-500/30 transition">
@@ -491,7 +667,7 @@ export default function AutoDemoPlayer({
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  HAZMAT plume full-loop across 3 portals
+                  HAZMAT plume + supply redirect + 3-portal closed loop
                 </p>
               </div>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500 group-hover:bg-red-400 text-white shadow-md shadow-red-500/30 transition">
@@ -503,7 +679,7 @@ export default function AutoDemoPlayer({
 
         {/* Running Banner */}
         {running && (
-          <div className="mb-3 rounded-xl border border-violet-500/30 bg-violet-500/10 p-2.5 flex items-center justify-between">
+          <div className="mb-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-2.5 flex items-center justify-between">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-violet-300 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping" />
@@ -513,14 +689,35 @@ export default function AutoDemoPlayer({
                 {scenario === 'blue-flood' ? '🌊 Operation Blue Flood' : '🔥 Operation Red Inferno'}
               </p>
             </div>
-            <div className="px-2 py-0.5 rounded-lg bg-violet-500/20 text-violet-300 font-mono text-[10px] font-bold">
-              Step {Math.max(1, stepIndex + 1)}
+            <div className="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 font-mono text-[11px] font-bold">
+              {Math.max(1, stepIndex + 1)}/{totalSteps}
+            </div>
+          </div>
+        )}
+
+        {/* Supply Redirect Alert */}
+        {supplyRedirectInfo && (
+          <div className="mb-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-2.5">
+            <div className="flex items-start gap-2">
+              <ArrowRightLeft className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  AI Supply Redirect
+                </p>
+                <p className="text-[9px] text-slate-400 mt-0.5">
+                  <span className="text-red-300 line-through">{supplyRedirectInfo.from}</span>
+                  {' → '}
+                  <span className="text-emerald-300 font-semibold">{supplyRedirectInfo.to}</span>
+                </p>
+                <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">{supplyRedirectInfo.reason}</p>
+              </div>
             </div>
           </div>
         )}
 
         {/* Telemetry Log Feed */}
-        <div className="max-h-36 space-y-1 overflow-y-auto rounded-xl border border-white/5 bg-black/30 p-2.5 scrollbar-thin">
+        <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-white/5 bg-black/30 p-2.5 scrollbar-thin">
           {logs.length === 0 ? (
             <p className="text-[10px] text-slate-500 italic">Ready for hands-free cross-portal autonomous demonstration.</p>
           ) : (

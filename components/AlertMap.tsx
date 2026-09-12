@@ -182,7 +182,7 @@ export default function AlertMap({
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="destructive" className="font-mono text-[10px] hidden sm:flex items-center gap-1">
+          <Badge variant="critical" className="font-mono text-[10px] hidden sm:flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping" />
             {highSeverityCount} High Threat Pins
           </Badge>

@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookieStore.set({ name, value: "", ...options });
           } catch {
             // Ignored if called from a Server Component context
           }

@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     ];
 
     // 2.1 Sufficient Inventory
-    const sufficientPlan = await optimizeMultiZoneAllocation([incidentZoneA, incidentZoneB], sampleDepots, abundantResources);
+    const sufficientPlan = await optimizeMultiZoneAllocation([incidentZoneA as any, incidentZoneB as any], sampleDepots as any, abundantResources as any);
     const p4 = !sufficientPlan.scarcity_detected && sufficientPlan.total_allocated_by_resource["Drinking Water"] === 250;
     results.push({
       id: 4,
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
     const scarceResources = [
       { id: "res-med-scarce", item_name: "Level-3 Medical Kits", category: "medical_kits", available_quantity: 15, total_quantity: 15, depot_id: "depot-alpha" },
     ];
-    const scarcePlan = await optimizeMultiZoneAllocation([critIncident, lowIncident], sampleDepots, scarceResources);
+    const scarcePlan = await optimizeMultiZoneAllocation([critIncident as any, lowIncident as any], sampleDepots as any, scarceResources as any);
     const critAlloc = scarcePlan.allocations_by_incident[critIncident.id]?.suggestions[0]?.allocated_quantity || 0;
     const lowAlloc = scarcePlan.allocations_by_incident[lowIncident.id]?.suggestions[0]?.allocated_quantity || 0;
     const p5 = scarcePlan.scarcity_detected && critAlloc === 15 && lowAlloc === 0;
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 2.3 Gemini API Resilience
-    const resilientPlan = await optimizeAllocationWithGemini(critIncident, sampleDepots, scarceResources, { mockMalformed: true });
+    const resilientPlan = await optimizeAllocationWithGemini(critIncident as any, sampleDepots as any, scarceResources as any, { mockMalformed: true });
     const p6 = resilientPlan.ai_rationale.includes("Unable to assess this report right now, please retry");
     results.push({
       id: 6,

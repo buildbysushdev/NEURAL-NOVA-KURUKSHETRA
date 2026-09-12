@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, X, ShieldAlert, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface ActiveDisasterBannerProps {
   zoneName?: string;

@@ -18,7 +18,7 @@ export default function RescueDemoActor() {
       console.log('[RescueDemoActor] Activated for scenario:', state.scenario);
 
       // Wait for mission cards to render
-      await wait(1200);
+      await wait(2500);
       if (unmounted) return;
 
       // 1. Accept mission: try data-demo hook first, then text matching
@@ -31,13 +31,13 @@ export default function RescueDemoActor() {
           try {
             acceptBtn.click();
           } catch (e) {}
-          await wait(500);
+          await wait(800);
           acceptBtn.classList.remove('demo-click-flash');
           accepted = true;
         }
       }
 
-      await wait(1400);
+      await wait(2800);
       if (unmounted) return;
 
       // 2. Mark resolved: try data-demo hook first, then text matching
@@ -50,7 +50,7 @@ export default function RescueDemoActor() {
           try {
             resolveBtn.click();
           } catch (e) {}
-          await wait(500);
+          await wait(800);
           resolveBtn.classList.remove('demo-click-flash');
         }
       }
@@ -60,12 +60,12 @@ export default function RescueDemoActor() {
       if (ptt) {
         ptt.classList.add('demo-click-flash');
         ptt.dispatchEvent(new Event('mousedown', { bubbles: true }));
-        await wait(800);
+        await wait(1500);
         ptt.dispatchEvent(new Event('mouseup', { bubbles: true }));
         ptt.classList.remove('demo-click-flash');
       }
 
-      await wait(1000);
+      await wait(1800);
       if (unmounted) return;
 
       // 4. Advance demo to Citizen ops and navigate

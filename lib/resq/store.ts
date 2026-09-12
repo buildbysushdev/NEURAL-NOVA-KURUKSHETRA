@@ -484,7 +484,7 @@ class ResqStore {
 
       case "reset":
         this.resetToScenario1();
-        this.auditLogger.logEvent("DEMO_RESET", "Demo environment reset to initial state.", "SYSTEM_AGENT");
+        this.auditLogger.logEvent("DEMO_RESET", "Demo environment reset to initial state.", "COORD_AGENT");
         break;
     }
 
