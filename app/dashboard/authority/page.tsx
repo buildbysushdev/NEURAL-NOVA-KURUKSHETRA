@@ -174,6 +174,7 @@ export default function AuthorityDashboardPage() {
   const [loadingIncidents, setLoadingIncidents] = useState<boolean>(false);
   const [incidentError, setIncidentError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState<boolean>(false);
+  const [simulationModalOpen, setSimulationModalOpen] = useState<boolean>(false);
   const [latestCitizenVoice, setLatestCitizenVoice] = useState<any>(null);
 
   // Tactical Right Column Tab Selector (Simulator, Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)

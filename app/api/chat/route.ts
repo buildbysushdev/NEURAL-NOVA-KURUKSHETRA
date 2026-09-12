@@ -447,7 +447,10 @@ Feel free to ask me any question—whether general queries, survival suggestions
 // POST Handler: Multi-Model AI Waterfall (Groq -> Gemini -> Semantic Engine)
 // =========================================================================
 export async function POST(req: NextRequest) {
+  const BUILD_VERSION = "v3-groq-fixed";
   let role = "citizen";
+  let groqAttempted = false;
+  let groqLastError = "";
   try {
     const body = await req.json().catch(() => ({}));
     const message = body.message || "";
@@ -459,6 +462,7 @@ export async function POST(req: NextRequest) {
         reply: getSemanticFallbackReply("", role),
         source: "fallback",
         status: "ready",
+        _v: BUILD_VERSION,
       });
     }
 
