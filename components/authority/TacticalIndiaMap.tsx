@@ -44,9 +44,19 @@ import {
   ChevronRight,
   Shield,
   Loader2,
+  Navigation,
+  Wind,
+  Compass,
 } from "lucide-react";
 import type { FireHotspot } from "@/app/api/telemetry/firms/route";
 import type { EarthquakeEvent } from "@/app/api/telemetry/earthquakes/route";
+import {
+  DEMO_FIRE_POINTS,
+  getWindCardinal,
+  getSpreadVector,
+  calculateDynamicSpreadMetrics,
+  type DemoFirePoint,
+} from "@/lib/telemetry/demoFireData";
 
 export interface TacticalZone {
   id: string;
@@ -91,8 +101,15 @@ export default function TacticalIndiaMap({
 
   // Layer Visibility Toggles
   const [showFires, setShowFires] = useState(true);
+  const [showDemoFires, setShowDemoFires] = useState(true);
   const [showQuakes, setShowQuakes] = useState(true);
   const [showZones, setShowZones] = useState(true);
+
+  // Tactical Wind & Flame Spread Telemetry
+  const windDir = 165; // 165° SSE gale origin
+  const windSpeed = 42.5; // km/h
+  const windCardinal = getWindCardinal(windDir);
+  const spreadVector = getSpreadVector(windDir);
 
   // Throttle references to prevent hammering APIs
   const lastFetchFirmsTime = useRef<number>(0);
@@ -448,6 +465,31 @@ export default function TacticalIndiaMap({
     []
   );
 
+  const createDemoFireIcon = useMemo(
+    () => (frp: number, riskLevel: string) => {
+      const isCrit = riskLevel === "CRITICAL";
+      const size = Math.min(26, Math.max(18, Math.round(frp * 0.6)));
+      const glowColor = isCrit ? "rgba(239, 68, 68, 0.85)" : "rgba(245, 158, 11, 0.75)";
+      const flameColor = isCrit ? "#DC2626" : "#EA580C";
+
+      return L.divIcon({
+        className: "tactical-demo-fire-pin",
+        html: `
+        <div style="position: relative; width: ${size + 8}px; height: ${size + 8}px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <div style="position: absolute; inset: 0; border-radius: 50%; background: ${glowColor}; opacity: 0.45; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="position: relative; width: ${size}px; height: ${size}px; border-radius: 50%; background: radial-gradient(circle, #FDE047 15%, ${flameColor} 70%, #7F1D1D 100%); border: 1.5px solid #FEF08A; box-shadow: 0 0 10px ${glowColor}; display: flex; align-items: center; justify-content: center; font-size: ${Math.round(size * 0.58)}px;">
+            🔥
+          </div>
+        </div>
+      `,
+        iconSize: [size + 8, size + 8],
+        iconAnchor: [(size + 8) / 2, (size + 8) / 2],
+        popupAnchor: [0, -(size + 8) / 2],
+      });
+    },
+    []
+  );
+
   if (!mounted) {
     return (
       <div className={`h-[500px] w-full border border-[#222933] bg-[#12161C] rounded-sm p-6 flex flex-col justify-between ${className}`}>
@@ -496,6 +538,18 @@ export default function TacticalIndiaMap({
             <Clock className="w-3 h-3" strokeWidth={1.75} />
             <span>SYNC: {lastUpdated}</span>
           </div>
+
+          {/* Tactical Wind Direction & Spread Vector Pill */}
+          <div className="hidden md:flex items-center gap-1.5 text-[10px] font-ibm-mono px-2 py-0.5 rounded bg-[#181E26] border border-blue-500/30 text-blue-300">
+            <Wind className="w-3 h-3 text-blue-400 shrink-0" />
+            <span>{windSpeed} km/h {windCardinal} ({windDir}°)</span>
+            <Navigation
+              className="w-2.5 h-2.5 text-cyan-400 shrink-0 transition-transform duration-500"
+              style={{ transform: `rotate(${windDir}deg)` }}
+            />
+            <span className="text-[#8A99AD] pl-1 border-l border-[#222933]">Spread Vector:</span>
+            <span className="text-red-400 font-bold">{spreadVector.cardinal} ({spreadVector.bearing}°)</span>
+          </div>
         </div>
 
         {/* Layer Filters & Demo Action */}
@@ -513,6 +567,24 @@ export default function TacticalIndiaMap({
           >
             <span className="w-2 h-2 rotate-45 bg-[#791F1F] inline-block" />
             <span>Zones ({zones.length})</span>
+          </button>
+
+          {/* Layer Toggle: Demo Fire Points with Causes */}
+          <button
+            type="button"
+            onClick={() => setShowDemoFires((p) => !p)}
+            className={`px-2 py-1 text-[10px] font-ibm-mono rounded transition-colors flex items-center gap-1.5 border ${
+              showDemoFires
+                ? "bg-[#251214] border-red-500 text-[#F6F4EF] ring-1 ring-red-500/40"
+                : "bg-transparent border-[#222933] text-[#8A99AD] opacity-60"
+            }`}
+            title="Toggle Demo Fire Points with Wind Spread Possibility and AI Root Causes"
+          >
+            <span className="text-xs">🔥</span>
+            <span>Demo Fires ({DEMO_FIRE_POINTS.length})</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-red-500/30 text-red-300 font-bold">
+              88% SPREAD
+            </span>
           </button>
 
           {/* Layer Toggle: NASA FIRMS */}
@@ -688,6 +760,114 @@ export default function TacticalIndiaMap({
                         <span className="font-mono">
                           {hotspot.latitude.toFixed(4)}, {hotspot.longitude.toFixed(4)}
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+          {/* ----------------------------------------------------------------- */}
+          {/* LAYER 1B: Curated Demo Fire Points with Wind Spread & Root Causes */}
+          {/* ----------------------------------------------------------------- */}
+          {showDemoFires &&
+            DEMO_FIRE_POINTS.map((fire) => (
+              <Marker
+                key={fire.id}
+                position={[fire.latitude, fire.longitude]}
+                icon={createDemoFireIcon(fire.frp_mw, fire.spreadRiskLevel)}
+              >
+                {/* Lightweight hover tooltip */}
+                <Tooltip direction="top" offset={[0, -10]} opacity={0.95}>
+                  <div className="flex items-center gap-1 font-mono text-[10px]">
+                    <span>🔥</span>
+                    <span className="font-bold text-[#F6F4EF]">{fire.name}</span>
+                    <span className="text-red-400 font-bold">
+                      • Spread: {fire.spreadProbability}% ({fire.spreadRiskLevel})
+                    </span>
+                  </div>
+                </Tooltip>
+
+                {/* Rich Tactical Fire Popup with Wind Vector & Root Cause */}
+                <Popup>
+                  <div className="p-3 space-y-2 text-xs font-ibm-sans min-w-[280px] max-w-[320px] bg-[#181E26] text-[#F6F4EF] rounded-sm">
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-[#222933] pb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">🔥</span>
+                        <div>
+                          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-red-400 block">
+                            ACTIVE DEMO FIRE
+                          </span>
+                          <span className="text-[10px] text-[#8A99AD] font-mono">
+                            {fire.zone}
+                          </span>
+                        </div>
+                      </div>
+                      <span
+                        className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                          fire.spreadRiskLevel === "CRITICAL"
+                            ? "bg-[#791F1F] border-[#A83232] text-white"
+                            : "bg-[#854F0B] border-[#B26B10] text-white"
+                        }`}
+                      >
+                        {fire.spreadProbability}% SPREAD
+                      </span>
+                    </div>
+
+                    {/* Fire Title */}
+                    <p className="font-bold text-[#F6F4EF] text-[12px] leading-snug">
+                      {fire.name}
+                    </p>
+
+                    {/* Wind Vector & Propagation Possibility */}
+                    <div className="rounded bg-[#12161C] p-2 border border-[#222933] space-y-1 font-mono text-[10px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#8A99AD]">Wind Origin:</span>
+                        <span className="text-cyan-300 font-bold flex items-center gap-1">
+                          <Navigation
+                            className="w-2.5 h-2.5"
+                            style={{ transform: `rotate(${windDir}deg)` }}
+                          />
+                          {windCardinal} ({windDir}°) @ {windSpeed} km/h
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#8A99AD]">Spread Heading:</span>
+                        <span className="text-red-400 font-bold">
+                          Downwind {spreadVector.cardinal} ({spreadVector.bearing}°)
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#8A99AD]">Advance Velocity:</span>
+                        <span className="text-amber-300">{fire.advanceRateKmh} km/h</span>
+                      </div>
+                    </div>
+
+                    {/* Root Cause Diagnosis */}
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-400 inline" />
+                        AI Root Cause Diagnosis:
+                      </span>
+                      <p className="text-[11px] text-slate-300 leading-relaxed bg-[#221A12] border border-amber-500/20 rounded p-1.5 font-sans">
+                        {fire.cause}
+                      </p>
+                    </div>
+
+                    {/* Plume & Suppressant */}
+                    <div className="space-y-1 border-t border-[#222933] pt-1.5 text-[10px] font-mono">
+                      <div>
+                        <span className="text-[#8A99AD]">Toxic Plume: </span>
+                        <span className="text-slate-200">{fire.hazardPlume}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#8A99AD]">Required Foam: </span>
+                        <span className="text-emerald-400 font-bold">{fire.recommendedSuppressant}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#8A99AD] pt-1 border-t border-[#222933]">
+                        <span>GPS Coordinates:</span>
+                        <span className="text-[#F6F4EF]">{fire.coordinatesFormatted}</span>
                       </div>
                     </div>
                   </div>
@@ -899,15 +1079,64 @@ export default function TacticalIndiaMap({
         </MapContainer>
 
         {/* ------------------------------------------------------------------- */}
+        {/* Top-Right Tactical Wind Direction & Fire Propagation Vector HUD    */}
+        {/* ------------------------------------------------------------------- */}
+        <div className="absolute top-3 right-3 z-[1000] bg-[#12161C]/92 backdrop-blur-md border border-[#222933] rounded-sm p-2.5 text-[10px] font-ibm-mono text-[#8A99AD] shadow-xl space-y-1.5 min-w-[215px]">
+          <div className="flex items-center justify-between pb-1 border-b border-[#222933]">
+            <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[#F6F4EF]">
+              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Tactical Wind Vector</span>
+            </div>
+            <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-bold text-[9px]">
+              GALE SQUALL
+            </span>
+          </div>
+
+          <div className="space-y-1 text-[11px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[#8A99AD]">Wind Velocity:</span>
+              <span className="font-bold text-white flex items-center gap-1">
+                <Navigation
+                  className="w-3 h-3 text-cyan-400 inline-block transition-transform duration-500"
+                  style={{ transform: `rotate(${windDir}deg)` }}
+                />
+                {windSpeed} km/h {windCardinal} ({windDir}°)
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-[#222933]/60 pt-1">
+              <span className="text-[#8A99AD]">Spread Heading:</span>
+              <span className="font-bold text-red-400">
+                {spreadVector.cardinal} ({spreadVector.bearing}°)
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[#8A99AD]">Spread Risk:</span>
+              <span className="font-bold text-red-400">88% CRITICAL</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[#8A99AD]">Demo Fire Hotspots:</span>
+              <span className="font-bold text-amber-300">{DEMO_FIRE_POINTS.length} Active (AI Causes)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ------------------------------------------------------------------- */}
         {/* Bottom-Left Unobtrusive Command Legend                              */}
         {/* ------------------------------------------------------------------- */}
-        <div className="absolute bottom-3 left-3 z-[1000] bg-[#12161C]/90 backdrop-blur-md border border-[#222933] rounded-sm p-2.5 text-[10px] font-ibm-mono text-[#8A99AD] shadow-xl space-y-1.5 max-w-[210px]">
+        <div className="absolute bottom-3 left-3 z-[1000] bg-[#12161C]/90 backdrop-blur-md border border-[#222933] rounded-sm p-2.5 text-[10px] font-ibm-mono text-[#8A99AD] shadow-xl space-y-1.5 max-w-[220px]">
           <div className="font-bold uppercase tracking-wider text-[#F6F4EF] pb-1 border-b border-[#222933] flex items-center gap-1">
             <Layers className="w-3 h-3 text-[#8A99AD]" />
             <span>Telemetry Legend</span>
           </div>
 
           <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs">🔥</span>
+              <span className="text-[#F6F4EF]">Demo Fire Points & Causes</span>
+            </div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#FF5722] border border-[#FFAB91] inline-block shadow-sm" />
               <span className="text-[#F6F4EF]">NASA FIRMS Fire Hotspots</span>

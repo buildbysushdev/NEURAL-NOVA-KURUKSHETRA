@@ -2,7 +2,18 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Play, Square, ChevronRight, Zap, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import {
+  Bot,
+  Play,
+  Square,
+  ChevronRight,
+  Zap,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Minus,
+  Maximize2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   clearDemoState,
@@ -30,6 +41,7 @@ export default function AutoDemoPlayer({
 }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [scenario, setScenario] = useState<DemoScenario | null>(null);
   const [stepIndex, setStepIndex] = useState(-1);
   const [logs, setLogs] = useState<string[]>([]);
@@ -308,6 +320,80 @@ export default function AutoDemoPlayer({
     }
   };
 
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-6 left-6 z-[90] animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div
+          onClick={() => setIsMinimized(false)}
+          className="group flex items-center gap-3 rounded-2xl border border-violet-500/40 bg-[#0B1220]/95 px-3.5 py-2 shadow-2xl backdrop-blur-xl border-t-2 border-t-violet-400 hover:border-violet-400 cursor-pointer transition-all hover:scale-[1.02]"
+          title="Click to expand AI Demo Director"
+        >
+          <div className="relative flex h-7 w-7 items-center justify-center rounded-xl bg-violet-500/20 text-violet-300 border border-violet-500/30 shadow-md shadow-violet-500/10">
+            <Bot className="h-4 w-4" />
+            {running && (
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500" />
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-100 group-hover:text-violet-300 transition">
+                AI Demo Director
+              </span>
+              <span
+                className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                  running
+                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 animate-pulse'
+                    : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                }`}
+              >
+                {running ? `STEP ${Math.max(1, stepIndex + 1)}` : 'READY'}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400 line-clamp-1 max-w-[170px]">
+              {running
+                ? scenario === 'blue-flood'
+                  ? '🌊 Blue Flood Active'
+                  : '🔥 Red Inferno Active'
+                : 'Click to expand war room'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 pl-1.5 border-l border-white/10">
+            {running && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  stop();
+                }}
+                className="rounded-lg border border-red-500/40 bg-red-500/20 hover:bg-red-500/30 px-2 py-1 text-[10px] font-bold text-red-300 transition flex items-center gap-1"
+                title="Stop Auto Demo"
+              >
+                <Square className="h-2.5 w-2.5" /> STOP
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMinimized(false);
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/[0.08] text-slate-400 hover:text-white transition"
+              title="Expand AI Demo Director"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed bottom-6 left-6 z-[90] w-[390px] max-w-[94vw] animate-in fade-in slide-in-from-bottom-6 duration-300">
       <div className="rounded-2xl border border-white/10 bg-[#0B1220]/96 p-4 shadow-2xl backdrop-blur-xl border-t-2 border-t-violet-500/50">
@@ -354,6 +440,15 @@ export default function AutoDemoPlayer({
                 READY
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={() => setIsMinimized(true)}
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-slate-100 hover:bg-white/[0.08] transition"
+              title="Minimize AI Demo Director"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
 
