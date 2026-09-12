@@ -464,20 +464,20 @@ export function FloatingChatbotButton() {
             )}
           </div>
 
-          {/* Quick Questions */}
-          {msgs.length <= 2 && (
-            <div className="p-2 border-t border-slate-200 bg-white flex gap-1.5 overflow-x-auto scrollbar-none">
-              {QUICK_REPLIES.map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => send(q)}
-                  className="flex-shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Quick Questions & Answering Suggestions */}
+          <div className="p-2 border-t border-slate-200 bg-white flex gap-1.5 overflow-x-auto scrollbar-none">
+            {QUICK_REPLIES.map((q, idx) => (
+              <button
+                key={idx}
+                type="button"
+                disabled={loading}
+                onClick={() => send(q)}
+                className="flex-shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/60 transition shadow-sm disabled:opacity-50"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
 
           {/* Voice Input & Text Input Bar */}
           <div className="p-3 border-t border-slate-200 bg-white">

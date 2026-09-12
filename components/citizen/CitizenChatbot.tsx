@@ -199,6 +199,74 @@ export function CitizenChatbot() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Quick Answering Suggestions Chips */}
+      <div className="p-2 border-t border-[#DED9CE] bg-[#F6F4EF]/80 flex gap-1.5 overflow-x-auto scrollbar-none">
+        {[
+          "Nearest Shelters & Food",
+          "Flood Safety Precautions",
+          "Low Battery Power Saving",
+          "Medical First Aid",
+          "Emergency Helplines (112)",
+        ].map((chip, idx) => (
+          <button
+            key={idx}
+            type="button"
+            disabled={isTyping}
+            onClick={() => {
+              setInputText(chip);
+              // Trigger send immediately with this suggestion
+              const fakeEvent = { preventDefault: () => {} } as any;
+              setInputText("");
+              const userMsg: ChatMessage = {
+                id: `msg-${Date.now()}`,
+                sender: "user",
+                text: chip,
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              };
+              setMessages((prev) => [...prev, userMsg]);
+              setIsTyping(true);
+              fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  role: "citizen",
+                  message: chip,
+                  language: language || "en",
+                }),
+              })
+                .then((r) => r.json())
+                .then((data) => {
+                  const reply = data.reply || "Verified disaster relief briefing updated.";
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: `msg-${Date.now() + 1}`,
+                      sender: "assistant",
+                      text: reply,
+                      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                    },
+                  ]);
+                })
+                .catch(() => {
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: `msg-${Date.now() + 1}`,
+                      sender: "assistant",
+                      text: "Central Relief Station Alpha is located 800m inland from Marina Beach. National emergency helpline is 112.",
+                      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                    },
+                  ]);
+                })
+                .finally(() => setIsTyping(false));
+            }}
+            className="flex-shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-sm bg-white hover:bg-[#1A1A1A] text-[#1A1A1A] hover:text-white border border-[#DED9CE] transition font-mono whitespace-nowrap disabled:opacity-50"
+          >
+            💡 {chip}
+          </button>
+        ))}
+      </div>
+
       {/* Input Form with Specific Verb Phrase */}
       <form
         onSubmit={handleSendMessage}

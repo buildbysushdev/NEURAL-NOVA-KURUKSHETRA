@@ -462,19 +462,22 @@ export function RescueAIChatbot() {
           </div>
 
           {/* Quick Tactical Prompt Chips */}
-          <div className="p-2 border-t border-white/[0.06] bg-black/20 flex gap-1.5 overflow-x-auto text-[10px] font-mono">
+          <div className="p-2 border-t border-white/[0.06] bg-black/30 flex gap-1.5 overflow-x-auto text-[10px] font-mono scrollbar-none">
             {[
               "Swiftwater extraction SOP",
               "Transformer 50m safe standoff",
               "Mass casualty triage codes",
               "Alternative high-ground route",
+              "Helicopter LZ coordinates",
             ].map((chip) => (
               <button
                 key={chip}
+                type="button"
+                disabled={loading}
                 onClick={() => handleSend(chip)}
-                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-slate-400 hover:text-slate-200 whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:text-amber-200 whitespace-nowrap transition disabled:opacity-50"
               >
-                {chip}
+                ⚡ {chip}
               </button>
             ))}
           </div>
