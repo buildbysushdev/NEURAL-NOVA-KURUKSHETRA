@@ -310,6 +310,7 @@ export function MesmerizingSimulationModal({
     setStep("CONFIRMED");
 
     toast.success("🚨 DISASTER RESPONSE RATIFIED & BROADCASTED!", {
+      id: "sim-ratify-toast",
       description: `Plan verified. Dispatches transmitted live to Citizen, Rescue, and Authority portals.`,
       duration: 6000,
     });
