@@ -15,8 +15,10 @@ import {
   Maximize2,
   AlertTriangle,
   ArrowRightLeft,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { CitizenShowcase } from '@/components/demo/CitizenShowcase';
 import {
   clearDemoState,
   getDemoState,
@@ -24,6 +26,7 @@ import {
   wait,
   type DemoScenario,
 } from '@/lib/demo/demoOrchestrator';
+
 
 // ─── Supply Redirect Logic ────────────────────────────────────────────────────
 type SupplyZone = {
@@ -90,7 +93,9 @@ export default function AutoDemoPlayer({
   const [supplyRedirectInfo, setSupplyRedirectInfo] = useState<{
     from: string; to: string; reason: string;
   } | null>(null);
+  const [showCitizenShowcase, setShowCitizenShowcase] = useState(false);
   const stopRef = useRef(false);
+
 
   const log = (msg: string) => {
     const time = new Date().toLocaleTimeString('en-US', {
@@ -283,11 +288,36 @@ export default function AutoDemoPlayer({
       },
     },
     {
+      id: 'citizen-showcase',
+      title: '👁️ Citizen Portal Feature Preview',
+      detail: 'Offline AI · Walkie-Talkie · Safe Shelters · Map · Alerts — shown without redirecting',
+      durationMs: 26000, // 5 slides × ~5s each + buffer
+      speechText: 'Now showcasing the Citizen Safety Portal features — offline AI guidance, mesh walkie-talkie, safe shelter locator, incident map, and government alerts.',
+      run: async () => {
+        log('📱 Showcasing Citizen Portal features...');
+        await wait(600);
+        log('📴 Offline AI: 10 emergency Q&A categories — works without internet');
+        await wait(1200);
+        log('🎙️ Walkie-Talkie: PTT + speech-to-text + GPS lock');
+        await wait(1200);
+        log('🏫 Safe Shelter Locator: live occupancy, safe routes, medical team status');
+        await wait(1200);
+        log('🗺️ Alert Map: NASA FIRMS + USGS real-time hazard zones');
+        await wait(1200);
+        log('🚨 Government Alerts: authority-issued evacuation directives');
+        setShowCitizenShowcase(true);
+        speak('Citizen portal features now displayed. Five key safety features shown in sequence.');
+        // Showcase auto-closes after slides complete (~25s)
+        await wait(25000);
+        setShowCitizenShowcase(false);
+      },
+    },
+    {
       id: 'to-rescue',
       title: '➡️ Handoff to Rescue Portal',
-      detail: 'Mission cards dispatched to Rescue Squad Alpha',
+      detail: 'Mission cards + route animation dispatched to Rescue Squad Alpha',
       durationMs: 3200,
-      speechText: 'Routing dispatch orders to Rescue Squad Alpha field console. Field units will now receive their mission cards.',
+      speechText: 'Routing dispatch orders to Rescue Squad Alpha field console. Field units receive mission cards with route animation.',
       run: async () => {
         log('📡 Broadcasting mission orders to Rescue Squad Alpha...');
         await wait(1200);
@@ -304,6 +334,7 @@ export default function AutoDemoPlayer({
       },
     },
   ];
+
 
   const buildRedInfernoSteps = (): Step[] => [
     {
@@ -422,11 +453,33 @@ export default function AutoDemoPlayer({
       },
     },
     {
+      id: 'citizen-showcase',
+      title: '👁️ Citizen Portal Feature Preview',
+      detail: 'Offline AI · Walkie-Talkie · Shelters · Map — shown without redirecting',
+      durationMs: 26000,
+      speechText: 'Showcasing Citizen Safety Portal — offline AI, mesh radio, safe shelters, and hazard map features.',
+      run: async () => {
+        log('📱 Showcasing Citizen Portal features...');
+        await wait(600);
+        log('📴 Offline AI: HAZMAT Q&A + fire evacuation corridor guidance');
+        await wait(1200);
+        log('🎙️ Walkie-Talkie: PTT + speech-to-text + GPS + offline mesh');
+        await wait(1200);
+        log('🏫 Safe Shelter Locator: live occupancy, food rations, safe routes');
+        await wait(1200);
+        log('🗺️ Hazard Map: NASA FIRMS + plume dispersion overlay');
+        setShowCitizenShowcase(true);
+        speak('Citizen portal features now displayed.');
+        await wait(25000);
+        setShowCitizenShowcase(false);
+      },
+    },
+    {
       id: 'to-rescue',
       title: '➡️ Handoff to Rescue Portal',
-      detail: 'HAZMAT tasks dispatched to Rescue field console',
+      detail: 'HAZMAT tasks + route animation dispatched to Rescue field console',
       durationMs: 3200,
-      speechText: 'Dispatching tactical fire and rescue units to the field console. Rescue Squad Alpha now receives HAZMAT mission cards.',
+      speechText: 'Dispatching tactical fire and rescue units to the field console.',
       run: async () => {
         log('📡 Broadcasting HAZMAT orders to Rescue Squad Alpha...');
         await wait(1200);
@@ -443,6 +496,7 @@ export default function AutoDemoPlayer({
       },
     },
   ];
+
 
   const run = async (type: DemoScenario) => {
     stopRef.current = false;
@@ -742,6 +796,13 @@ export default function AutoDemoPlayer({
           </div>
         </div>
       </div>
+
+      {/* Citizen Portal Feature Showcase Overlay */}
+      <CitizenShowcase
+        visible={showCitizenShowcase}
+        onClose={() => setShowCitizenShowcase(false)}
+        autoPlay={true}
+      />
     </div>
   );
 }

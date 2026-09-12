@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import {
   Zap,
   ArrowRightLeft,
@@ -30,7 +31,15 @@ import {
   Play,
   RotateCcw,
   TrendingUp,
+  Truck,
+  X,
 } from "lucide-react";
+
+// Dynamic import avoids SSR issues with animation timers
+const SupplyRouteAnimation = dynamic(
+  () => import("./SupplyRouteAnimation").then((m) => ({ default: m.SupplyRouteAnimation })),
+  { ssr: false }
+);
 
 type ZoneStatus = "waiting" | "allocated" | "redirected" | "escalated" | "resolved";
 
@@ -158,6 +167,8 @@ export function LiveZonePriorityPanel() {
   const [logs, setLogs] = useState<string[]>([]);
   const [showApproveBtn, setShowApproveBtn] = useState(false);
   const [approved, setApproved] = useState(false);
+  const [showRouteMap, setShowRouteMap] = useState(false);
+  const [routeMapKey, setRouteMapKey] = useState(0); // force re-mount to replay
   const logRef = useRef<HTMLDivElement>(null);
   const stopRef = useRef(false);
 
@@ -237,9 +248,12 @@ export function LiveZonePriorityPanel() {
         await wait(700);
         addLog(`↪️ AI REDIRECT → Emergency Warehouse B (200 units) — saves ~35 min transit`);
         await wait(500);
+        // Show animated truck route map
+        setShowRouteMap(true);
+        setRouteMapKey((k) => k + 1);
         toast.warning(`Supply Redirect: ${z.name}`, {
-          description: `${z.depotName} depleted. AI rerouted to Emergency Warehouse B.`,
-          duration: 4000,
+          description: `${z.depotName} depleted. AI rerouted to Emergency Warehouse B. Watch the truck animation below.`,
+          duration: 5000,
         });
         setZones((prev) =>
           prev.map((p) =>
@@ -649,6 +663,28 @@ export function LiveZonePriorityPanel() {
           )}
         </div>
       </div>
+
+      {/* ── Animated Supply Route Map (shown when redirect fires) ── */}
+      {showRouteMap && (
+        <div className="border-t border-white/[0.06] p-4 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Truck className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-slate-200">Live Supply Route Animation</span>
+              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-mono">
+                AI REDIRECT ACTIVE
+              </span>
+            </div>
+            <button
+              onClick={() => setShowRouteMap(false)}
+              className="p-1 rounded hover:bg-white/[0.06] text-slate-400 hover:text-white transition"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <SupplyRouteAnimation key={routeMapKey} scenario="blue-flood" autoPlay={true} compact={true} />
+        </div>
+      )}
     </div>
   );
 }

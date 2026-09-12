@@ -48,6 +48,13 @@ import { RescueAIChatbot } from "@/components/rescue/RescueAIChatbot";
 import WalkieTalkie from "@/components/WalkieTalkie";
 import { AIIncidentClusterPanel } from "@/components/rescue/AIIncidentClusterPanel";
 import RescueDemoActor from "@/components/demo/RescueDemoActor";
+import dynamic from "next/dynamic";
+
+const SupplyRouteAnimation = dynamic(
+  () => import("@/components/authority/SupplyRouteAnimation").then((m) => ({ default: m.SupplyRouteAnimation })),
+  { ssr: false }
+);
+
 
 const INITIAL_RESCUE_TASKS: RescueTask[] = [
   {
@@ -111,6 +118,8 @@ export default function RescueDashboardPage() {
   const [activeTab, setActiveTab] = useState<"missions" | "terrain" | "measures" | "inventory" | "radio" | "clusters">("missions");
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
   const [latestCitizenVoice, setLatestCitizenVoice] = useState<any>(null);
+  const [showRescueRoute, setShowRescueRoute] = useState(false);
+
 
   // Load duty state from localStorage on mount & listen to tab changes
   useEffect(() => {
@@ -343,6 +352,8 @@ export default function RescueDashboardPage() {
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: "in_progress" } : t))
     );
+    // Show rescue route animation
+    setShowRescueRoute(true);
 
     try {
       await fetch("/api/rescue/update", {
@@ -560,6 +571,13 @@ export default function RescueDashboardPage() {
         <div className="space-y-4">
           {/* Authority Live Tactical Dispatch Banner */}
           <IncomingDispatchBanner onInspectTerrain={() => setActiveTab("terrain")} />
+
+          {/* Rescue Route Distance Animation */}
+          {showRescueRoute && (
+            <div className="animate-in slide-in-from-top-4 duration-500">
+              <SupplyRouteAnimation showRescueRoute={true} autoPlay={true} compact={true} />
+            </div>
+          )}
 
           {/* Real-time Citizen Voice SOS Banner */}
           {latestCitizenVoice && (
