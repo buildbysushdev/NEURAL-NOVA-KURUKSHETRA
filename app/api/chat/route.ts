@@ -481,11 +481,12 @@ export async function POST(req: NextRequest) {
     const groqCandidateModels = Array.from(
       new Set([
         configuredGroqModel,
+        "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile",
         "qwen/qwen3.8-27b",
         "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "qwen/qwen3.6-27b",
-        "groq/compound",
+        "llama3-70b-8192",
+        "mixtral-8x7b-32768",
       ].filter((m): m is string => Boolean(m && m.length > 0)))
     );
 
@@ -497,7 +498,7 @@ export async function POST(req: NextRequest) {
         for (const model of groqCandidateModels) {
           try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
           const systemContent = simulateOffline
             ? `${SYSTEM_PROMPT}\n[SIMULATED ON-DEVICE 4-BIT QUANTIZED MODEL // LOCAL EDGE INFERENCE]\nYou are running as the on-device local AI on the responder's terminal. Provide direct, helpful, and complete answers.\n${
@@ -578,8 +579,9 @@ export async function POST(req: NextRequest) {
         new Set(
           [
             configuredGeminiModel,
-            "gemini-3.6-flash",
-            "gemini-flash-latest",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
           ].filter((m): m is string => Boolean(m && m.length > 0))
         )
       );
