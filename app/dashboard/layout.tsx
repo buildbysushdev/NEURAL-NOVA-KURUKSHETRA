@@ -306,8 +306,6 @@ function CitizenShell({
           </a>
         ))}
       </nav>
-
-      <Toaster richColors position="top-center" theme="light" />
     </div>
   );
 }
@@ -620,8 +618,6 @@ function RescueShell({
           </button>
         ))}
       </nav>
-
-      <Toaster richColors position="top-right" theme="dark" />
     </div>
   );
 }
@@ -849,7 +845,6 @@ export default function DashboardLayout({
       </div>
 
       <AgentStatusBar />
-      <Toaster richColors position="top-right" theme="dark" />
     </div>
   );
 }

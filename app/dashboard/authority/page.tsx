@@ -174,7 +174,6 @@ export default function AuthorityDashboardPage() {
   const [loadingIncidents, setLoadingIncidents] = useState<boolean>(false);
   const [incidentError, setIncidentError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState<boolean>(false);
-  const [simulationModalOpen, setSimulationModalOpen] = useState<boolean>(false);
   const [latestCitizenVoice, setLatestCitizenVoice] = useState<any>(null);
 
   // Tactical Right Column Tab Selector (Simulator, Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
@@ -182,6 +181,10 @@ export default function AuthorityDashboardPage() {
   const [activeRightTab, setActiveRightTab] = useState<
     "simulator" | "copilot" | "alerts" | "orchestration" | "checklist" | "zone" | "audit" | "dispatch" | "priority"
   >("simulator");
+
+  // Deduplication refs to eliminate recursive toast glitching
+  const seenIncidentIds = useRef<Set<string>>(new Set(INITIAL_MASTER_INCIDENTS.map((i) => i.id)));
+  const lastVoiceToastTime = useRef<number>(0);
 
 
   const tacticalZones: TacticalZone[] = React.useMemo(() => {
@@ -281,13 +284,14 @@ export default function AuthorityDashboardPage() {
 
     const handleIncidentArrival = (item: any) => {
       if (!item || !item.id) return;
+      const idStr = item.id.toString();
       const lat = Number(item.location_lat ?? item.latitude) || 13.0827;
       const lng = Number(item.location_lng ?? item.longitude) || 80.2707;
       const score = item.severity_score !== undefined ? Number(item.severity_score) : 8;
       const sev = item.severity || (score >= 8 ? "CRITICAL" : "HIGH");
 
       const incident: IncidentReport = {
-        id: item.id.toString(),
+        id: idStr,
         type: item.type || "Disaster Emergency",
         description: item.description || "Active emergency incident reported.",
         location_lat: lat,
@@ -300,42 +304,62 @@ export default function AuthorityDashboardPage() {
         created_at: item.created_at || new Date().toISOString(),
       };
 
+      // Add to UI state
       setIncidents((prev) => {
-        if (prev.some((i) => i.id === incident.id)) return prev;
+        if (prev.some((i) => i.id === idStr)) return prev;
         return [incident, ...prev];
       });
 
-      toast.success("🚨 New Incident Verified by Sentinel AI", {
-        description: `${incident.type} reported. Severity: ${incident.severity}. Auto-dispatched to Rescue Squad Alpha.`,
-      });
+      // Deduplicate toast notification to prevent continuous loops/stacking
+      if (!seenIncidentIds.current.has(idStr)) {
+        seenIncidentIds.current.add(idStr);
+        toast.success("🚨 New Incident Verified by Sentinel AI", {
+          id: `incident-toast-${idStr}`,
+          description: `${incident.type} reported. Severity: ${incident.severity}. Auto-dispatched to Rescue Squad Alpha.`,
+          duration: 4000,
+        });
+      }
 
-      // Forward dispatch order to Rescue
+      // Forward dispatch order to Rescue via targeted custom event & storage (without triggering synthetic storage loop)
       try {
         localStorage.setItem("kurukshetra_latest_dispatch", JSON.stringify(incident));
-        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new CustomEvent("kurukshetra:dispatch_created", { detail: incident }));
       } catch (err) {}
     };
 
-    const handleStorage = () => {
+    const handleStorage = (e: StorageEvent) => {
       try {
+        // Only react to cross-window storage mutations matching incident or voice distress
+        if (e.key && e.key !== "kurukshetra_latest_incident" && e.key !== "latest_citizen_voice_cry") {
+          return;
+        }
         const raw = localStorage.getItem("kurukshetra_latest_incident");
         if (raw) {
-          handleIncidentArrival(JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          if (parsed?.id && !seenIncidentIds.current.has(parsed.id.toString())) {
+            handleIncidentArrival(parsed);
+          }
         }
         const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
         if (voiceRaw) {
           setLatestCitizenVoice(JSON.parse(voiceRaw));
         }
-      } catch (e) {}
+      } catch (err) {}
     };
 
     const handleVoiceTransmitted = (e: any) => {
       if (e.detail) {
         setLatestCitizenVoice(e.detail);
-        toast.error("🚨 LIVE CITIZEN VOICE SOS INTERCEPTED", {
-          description: `Voice transmission detected from ${e.detail?.location?.locationName || "Sector B"}. Pinned to Tactical Map.`,
-          duration: 7000,
-        });
+        const now = Date.now();
+        // Throttle rapid voice notifications to at most one per 3 seconds
+        if (now - lastVoiceToastTime.current > 3000) {
+          lastVoiceToastTime.current = now;
+          toast.error("🚨 LIVE CITIZEN VOICE SOS INTERCEPTED", {
+            id: `voice-sos-${e.detail?.timestamp || now}`,
+            description: `Voice transmission detected from ${e.detail?.location?.locationName || "Sector B"}. Pinned to Tactical Map.`,
+            duration: 5000,
+          });
+        }
       }
     };
 
@@ -693,10 +717,12 @@ export default function AuthorityDashboardPage() {
                   setIncidents((prev) => [dispatchIncident, ...prev]);
                   try {
                     localStorage.setItem("kurukshetra_latest_dispatch", JSON.stringify(dispatchIncident));
-                    window.dispatchEvent(new Event("storage"));
+                    window.dispatchEvent(new CustomEvent("kurukshetra:dispatch_created", { detail: dispatchIncident }));
                   } catch (e) {}
                   toast.success("🚨 COMMAND DISPATCH TRANSMITTED TO SQUAD ALPHA", {
+                    id: `manual-dispatch-${dispatchIncident.id}`,
                     description: `Orders confirmed for coordinates [${(latestCitizenVoice.location?.lat || 13.0544).toFixed(4)}, ${(latestCitizenVoice.location?.lng || 80.2818).toFixed(4)}].`,
+                    duration: 4000,
                   });
                 }}
                 className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 transition flex items-center gap-2"

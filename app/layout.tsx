@@ -30,6 +30,9 @@ export default function RootLayout({
               <Toaster
                 position="top-right"
                 duration={4000}
+                visibleToasts={3}
+                closeButton
+                expand={false}
                 theme="dark"
                 toastOptions={{
                   style: {
@@ -38,7 +41,7 @@ export default function RootLayout({
                     color: "#F6F4EF",
                     fontFamily: "var(--font-ibm-sans)",
                     fontSize: "13px",
-                    borderRadius: "2px",
+                    borderRadius: "4px",
                   },
                 }}
               />

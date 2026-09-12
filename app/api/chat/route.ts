@@ -129,29 +129,74 @@ Evacuate inland westward along **Anna Salai High Ridge**. Avoid Marina Promenade
 📞 **All-India Disaster Helpline:** **112** | **State Disaster Control:** **1070**`;
   }
 
-  // 4. Survival Suggestions, Go-Bag & Preparation
+  // 3. Phone Low Battery, Charging & Power Conservation Survival Protocol
   if (
+    msg.includes("battery") ||
+    msg.includes("charg") ||
+    msg.includes("low power") ||
+    msg.includes("power bank") ||
+    msg.includes("power save") ||
+    msg.includes("phone is low") ||
+    msg.includes("phone low") ||
+    msg.includes("phone die") ||
+    msg.includes("phone dying") ||
+    msg.includes("dead phone") ||
+    (msg.includes("phone") && (msg.includes("low") || msg.includes("save") || msg.includes("drain") || msg.includes("shut") || msg.includes("percent")))
+  ) {
+    return `🔋 **Critical Phone Battery Preservation & Survival Protocol:**
+
+⚡ **Immediate Power-Saving Actions (Stretch Battery 3–5x):**
+1. **Enable Ultra / Extreme Battery Saver Mode:** Immediately turn on Extreme Battery Saver in settings. This suspends background apps and caps CPU power draw.
+2. **Dim Screen to Minimum & Set 15s Sleep:** The screen is your #1 power drain. Lower brightness to the lowest readable level and set sleep timeout to 15 seconds.
+3. **Turn Off Radios:** Disable Bluetooth, Wi-Fi, NFC, and GPS/Location unless actively pinning your coordinates for emergency dispatchers.
+4. **Airplane Mode When Signal is Weak (0–1 Bar):** In disaster zones, phones burn 3–5x more power searching for damaged cell towers. Keep the phone in Airplane mode and turn it on for 2 minutes every hour to check for emergency SMS.
+5. **Dark Mode (OLED/AMOLED):** Pure black wallpapers and dark UI consume zero power on OLED pixels.
+
+📡 **Emergency Communication Protocol:**
+- **Send SMS/Text, NOT Voice or Video:** SMS takes mere milliseconds of radio burst and uses <0.1% of the energy of a call.
+- **Send Crucial Data in One SMS:** Text family/rescue: *"Safe at [Landmark], [Floor #], [Battery %], [No. of People]"*.
+- **Power Off at <15%:** If awaiting rescue, turn the phone completely OFF. Power it on for 3 minutes at the top of each hour (e.g. 1:00, 2:00) to check rescue progress.
+
+🎒 **Field Charging Alternatives:**
+- Connect to a power bank, laptop USB port, or vehicle 12V socket.
+- Keep the device warm and dry in a sealed plastic bag — cold and dampness degrade lithium-ion battery voltage rapidly.
+
+📞 **Emergency SMS / Call:** If battery is critical (<5%) and you are trapped, dial **112** immediately before shutdown!`;
+  }
+
+  // 4. Survival Suggestions, Go-Bag & Emergency Preparedness
+  if (
+    msg.includes("surviv") ||
     msg.includes("suggest") ||
     msg.includes("tip") ||
     msg.includes("advice") ||
     msg.includes("kit") ||
     msg.includes("bag") ||
     msg.includes("pack") ||
-    msg.includes("prepare")
+    msg.includes("prepare") ||
+    msg.includes("ration") ||
+    msg.includes("supplies") ||
+    msg.includes("food") ||
+    msg.includes("what should i do") ||
+    msg.includes("how to survive")
   ) {
-    return `💡 **Essential Disaster Survival Suggestions (72-Hour Go-Bag):**
+    return `💡 **Disaster Survival Guide & 72-Hour Preparedness Protocol:**
 
-🎒 **What to Pack Immediately:**
-- **Water:** 2 liters per person per day.
-- **Ready Food:** High-calorie energy bars, nuts, dry fruit, biscuits.
-- **First Aid:** Antiseptic wipes, sterile gauze, band-aids, ORS packets, personal prescription drugs.
-- **Tools:** Flashlight + spare batteries, loud whistle, multi-tool knife, power bank + cable.
-- **Documents:** Aadhaar / ID card, insurance papers in sealed ziplock bags.
+🎒 **Essential 72-Hour Go-Bag Checklist:**
+- **Water:** Minimum 2–3 liters per person per day.
+- **Non-Perishable Food:** High-calorie energy bars, nuts, dry fruit, canned rations.
+- **First Aid Kit:** Antiseptic wipes, sterile gauze, band-aids, ORS rehydration salts, minimum 7-day supply of critical personal medications.
+- **Emergency Tools:** High-intensity flashlight + spare batteries, loud emergency whistle (audible across 500m), multi-tool, charged power bank + cable.
+- **Essential Documents:** Aadhaar / IDs, insurance papers in sealed waterproof ziplock pouches.
 
-💧 **Water Purification Suggestion:**
-If tap water is questionable, boil for at least 3 minutes, or add 2 drops of unscented household bleach per liter and wait 30 minutes before drinking.
+💧 **Field Water Purification:**
+- Bring water to a rolling boil for at least 3 minutes.
+- If boiling is impossible, add 2 drops of unscented household bleach (5%) per liter of clear water, shake well, and wait 30 minutes before drinking.
 
-📞 **Emergency Relief Distribution Center:** Central Relief Station Alpha (Marina Sector).`;
+📍 **Safe Haven & Relief Distribution:**
+- **Central Relief Station Alpha** (800m inland from Marina Beach / Anna Salai Junction). Hot meals, potable water, and medical triage are operational.
+
+📞 **Emergency Dispatch:** Dial **112** (National Emergency) or **1070** (Disaster Control).`;
   }
 
   // 5. Fire, Chemical Leak & Smoke
@@ -227,7 +272,7 @@ If tap water is questionable, boil for at least 3 minutes, or add 2 drops of uns
     msg.includes("when will") ||
     msg.includes("eta") ||
     msg.includes("time") ||
-    msg.includes("response")
+    msg.includes("dispatch")
   ) {
     return `⏱️ **Rescue Response Time & Dispatch Protocols:**
 
@@ -241,14 +286,22 @@ If tap water is questionable, boil for at least 3 minutes, or add 2 drops of uns
 4. Do NOT attempt to wade into swift water on your own.`;
   }
 
-  // 9. Emergency Helpline Numbers
-  if (
-    msg.includes("number") ||
-    msg.includes("call") ||
-    msg.includes("phone") ||
-    msg.includes("contact") ||
-    msg.includes("helpline")
-  ) {
+  // 9. Emergency Helpline Numbers (Only match explicit inquiries for phone numbers or emergency calling)
+  const isHelplineInquiry =
+    msg.includes("helpline") ||
+    msg.includes("emergency number") ||
+    msg.includes("phone number") ||
+    msg.includes("contact number") ||
+    msg.includes("toll free") ||
+    msg.includes("control room") ||
+    msg.includes("who can i call") ||
+    msg.includes("who to call") ||
+    msg.includes("whom to call") ||
+    msg.includes("what number") ||
+    msg.includes("give me the number") ||
+    (msg.includes("call") && (msg.includes("police") || msg.includes("ambulance") || msg.includes("ndrf") || msg.includes("fire") || msg.includes("hospital") || msg.includes("emergency")));
+
+  if (isHelplineInquiry) {
     return `📞 **Official Emergency Response Helplines:**
 
 - **National Emergency Unified Service:** **112**
@@ -266,10 +319,10 @@ If tap water is questionable, boil for at least 3 minutes, or add 2 drops of uns
 📍 **Nearest Safe Haven:** Central Relief Station Alpha (800m inland from Marina Beach).
 🚶 **Evacuation Route:** Westward inland corridor via Anna Salai high ground.
 🌊 **Water Depth Alert:** Coastal Marina promenade is submerged (1.4m depth); avoid low-lying underpasses.
-💡 **Key Safety Measure:** Disconnect mains electricity and stay on upper floors.
+💡 **Key Safety Measure:** Disconnect mains electricity, conserve mobile battery, and stay on upper floors.
 
 📞 **Immediate Life-Threatening Emergency:** Dial **112** or **108**.
-Ask me about specific shelter locations, evacuation corridors, flood precautions, or first aid!`;
+Ask me about battery preservation, survival tips, shelter locations, evacuation corridors, flood precautions, or first aid!`;
 }
 
 // =========================================================================
@@ -296,12 +349,18 @@ export async function POST(req: NextRequest) {
     const simulateOffline = Boolean(body.simulate_offline);
 
     // List of reliable, verified models on Groq to attempt in sequence (fastest first)
-    const groqCandidateModels = [
-      "openai/gpt-oss-20b",
-      "openai/gpt-oss-120b",
-      "allam-2-7b",
-      "qwen/qwen3.6-27b",
-    ];
+    const configuredGroqModel = process.env.GROQ_MODEL?.trim();
+    const groqCandidateModels = Array.from(
+      new Set([
+        configuredGroqModel,
+        "qwen/qwen3.8-27b",
+        "groq/compound-mini",
+        "groq/compound",
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "openai/gpt-oss-20b",
+      ].filter((m): m is string => Boolean(m && m.length > 0)))
+    );
 
     // -------------------------------------------------------------
     // Tier 1: Try Groq Ultra-Fast AI (Multi-Model Waterfall)
@@ -310,7 +369,7 @@ export async function POST(req: NextRequest) {
       for (const model of groqCandidateModels) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 9000);
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
 
           const systemContent = simulateOffline
             ? `${SYSTEM_PROMPT}\n[SIMULATED ON-DEVICE 4-BIT QUANTIZED MODEL // LOCAL EDGE INFERENCE]\nYou are running as the on-device local AI on the responder's terminal. Provide direct, concise, and complete answers with zero cellular connectivity dependency.\n${
@@ -338,8 +397,8 @@ export async function POST(req: NextRequest) {
             },
             body: JSON.stringify({
               model,
-              max_tokens: 1024,
-              temperature: 0.3, // Lower temperature for factual, calm safety advice
+              max_tokens: 800,
+              temperature: 0.3,
               messages: [
                 {
                   role: "system",
@@ -355,13 +414,14 @@ export async function POST(req: NextRequest) {
 
           if (groqRes.ok) {
             const data = await groqRes.json();
-            const reply = data.choices?.[0]?.message?.content?.trim();
+            const choice = data.choices?.[0]?.message;
+            const reply = (choice?.content || choice?.reasoning || "").trim();
             if (reply && reply.length > 10) {
               return NextResponse.json({
                 reply,
                 source: simulateOffline ? "offline_simulated" : "groq",
                 model: simulateOffline ? "On-Device Edge 4-Bit LPU (Simulated Local Model)" : model,
-                latency_ms: simulateOffline ? 18 : 310,
+                latency_ms: simulateOffline ? 18 : 280,
                 offline: simulateOffline,
                 status: "success",
               });
@@ -380,12 +440,21 @@ export async function POST(req: NextRequest) {
     // Tier 2: Try Google Gemini AI (Secondary Backup)
     // -------------------------------------------------------------
     if (geminiKey) {
-      const geminiCandidateModels = ["gemini-3.6-flash", "gemini-flash-latest"];
+      const configuredGeminiModel = process.env.GEMINI_MODEL?.trim();
+      const geminiCandidateModels = Array.from(
+        new Set(
+          [
+            configuredGeminiModel,
+            "gemini-3.6-flash",
+            "gemini-flash-latest",
+          ].filter((m): m is string => Boolean(m && m.length > 0))
+        )
+      );
 
       for (const gemModel of geminiCandidateModels) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6500);
+          const timeoutId = setTimeout(() => controller.abort(), 4500);
 
           const geminiRes = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${gemModel}:generateContent?key=${geminiKey}`,

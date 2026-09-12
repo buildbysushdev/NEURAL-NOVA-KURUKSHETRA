@@ -228,10 +228,13 @@ export default function RescueDashboardPage() {
       }
     } catch (e) {}
 
+    const seenTaskIds = new Set(INITIAL_RESCUE_TASKS.map((t) => t.id));
+
     const handleIncomingDispatch = (d: any) => {
       if (!d || !d.id) return;
+      const idStr = d.id.toString();
       const newTask: RescueTask = {
-        id: d.id.toString(),
+        id: idStr,
         type: d.type || "Citizen Emergency SOS",
         zone: "Assigned Sector",
         location_name: d.description ? d.description.slice(0, 45) : "Disaster Coordinate",
@@ -249,41 +252,59 @@ export default function RescueDashboardPage() {
       };
 
       setTasks((prev) => {
-        if (prev.some((t) => t.id === newTask.id)) return prev;
-        toast.error("🚨 IMMEDIATE RESCUE DISPATCH ALERT", {
-          description: `${newTask.type} at [${newTask.latitude?.toFixed(4)}, ${newTask.longitude?.toFixed(4)}]: ${newTask.description.slice(0, 50)}...`,
-          duration: 6000,
-        });
+        if (prev.some((t) => t.id === idStr)) return prev;
         return [newTask, ...prev];
       });
+
+      if (!seenTaskIds.has(idStr)) {
+        seenTaskIds.add(idStr);
+        toast.error("🚨 IMMEDIATE RESCUE DISPATCH ALERT", {
+          id: `rescue-dispatch-${idStr}`,
+          description: `${newTask.type} at [${newTask.latitude?.toFixed(4)}, ${newTask.longitude?.toFixed(4)}]: ${newTask.description.slice(0, 50)}...`,
+          duration: 5000,
+        });
+      }
     };
 
-    const handleStorage = () => {
+    const handleStorage = (e: StorageEvent) => {
       try {
+        if (e.key && e.key !== "kurukshetra_latest_incident" && e.key !== "kurukshetra_latest_dispatch" && e.key !== "latest_citizen_voice_cry") {
+          return;
+        }
         const raw = localStorage.getItem("kurukshetra_latest_incident") || localStorage.getItem("kurukshetra_latest_dispatch");
         if (raw) {
-          handleIncomingDispatch(JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          if (parsed?.id && !seenTaskIds.has(parsed.id.toString())) {
+            handleIncomingDispatch(parsed);
+          }
         }
         const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
         if (voiceRaw) {
           setLatestCitizenVoice(JSON.parse(voiceRaw));
         }
-      } catch (e) {}
+      } catch (err) {}
     };
 
+    let lastVoiceNotice = 0;
     const handleVoiceTransmitted = (e: any) => {
       if (e.detail) {
         setLatestCitizenVoice(e.detail);
-        toast.error("🚨 LIVE CITIZEN VOICE SOS RECEIVED", {
-          description: `Voice broadcast from ${e.detail?.location?.locationName || "Sector B"} (${e.detail?.location?.building || "Building B-17"}). Coords locked.`,
-          duration: 7000,
-        });
+        const now = Date.now();
+        if (now - lastVoiceNotice > 3000) {
+          lastVoiceNotice = now;
+          toast.error("🚨 LIVE CITIZEN VOICE SOS RECEIVED", {
+            id: `rescue-voice-sos-${e.detail?.timestamp || now}`,
+            description: `Voice broadcast from ${e.detail?.location?.locationName || "Sector B"} (${e.detail?.location?.building || "Building B-17"}). Coords locked.`,
+            duration: 5000,
+          });
+        }
       }
     };
 
     window.addEventListener("storage", handleStorage);
     const customListener = (e: any) => handleIncomingDispatch(e.detail);
     window.addEventListener("kurukshetra:incident_reported", customListener);
+    window.addEventListener("kurukshetra:dispatch_created", customListener);
     window.addEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
 
     let broadcastChannel: any = null;

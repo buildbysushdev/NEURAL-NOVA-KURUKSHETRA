@@ -44,8 +44,11 @@ export function CitizenChatbot() {
 
   // Auto-scroll to newest message unless user scrolled up
   useEffect(() => {
-    if (!isUserScrolledUp.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isUserScrolledUp.current && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [messages, isTyping]);
 

@@ -38,19 +38,83 @@ export function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function flashAndClick(selector: string): Promise<boolean> {
-  if (typeof document === 'undefined') return false;
-  const el = document.querySelector(selector) as HTMLElement | null;
-  if (!el) return false;
-  el.classList.add('demo-click-flash');
+/**
+ * Robust cross-container page scroller.
+ * Correctly scrolls window or document.querySelector('main') depending on dashboard layout.
+ */
+export function scrollPageTo(top = 0, behavior: ScrollBehavior = 'smooth') {
+  if (typeof window === 'undefined') return;
   try {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.scrollTo({ top, behavior });
   } catch {}
-  await wait(350);
+  try {
+    document.documentElement.scrollTo({ top, behavior });
+  } catch {}
+  try {
+    document.body.scrollTo({ top, behavior });
+  } catch {}
+  try {
+    const main = document.querySelector('main');
+    if (main) {
+      main.scrollTo({ top, behavior });
+    }
+  } catch {}
+}
+
+/**
+ * Smoothly scrolls any element into view regardless of whether parent is window or a scrollable main div.
+ */
+export function scrollToElement(target: string | HTMLElement): boolean {
+  if (typeof document === 'undefined') return false;
+  const el = typeof target === 'string' ? (document.querySelector(target) as HTMLElement | null) : target;
+  if (!el) return false;
+
+  try {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  } catch {
+    try {
+      el.scrollIntoView();
+    } catch {}
+  }
+
+  // Handle scrollable <main> container if present (e.g. Authority dashboard)
+  try {
+    const main = document.querySelector('main');
+    if (main && main.contains(el)) {
+      const mainRect = main.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const relativeTop = elRect.top - mainRect.top + main.scrollTop;
+      const targetScroll = Math.max(0, relativeTop - (mainRect.height / 2) + (elRect.height / 2));
+      main.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    }
+  } catch {}
+
+  return true;
+}
+
+export async function flashAndClick(selectorOrEl: string | HTMLElement, delayMs = 500): Promise<boolean> {
+  if (typeof document === 'undefined') return false;
+  const el = typeof selectorOrEl === 'string'
+    ? (document.querySelector(selectorOrEl) as HTMLElement | null)
+    : selectorOrEl;
+  if (!el) return false;
+
+  scrollToElement(el);
+  await wait(250);
+
+  el.classList.add('demo-click-flash');
+  el.style.transition = 'box-shadow 0.2s, outline 0.2s';
+  el.style.outline = '3px solid #f59e0b';
+  el.style.boxShadow = '0 0 0 6px rgba(245,158,11,0.35)';
+
+  await wait(delayMs);
   try {
     el.click();
   } catch (e) {}
   await wait(250);
+
   el.classList.remove('demo-click-flash');
+  el.style.outline = '';
+  el.style.boxShadow = '';
   return true;
 }

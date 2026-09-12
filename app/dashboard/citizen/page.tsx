@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import ReportForm, { IncidentReport } from "@/components/ReportForm";
 import { ActiveDisasterBanner } from "@/components/citizen/ActiveDisasterBanner";
 import { GovernmentAlertModal } from "@/components/citizen/GovernmentAlertModal";
-import { FloatingChatbotButton } from "@/components/citizen/FloatingChatbotButton";
 import AlertMap from "@/components/AlertMap";
 import { RichAlertCard, RichAlertIncident } from "@/components/notifications/RichAlertCard";
 import WalkieTalkie from "@/components/WalkieTalkie";
@@ -1073,9 +1072,6 @@ export default function CitizenDashboardPage() {
         )}
 
       </div>
-
-      {/* Real-time Voice Floating AI Ground Assistant */}
-      <FloatingChatbotButton />
     </div>
   );
 }

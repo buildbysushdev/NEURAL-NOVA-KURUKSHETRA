@@ -41,9 +41,12 @@ function formatInline(text: string) {
 function FormattedMessage({ text }: { text: string }) {
   const lines = text.split("\n");
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 text-xs">
       {lines.map((line, i) => {
         const trimmed = line.trim();
+        if (trimmed === "---" || trimmed === "***") {
+          return <hr key={i} className="my-1.5 border-slate-200" />;
+        }
         if (trimmed.startsWith("# ")) {
           return (
             <h3 key={i} className="font-bold text-sm text-blue-700 mt-1">
@@ -76,17 +79,33 @@ function FormattedMessage({ text }: { text: string }) {
         if (/^\d+\.\s/.test(trimmed)) {
           return (
             <div key={i} className="flex items-start gap-1.5 pl-1">
-              <span className="text-blue-600 font-mono text-[10px]">
+              <span className="text-blue-600 font-mono text-[10px] font-bold">
                 {trimmed.match(/^\d+\./)?.[0]}
               </span>
               <span className="flex-1 text-slate-800">{formatInline(trimmed.replace(/^\d+\.\s*/, ""))}</span>
             </div>
           );
         }
+        if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+          // Skip divider lines like |---|---|
+          if (/^\|[\s\-:|]+\|$/.test(trimmed)) {
+            return null;
+          }
+          const cells = trimmed.split("|").slice(1, -1);
+          return (
+            <div key={i} className="grid grid-flow-col auto-cols-fr gap-1 py-0.5 px-1 bg-slate-100/70 rounded text-[11px] font-mono border border-slate-200/60">
+              {cells.map((cell, cIdx) => (
+                <span key={cIdx} className="truncate text-slate-800 font-medium">
+                  {formatInline(cell.trim())}
+                </span>
+              ))}
+            </div>
+          );
+        }
         if (!trimmed) {
           return <div key={i} className="h-1" />;
         }
-        return <p key={i} className="text-slate-800">{formatInline(line)}</p>;
+        return <p key={i} className="text-slate-800 leading-relaxed">{formatInline(line)}</p>;
       })}
     </div>
   );
@@ -94,6 +113,7 @@ function FormattedMessage({ text }: { text: string }) {
 
 const QUICK_REPLIES = [
   "📍 Nearest Shelters & Safe Locations",
+  "🔋 Phone Low Battery & Power Saving",
   "🌊 Flood & Storm Safety Measures",
   "💡 Survival Suggestions & Go-Bag",
   "⏱️ How long for rescue to arrive?",
@@ -116,13 +136,40 @@ export function FloatingChatbotButton() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrolledUp = useRef(false);
   const recognitionRef = useRef<any>(null);
 
-  // Auto-scroll
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    isUserScrolledUp.current = scrollHeight - (scrollTop + clientHeight) > 60;
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  // Auto-scroll on new messages or loading states
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isUserScrolledUp.current) {
+      scrollToBottom("smooth");
+    }
   }, [msgs, loading]);
+
+  // Ensure scroll to bottom on modal open
+  useEffect(() => {
+    if (open) {
+      isUserScrolledUp.current = false;
+      const timer = setTimeout(() => scrollToBottom("auto"), 80);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -359,14 +406,22 @@ export function FloatingChatbotButton() {
           </div>
 
           {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+          <div
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 overscroll-contain relative"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              scrollBehavior: "smooth",
+            }}
+          >
             {msgs.map((m, i) => (
               <div
                 key={i}
                 className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`max-w-[85%] px-4 py-2.5 text-xs leading-relaxed rounded-2xl shadow-sm ${
+                  className={`max-w-[85%] px-4 py-2.5 text-xs leading-relaxed rounded-2xl shadow-sm break-words ${
                     m.role === "user"
                       ? "bg-blue-600 text-white rounded-tr-none"
                       : "bg-white text-slate-800 border border-slate-200/80 rounded-tl-none"
@@ -407,7 +462,6 @@ export function FloatingChatbotButton() {
                 <span>Sentinel AI is analyzing safety instructions...</span>
               </div>
             )}
-            <div ref={bottomRef} />
           </div>
 
           {/* Quick Questions */}
