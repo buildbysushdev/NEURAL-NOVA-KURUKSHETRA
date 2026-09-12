@@ -22,8 +22,8 @@ export function CitizenChatbot() {
       sender: "assistant",
       text:
         language === "hi"
-          ? "नमस्ते। मैं कुरुक्षेत्र नागरिक आपातकालीन सहायता बॉट हूँ। आप बाढ़, चिकित्सा या राहत सामग्री के बारे में पूछ सकते हैं। मैं आपकी क्या सहायता कर सकता हूँ?"
-          : "Welcome to Kurukshetra Emergency Support. I am your automated Sentinel Assistant. You can describe an emergency, request immediate supplies (water/medical/food), or inquire about safe evacuation zones. How can I assist you right now?",
+          ? "नमस्ते! मैं कुरुक्षेत्र सेंटिनल एआई हूँ। मैं आपके किसी भी प्रश्न का उत्तर देने के लिए तैयार हूँ—चाहे वह आपातकालीन सहायता हो, आश्रय स्थल हों, प्राथमिक उपचार हो, या कोई भी सामान्य जानकारी। मैं आपकी कैसे मदद कर सकता हूँ?"
+          : "Hello! I am Sentinel AI. I am here to help answer all your questions—including emergency guidance, shelter locations, first aid, disaster safety, or any general queries. How can I assist you right now?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);

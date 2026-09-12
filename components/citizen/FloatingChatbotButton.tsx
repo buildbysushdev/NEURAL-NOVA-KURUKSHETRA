@@ -126,7 +126,7 @@ export function FloatingChatbotButton() {
   const [msgs, setMsgs] = useState<Message[]>([
     {
       role: "bot",
-      text: "Hello. I am Sentinel AI, your official Disaster Relief & Emergency Safety Assistant. I provide life-saving guidance on emergency locations, disaster safety measures, survival suggestions, and rescue coordination. How can I help you right now?",
+      text: "Hello! I am Sentinel AI. I am powered by Groq and ready to answer any questions you have—whether about emergency survival, nearest shelters, first aid, disaster safety, or any general inquiries. How can I help you today?",
       source: "groq",
     },
   ]);

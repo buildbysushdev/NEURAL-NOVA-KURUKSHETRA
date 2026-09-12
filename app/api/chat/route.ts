@@ -6,16 +6,14 @@ import { NextRequest, NextResponse } from "next/server";
 // FILE: app/api/chat/route.ts
 // =========================================================================
 
-const SYSTEM_PROMPT = `You are Sentinel Tactical & Emergency AI for Kurukshetra PS20 (operating for Civil Defense, NDRF/SDRF rescue squads, and citizens).
+const SYSTEM_PROMPT = `You are Sentinel AI for Kurukshetra PS20 (a state-of-the-art emergency relief and intelligence assistant).
 
 CORE CAPABILITIES & DIRECTIVES:
-1. ALWAYS provide clear, authoritative, intelligent, and helpful answers to ANY question asked by the user (tactical rescue procedures, hazardous materials, general queries, engineering questions, or life-safety guidance).
-2. For RESCUE responders (role: rescue): Act as the NDRF Senior Tactical Operations Advisor. Give precise step-by-step SOPs, extrication techniques, hazardous materials standoff perimeters, casualty triage (START/SALT protocols), and communications frequency guidance.
-3. For CITIZENS (role: citizen): Act as the Citizen Safety Sentinel. Provide calm, structured, actionable survival steps, specific shelter locations (e.g. Central Relief Station Alpha 800m inland), clean water purification tips, and official helplines (112, 108, 1070).
-4. For GENERAL / TECHNICAL questions: Answer directly, accurately, and thoroughly with deep domain intelligence.
-
-RESPONSE FORMAT:
-Use clean Markdown headers, bullet points, and bold tags for immediate readability on mobile field devices.`;
+1. ANSWER ALL USER QUESTIONS: You are open, unrestricted, helpful, intelligent, and articulate. Answer ANY question the user asks—whether about disasters, survival, first aid, weather, science, coding, general knowledge, or casual conversation. Never refuse or say you can only talk about disasters.
+2. If asked about emergencies or crisis situations: Provide calm, structured, actionable, and life-saving steps, specific shelter locations, and emergency contacts (National Helpline: 112, State Disaster: 1070, Ambulance: 108).
+3. If asked by a rescue responder (role: rescue): Act as a senior tactical rescue advisor with precise SOPs, coordinates, and standoff perimeters.
+4. If asked by a citizen (role: citizen): Be reassuring, clear, warm, and highly practical.
+5. RESPONSE FORMAT: Use clean Markdown headers, bullet points, and bold text for maximum readability.`;
 
 // =========================================================================
 // Comprehensive Context-Aware Offline Semantic Engine
@@ -313,16 +311,16 @@ Evacuate inland westward along **Anna Salai High Ridge**. Avoid Marina Promenade
 - **Police Emergency:** **100**`;
   }
 
-  // Default Sentinel Disaster Briefing
-  return `🛡️ **Sentinel Emergency Disaster Guidance:**
+  // Default Sentinel Multi-Domain Briefing
+  return `🛡️ **Sentinel AI Operational Assistant:**
 
-📍 **Nearest Safe Haven:** Central Relief Station Alpha (800m inland from Marina Beach).
-🚶 **Evacuation Route:** Westward inland corridor via Anna Salai high ground.
-🌊 **Water Depth Alert:** Coastal Marina promenade is submerged (1.4m depth); avoid low-lying underpasses.
-💡 **Key Safety Measure:** Disconnect mains electricity, conserve mobile battery, and stay on upper floors.
+I am active and ready to help you with any questions or emergency needs. 
+- 📍 **Nearest Safe Haven:** Central Relief Station Alpha (800m inland from Marina Beach).
+- 🚶 **Evacuation Route:** Westward inland corridor via Anna Salai high ground.
+- 💡 **Key Safety Measure:** Disconnect mains electricity, conserve mobile battery, and stay on upper floors.
+- 📞 **Immediate Life-Threatening Emergency:** Dial **112** (National Emergency) or **108** (Ambulance).
 
-📞 **Immediate Life-Threatening Emergency:** Dial **112** or **108**.
-Ask me about battery preservation, survival tips, shelter locations, evacuation corridors, flood precautions, or first aid!`;
+Feel free to ask me any question—whether general queries, survival suggestions, weather updates, shelter navigation, or tactical relief instructions!`;
 }
 
 // =========================================================================
@@ -348,16 +346,16 @@ export async function POST(req: NextRequest) {
     const geminiKey = process.env.GEMINI_API_KEY?.trim();
     const simulateOffline = Boolean(body.simulate_offline);
 
-    // List of reliable, verified models on Groq to attempt in sequence (fastest first)
+    // List of reliable, verified active models on Groq to attempt in sequence (fastest first)
     const configuredGroqModel = process.env.GROQ_MODEL?.trim();
     const groqCandidateModels = Array.from(
       new Set([
         configuredGroqModel,
-        "qwen/qwen3.8-27b",
         "groq/compound-mini",
+        "qwen/qwen3.8-27b",
         "groq/compound",
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-120b",
         "openai/gpt-oss-20b",
       ].filter((m): m is string => Boolean(m && m.length > 0)))
     );
@@ -372,21 +370,21 @@ export async function POST(req: NextRequest) {
           const timeoutId = setTimeout(() => controller.abort(), 6000);
 
           const systemContent = simulateOffline
-            ? `${SYSTEM_PROMPT}\n[SIMULATED ON-DEVICE 4-BIT QUANTIZED MODEL // LOCAL EDGE INFERENCE]\nYou are running as the on-device local AI on the responder's terminal. Provide direct, concise, and complete answers with zero cellular connectivity dependency.\n${
+            ? `${SYSTEM_PROMPT}\n[SIMULATED ON-DEVICE 4-BIT QUANTIZED MODEL // LOCAL EDGE INFERENCE]\nYou are running as the on-device local AI on the responder's terminal. Provide direct, helpful, and complete answers.\n${
                 role === "rescue"
-                  ? "The user is an NDRF Search & Rescue responder. Provide tactical, concise, step-by-step SOPs, coordinates, and hazard standoff rules."
-                  : "The user is a civilian. Provide calm, reassuring, highly practical life-saving steps, shelter coordinates, and survival suggestions."
+                  ? "The user is an NDRF Search & Rescue responder. Provide tactical SOPs, coordinates, and standoff rules."
+                  : "The user is a citizen. Provide reassuring, clear, and actionable advice."
               }`
             : `${SYSTEM_PROMPT}\n${
                 role === "rescue"
                   ? "The user is an NDRF Search & Rescue responder. Provide tactical, concise, step-by-step SOPs, coordinates, and hazard standoff rules."
-                  : "The user is a civilian. Provide calm, reassuring, highly practical life-saving steps, shelter coordinates, and survival suggestions."
+                  : "The user is a citizen. Provide helpful, conversational, clear, and reassuring answers to ANY question they ask."
               }\n${
                 language === "hi"
                   ? "Respond in clear, natural Hindi."
                   : language === "ta"
                   ? "Respond in clear, natural Tamil."
-                  : "Respond in clear, formatted English."
+                  : "Respond in clear, natural English."
               }`;
 
           const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
