@@ -82,6 +82,92 @@ Evacuate inland westward along **Anna Salai High Ridge**. Avoid Marina Promenade
 📞 **Emergency Transport Dispatch:** Dial **112** or **1070**.`;
   }
 
+  // 1A. Chemical Solvents, Toxic Leaks & HazMat Inundation (Checked before generic flood)
+  if (
+    msg.includes("chemical") ||
+    msg.includes("solvent") ||
+    msg.includes("hazmat") ||
+    msg.includes("toxic") ||
+    msg.includes("cbrn") ||
+    msg.includes("chlorine") ||
+    msg.includes("plume") ||
+    msg.includes("leak") ||
+    msg.includes("gas")
+  ) {
+    return `☣️ **NDRF TACTICAL DIRECTIVE: Chemical Solvents & Toxic Inundation Protocol**
+
+1. **Level-B Hazmat & SCBA Mandatory:** Responders entering contaminated flood sectors must wear Level-B encapsulated suits with positive-pressure SCBA. Zero skin or mucus membrane contact with solvent-laden floodwater.
+2. **100m Upwind Exclusion Perimeter:** Cordon off a 100-meter safety boundary strictly upwind. Cease motorized boat propeller operations inside the vapor zone to prevent combustible gas ignition.
+3. **Hydrophobic Sorbent Booms:** Deploy floating oil/solvent-selective sorbent booms across drainage channels to arrest solvent dispersion toward residential clusters.
+4. **3-Stage Decontamination Corridor:** Establish warm-water rinse, chemical neutralizing wash, and clean-air staging post at high-ground pavilion before personnel egress.
+
+📞 **HazMat Emergency Response:** Dial **101** | **Disaster HazMat Control:** **112**`;
+  }
+
+  // 1B. Substation Transformer Sparking & High-Voltage Arcing (Checked before generic flood)
+  if (
+    msg.includes("substation") ||
+    msg.includes("transformer") ||
+    msg.includes("spark") ||
+    msg.includes("arcing") ||
+    msg.includes("electrocution") ||
+    msg.includes("high voltage") ||
+    msg.includes("downed wire") ||
+    msg.includes("power line") ||
+    msg.includes("grid")
+  ) {
+    return `⚡ **NDRF TACTICAL DIRECTIVE: High-Voltage Substation Sparking & Electrical Hazard**
+
+1. **50-Meter Hard Exclusion Standoff:** Enforce a strict 50-meter perimeter around sparking transformers. Floodwater carries high salinity and conducts lethal step-potential voltage.
+2. **TANGEDCO SCADA Feeder Lockout:** Await confirmation of 11kV/33kV feeder trip from State Electricity Board SCADA control before initiating boat or wading entry.
+3. **Class-C Dry Powder / CO2 Suppression:** NEVER apply water streams or standard foam to energized transformers. Use Class-C dry chemical extinguishing agent or maintain standoff until burnout.
+4. **Dielectric Safety Gear:** All personnel operating in adjacent sectors must wear 20kV dielectric boots and deploy non-conductive fiberglass grab-poles.
+
+📞 **TNEB Electrical Emergency:** Dial **94987 94987** | **NDRF Control:** **112**`;
+  }
+
+  // 1C. Elderly Care Facility & Vulnerable Citizen Extrication (Checked before generic flood)
+  if (
+    msg.includes("elderly") ||
+    msg.includes("care facility") ||
+    msg.includes("bedridden") ||
+    msg.includes("wheelchair") ||
+    msg.includes("oxygen") ||
+    msg.includes("nursing") ||
+    msg.includes("geriatric") ||
+    msg.includes("dialysis") ||
+    msg.includes("senior")
+  ) {
+    return `🏥 **NDRF TACTICAL DIRECTIVE: Elderly Care Facility & Vulnerable Extrication**
+
+1. **Vertical Triage & Evac-Chair Extraction:** Deploy rigid Stokes basket litters and stair-evacuation chairs. Move bedridden residents to the facility second floor immediately.
+2. **Critical Life-Support Power Bridge:** Prioritize continuous power delivery for oxygen concentrators and dialysis units via portable water-sealed battery inverter packs.
+3. **Hypothermia Mitigation & Warmth:** Wrap elderly evacuees in aluminized thermal space blankets; provide heated oral rehydration and warm glucose solutions.
+4. **High-Axle Water-Bridge Transport:** Establish continuous shuttle using heavy 4x4 high-clearance rescue vehicles between facility egress and Anna Salai high ground.
+
+📞 **Elderly Emergency Helpline:** Dial **14567** | **Medical Ambulance Triage:** **108**`;
+  }
+
+  // 1D. High-Velocity Swiftwater Current (>3.0 m/s) (Checked before generic flood)
+  if (
+    msg.includes("current") ||
+    msg.includes("velocity") ||
+    msg.includes("swiftwater") ||
+    msg.includes("3.0") ||
+    msg.includes("m/s") ||
+    msg.includes("rapids") ||
+    (msg.includes("water") && (msg.includes("speed") || msg.includes("fast") || msg.includes("accelerat")))
+  ) {
+    return `🌊 **NDRF TACTICAL DIRECTIVE: High-Velocity Swiftwater Current (>3.0 m/s)**
+
+1. **45-Degree Tensioned High-Line System:** Rig 11mm static kernmantle ferry line anchored to structural pillars at 45 degrees to traverse cross-current safely.
+2. **Inflatable Motor Standoff:** Cease outboard motor operations in >3.0 m/s currents with submerged debris; transition to manual mechanical-advantage rope hauling.
+3. **Upstream & Downstream Spotter Belays:** Position upstream lookout with warning whistle (1 blast = large debris approaching). Position downstream catch-team with 20m throw-bags.
+4. **Type-V Swiftwater PPE:** Responders must utilize Type-V rescue PFDs with quick-release chest harnesses, composite helmets, and blunt-tip river rescue blades.
+
+📞 **Swiftwater Extraction Unit:** Dial **112** or **1070**`;
+  }
+
   // 2. Flood & Severe Waterlogging
   if (
     msg.includes("flood") ||
@@ -358,12 +444,11 @@ export async function POST(req: NextRequest) {
     const groqCandidateModels = Array.from(
       new Set([
         configuredGroqModel,
-        "groq/compound-mini",
         "qwen/qwen3.8-27b",
-        "groq/compound",
-        "qwen/qwen3.6-27b",
         "openai/gpt-oss-120b",
         "openai/gpt-oss-20b",
+        "qwen/qwen3.6-27b",
+        "groq/compound",
       ].filter((m): m is string => Boolean(m && m.length > 0)))
     );
 
