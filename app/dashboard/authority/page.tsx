@@ -62,7 +62,8 @@ import { FeatureInfoTooltip } from "@/components/ui/FeatureInfoTooltip";
 import { TacticalWorkflowSimulator } from "@/components/authority/TacticalWorkflowSimulator";
 import AutoDemoPlayer from "@/components/demo/AutoDemoPlayer";
 import { LiveZonePriorityPanel } from "@/components/authority/LiveZonePriorityPanel";
-
+import TacticalVoicePlayer from "@/components/TacticalVoicePlayer";
+import { ensurePlayableAudioUrl } from "@/lib/audioUtils";
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
@@ -279,7 +280,8 @@ export default function AuthorityDashboardPage() {
       }
       const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
       if (voiceRaw) {
-        setLatestCitizenVoice(JSON.parse(voiceRaw));
+        const vp = JSON.parse(voiceRaw);
+        if (vp) { vp.audioUrl = ensurePlayableAudioUrl(vp.audioUrl, (vp.durationMs || 3000) / 1000); setLatestCitizenVoice(vp); }
       }
     } catch (e) {}
 
@@ -343,14 +345,17 @@ export default function AuthorityDashboardPage() {
         }
         const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
         if (voiceRaw) {
-          setLatestCitizenVoice(JSON.parse(voiceRaw));
+          const vp = JSON.parse(voiceRaw);
+          if (vp) { vp.audioUrl = ensurePlayableAudioUrl(vp.audioUrl, (vp.durationMs || 3000) / 1000); setLatestCitizenVoice(vp); }
         }
       } catch (err) {}
     };
 
     const handleVoiceTransmitted = (e: any) => {
       if (e.detail) {
-        setLatestCitizenVoice(e.detail);
+        const vd = { ...e.detail };
+        vd.audioUrl = ensurePlayableAudioUrl(vd.audioUrl, (vd.durationMs || 3000) / 1000);
+        setLatestCitizenVoice(vd);
         const now = Date.now();
         // Throttle rapid voice notifications to at most one per 3 seconds
         if (now - lastVoiceToastTime.current > 3000) {
@@ -762,14 +767,13 @@ export default function AuthorityDashboardPage() {
 
             <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
               <span className="text-[10px] font-mono uppercase text-slate-400">Audio Distress Intercept</span>
-              {latestCitizenVoice.audioUrl ? (
-                <audio controls src={latestCitizenVoice.audioUrl} className="w-full h-8 mt-1" />
-              ) : (
-                <div className="text-xs text-slate-400 flex items-center gap-2 pt-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  Voice Synthesized Buffer Intercepted
-                </div>
-              )}
+              <TacticalVoicePlayer
+                audioUrl={latestCitizenVoice.audioUrl}
+                transcript={latestCitizenVoice.transcript}
+                role="citizen"
+                durationMs={latestCitizenVoice.durationMs || 3000}
+                className="mt-1"
+              />
             </div>
           </div>
         </div>

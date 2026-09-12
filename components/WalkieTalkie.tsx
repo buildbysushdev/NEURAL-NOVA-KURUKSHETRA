@@ -38,6 +38,14 @@ import {
   Activity,
 } from "lucide-react";
 import { toast } from "sonner";
+import TacticalVoicePlayer from "@/components/TacticalVoicePlayer";
+import {
+  blobToDataUrl,
+  createTacticalRadioWav,
+  ensurePlayableAudioUrl,
+  playTacticalVoiceComms,
+  stopTacticalVoiceComms,
+} from "@/lib/audioUtils";
 
 // Pre-fixed Emergency Q&A for Offline AI
 const OFFLINE_QA: { triggers: string[]; answer: string; icon: string }[] = [
@@ -251,6 +259,7 @@ export default function WalkieTalkie({
         if (raw) {
           const parsed: WalkieTransmission = JSON.parse(raw);
           if (parsed && parsed.role !== role) {
+            parsed.audioUrl = ensurePlayableAudioUrl(parsed.audioUrl, (parsed.durationMs || 3000) / 1000);
             setIncomingTx(parsed);
           }
         }
@@ -603,11 +612,13 @@ export default function WalkieTalkie({
       if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
     };
 
-    recorder.onstop = () => {
+    recorder.onstop = async () => {
       const mime = recorder.mimeType || bestMime || "audio/webm";
       const blob = new Blob(chunksRef.current, { type: mime });
-      const url = URL.createObjectURL(blob);
+      // Convert to persistent base64 Data URL so it travels across tabs and survives reloads
+      const dataUrl = await blobToDataUrl(blob);
       const durationMs = Math.max(Date.now() - startTimeRef.current, 500);
+      const url = dataUrl || createTacticalRadioWav(durationMs / 1000);
       setLastAudioUrl(url);
 
       stopAudioMeter();
@@ -649,7 +660,9 @@ export default function WalkieTalkie({
       } else {
         const durationMs = Math.max(Date.now() - startTimeRef.current, 1000);
         const t = transcriptAccumRef.current.trim() || "";
-        finalizeTransmission("", durationMs, t, lastConfidence);
+        const fallbackUrl = createTacticalRadioWav(durationMs / 1000);
+        setLastAudioUrl(fallbackUrl);
+        finalizeTransmission(fallbackUrl, durationMs, t, lastConfidence);
       }
     },
     [isTransmitting, lastConfidence, finalizeTransmission, stopSpeechRecognition]
@@ -674,27 +687,33 @@ export default function WalkieTalkie({
     toast.success("Emergency message selected", { description: presetText });
 
     if (!isTransmitting) {
-      finalizeTransmission("", 2000, presetText, 96);
+      const audioUrl = createTacticalRadioWav(2.8);
+      setLastAudioUrl(audioUrl);
+      finalizeTransmission(audioUrl, 2800, presetText, 96);
     }
   };
 
-  // Audio Playback Handler
+  // Audio Playback Handler with Tactical Speech & Radio Effects
   const handlePlayAudio = () => {
-    if (!lastAudioUrl) return;
-    if (audioElRef.current) {
-      if (isPlayingAudio) {
+    if (!lastAudioUrl && !lastTranscript) return;
+    if (isPlayingAudio) {
+      stopTacticalVoiceComms();
+      if (audioElRef.current) {
         audioElRef.current.pause();
         audioElRef.current.currentTime = 0;
-        setIsPlayingAudio(false);
-      } else {
-        audioElRef.current
-          .play()
-          .then(() => setIsPlayingAudio(true))
-          .catch((err) => {
-            console.warn("Audio play error:", err);
-            toast.error("Tap play button directly on mobile");
-          });
       }
+      setIsPlayingAudio(false);
+    } else {
+      setIsPlayingAudio(true);
+      if (audioElRef.current) {
+        audioElRef.current.currentTime = 0;
+        audioElRef.current.play().catch(() => {});
+      }
+      playTacticalVoiceComms(lastTranscript || "Emergency transmission recorded on Channel 7.", {
+        audioUrl: lastAudioUrl || undefined,
+        role,
+        onEnd: () => setIsPlayingAudio(false),
+      });
     }
   };
 
@@ -961,9 +980,10 @@ export default function WalkieTalkie({
           <div className="space-y-2 mb-2">
             <audio
               ref={audioElRef}
-              src={lastAudioUrl}
+              src={ensurePlayableAudioUrl(lastAudioUrl)}
               playsInline
               preload="metadata"
+              onError={() => setLastAudioUrl(createTacticalRadioWav(2.5))}
               onEnded={() => setIsPlayingAudio(false)}
               className="w-full h-8"
               controls
@@ -1084,13 +1104,12 @@ export default function WalkieTalkie({
             <strong>Sector:</strong> {incomingTx.sector} • <strong>CH:</strong> {incomingTx.channel}
           </p>
 
-          {incomingTx.audioUrl ? (
-            <audio controls playsInline preload="metadata" src={incomingTx.audioUrl} className="w-full h-8" />
-          ) : (
-            <p className="text-[11px] text-amber-300 font-mono">
-              [Voice Packet • {(incomingTx.durationMs / 1000).toFixed(1)}s • Mesh Hop Received]
-            </p>
-          )}
+          <TacticalVoicePlayer
+            audioUrl={incomingTx.audioUrl}
+            transcript={incomingTx.transcript}
+            role={incomingTx.role}
+            durationMs={incomingTx.durationMs}
+          />
 
           {incomingTx.transcript && (
             <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 p-2.5">

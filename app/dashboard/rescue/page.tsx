@@ -48,6 +48,8 @@ import { RescueAIChatbot } from "@/components/rescue/RescueAIChatbot";
 import WalkieTalkie from "@/components/WalkieTalkie";
 import { AIIncidentClusterPanel } from "@/components/rescue/AIIncidentClusterPanel";
 import RescueDemoActor from "@/components/demo/RescueDemoActor";
+import TacticalVoicePlayer from "@/components/TacticalVoicePlayer";
+import { ensurePlayableAudioUrl } from "@/lib/audioUtils";
 import dynamic from "next/dynamic";
 
 const SupplyRouteAnimation = dynamic(
@@ -224,7 +226,11 @@ export default function RescueDashboardPage() {
 
       const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
       if (voiceRaw) {
-        setLatestCitizenVoice(JSON.parse(voiceRaw));
+        const parsed = JSON.parse(voiceRaw);
+        if (parsed) {
+          parsed.audioUrl = ensurePlayableAudioUrl(parsed.audioUrl, (parsed.durationMs || 3000) / 1000);
+          setLatestCitizenVoice(parsed);
+        }
       }
     } catch (e) {}
 
@@ -238,32 +244,24 @@ export default function RescueDashboardPage() {
         type: d.type || "Citizen Emergency SOS",
         zone: "Assigned Sector",
         location_name: d.description ? d.description.slice(0, 45) : "Disaster Coordinate",
-        description: d.description || "Active emergency dispatch from Sentinel AI.",
-        location_lat: Number(d.location_lat ?? d.latitude) || 13.0827,
-        location_lng: Number(d.location_lng ?? d.longitude) || 80.2707,
-        latitude: Number(d.location_lat ?? d.latitude) || 13.0827,
-        longitude: Number(d.location_lng ?? d.longitude) || 80.2707,
+        needed_resources: d.needed_resources || ["Field Rescue Boat", "Medic"],
         severity_score: d.severity_score || 8,
         severity: d.severity || "CRITICAL",
         status: "open",
-        needed_resources: d.needed_resources || ["boats", "medical"],
-        required_resources: d.needed_resources || ["boats", "medical"],
         created_at: d.created_at || new Date().toISOString(),
       };
 
       setTasks((prev) => {
         if (prev.some((t) => t.id === idStr)) return prev;
+        seenTaskIds.add(idStr);
         return [newTask, ...prev];
       });
 
-      if (!seenTaskIds.has(idStr)) {
-        seenTaskIds.add(idStr);
-        toast.error("🚨 IMMEDIATE RESCUE DISPATCH ALERT", {
-          id: `rescue-dispatch-${idStr}`,
-          description: `${newTask.type} at [${newTask.latitude?.toFixed(4)}, ${newTask.longitude?.toFixed(4)}]: ${newTask.description.slice(0, 50)}...`,
-          duration: 5000,
-        });
-      }
+      toast.error("🚨 IMMEDIATE RESCUE DISPATCH ALERT", {
+        id: `rescue-dispatch-${idStr}`,
+        description: `${newTask.type} — Active emergency in Sector B. Coordinates locked.`,
+        duration: 5000,
+      });
     };
 
     const handleStorage = (e: StorageEvent) => {
@@ -280,7 +278,11 @@ export default function RescueDashboardPage() {
         }
         const voiceRaw = localStorage.getItem("latest_citizen_voice_cry");
         if (voiceRaw) {
-          setLatestCitizenVoice(JSON.parse(voiceRaw));
+          const vParsed = JSON.parse(voiceRaw);
+          if (vParsed) {
+            vParsed.audioUrl = ensurePlayableAudioUrl(vParsed.audioUrl, (vParsed.durationMs || 3000) / 1000);
+            setLatestCitizenVoice(vParsed);
+          }
         }
       } catch (err) {}
     };
@@ -288,7 +290,9 @@ export default function RescueDashboardPage() {
     let lastVoiceNotice = 0;
     const handleVoiceTransmitted = (e: any) => {
       if (e.detail) {
-        setLatestCitizenVoice(e.detail);
+        const payload = { ...e.detail };
+        payload.audioUrl = ensurePlayableAudioUrl(payload.audioUrl, (payload.durationMs || 3000) / 1000);
+        setLatestCitizenVoice(payload);
         const now = Date.now();
         if (now - lastVoiceNotice > 3000) {
           lastVoiceNotice = now;
@@ -690,14 +694,13 @@ export default function RescueDashboardPage() {
 
                 <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1">
                   <span className="text-[10px] font-mono uppercase text-slate-400">Offline Mesh Audio Stream</span>
-                  {latestCitizenVoice.audioUrl ? (
-                    <audio src={latestCitizenVoice.audioUrl} controls className="w-full h-8 mt-1" />
-                  ) : (
-                    <div className="flex items-center gap-2 text-xs text-amber-300 font-mono pt-1">
-                      <Radio className="w-3.5 h-3.5 animate-pulse text-amber-400" />
-                      <span>Encapsulated Opus/16kHz Mesh Packet</span>
-                    </div>
-                  )}
+                  <TacticalVoicePlayer
+                    audioUrl={latestCitizenVoice.audioUrl}
+                    transcript={latestCitizenVoice.transcript}
+                    role="citizen"
+                    durationMs={latestCitizenVoice.durationMs || 3000}
+                    className="mt-1"
+                  />
                 </div>
               </div>
             </div>
