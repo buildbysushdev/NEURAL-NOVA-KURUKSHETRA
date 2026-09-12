@@ -59,14 +59,45 @@ I am connected to the Kurukshetra Civil Defense Network. You can ask me anything
 - **Field Squad Integration:** Voice telemetry GPS tracking with instant tactical routing for NDRF teams.`;
   }
 
+  // 0. Life-Threatening Emergency: Drowning, Water Rescue & CPR (Highest priority)
+  if (
+    msg.includes("drown") ||
+    msg.includes("drownig") ||
+    msg.includes("sinking") ||
+    msg.includes("sink") ||
+    msg.includes("cpr") ||
+    msg.includes("unconscious") ||
+    msg.includes("choking") ||
+    msg.includes("breath") ||
+    msg.includes("pulled under")
+  ) {
+    return `🆘 **CRITICAL DROWNING & WATER RESCUE LIFE-SAVING PROTOCOL:**
+
+🛟 **Immediate Extraction Rules (Reach, Throw, Row, Go):**
+1. **DO NOT Jump in Alone:** A panicking drowning person will unintentionally pull their rescuer underwater.
+2. **Reach & Throw:** Extend a long pole, branch, towel, or throw any buoyant object immediately (empty sealed 20L water can, plastic cooler, tire tube, life ring).
+3. **Haul to Dry Ground:** Pull the person onto a flat, elevated, dry surface before attempting resuscitation.
+
+🫀 **Immediate CPR Protocol (If Unconscious / Not Breathing):**
+1. **Check Responsiveness & Airway:** Tap shoulders firmly. Gently tilt head back and lift chin. Clear any silt/mud or vomit from mouth.
+2. **30 Hard & Fast Chest Compressions:** Place heel of hand in center of breastbone. Push hard and fast at **100–120 beats/min** (at least 5 cm deep).
+3. **2 Gentle Rescue Breaths:** Pinch the nose shut, seal your mouth over theirs, and give 2 full breaths until chest visibly rises.
+4. **Repeat 30 Compressions to 2 Breaths:** Continue uninterrupted until professional medical help takes over or person coughs and breathes.
+5. **Recovery Position:** If victim begins breathing, roll them onto their **left side** to keep airway clear and prevent fluid inhalation.
+
+📞 **Immediate Emergency Medical Services:** Dial **108** (Ambulance) or **112** (National Emergency).`;
+  }
+
   // 1. Locations, Shelters & Evacuation Corridors
   if (
     msg.includes("shelter") ||
     msg.includes("camp") ||
-    msg.includes("where") ||
+    msg.includes("where can i go") ||
+    msg.includes("where to go") ||
     msg.includes("location") ||
     msg.includes("safe place") ||
-    msg.includes("zone") ||
+    msg.includes("safe zone") ||
+    msg.includes("evacuation zone") ||
     msg.includes("corridor") ||
     msg.includes("evacuat") ||
     msg.includes("route")
@@ -465,11 +496,15 @@ export async function POST(req: NextRequest) {
             ? `${SYSTEM_PROMPT}\n[SIMULATED ON-DEVICE 4-BIT QUANTIZED MODEL // LOCAL EDGE INFERENCE]\nYou are running as the on-device local AI on the responder's terminal. Provide direct, helpful, and complete answers.\n${
                 role === "rescue"
                   ? "The user is an NDRF Search & Rescue responder. Provide tactical SOPs, coordinates, and standoff rules."
+                  : role === "authority"
+                  ? "The user is the SDMA State Disaster Management Commander. Provide tactical decision triage, resource counts, sector allocations, and executive operational directives."
                   : "The user is a citizen. Provide reassuring, clear, and actionable advice."
               }`
             : `${SYSTEM_PROMPT}\n${
                 role === "rescue"
                   ? "The user is an NDRF Search & Rescue responder. Provide tactical, concise, step-by-step SOPs, coordinates, and hazard standoff rules."
+                  : role === "authority"
+                  ? "The user is the SDMA State Disaster Management Commander in the tactical operations center. Provide executive tactical operations triage, resource dispatch counts, and critical emergency decisions with urgency and precision."
                   : "The user is a citizen. Provide helpful, conversational, clear, and reassuring answers to ANY question they ask."
               }\n${
                 language === "hi"

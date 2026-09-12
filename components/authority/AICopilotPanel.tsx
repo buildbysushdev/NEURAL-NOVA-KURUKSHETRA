@@ -79,7 +79,8 @@ export function AICopilotPanel() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `[COMMANDER CONTEXT: You are assisting the State Disaster Management Authority (SDMA) commander in the tactical operations room. Answer with high operational precision, tactical bullet points, exact resource quantities, and evacuation routes for Chennai.] ${query}`,
+          role: "authority",
+          message: query,
           language: "en",
         }),
       });
@@ -94,7 +95,7 @@ export function AICopilotPanel() {
             data.reply ||
             "Tactical triage generated. Recommend initiating Zone B evacuation via Anna Salai corridor and alerting SDRF Sector Units 1 & 2.",
           source: data.source || "groq",
-          model: data.model || "groq/compound-mini",
+          model: data.model || "Qwen 3.8 (Groq LPU)",
           timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
