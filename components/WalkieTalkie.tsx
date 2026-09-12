@@ -443,19 +443,10 @@ export default function WalkieTalkie({
         second: "2-digit",
       });
 
-      // Mobile STT Fallback: If transcript is empty but audio was recorded, supply intelligent distress message
+      // Use actual transcript from speech recognition — no fake default
       let transcript = rawTranscript.trim();
-      let calculatedConfidence = confidence;
-
-      if (!transcript && durationMs >= 700) {
-        if (role === "citizen") {
-          transcript = `Distress transmission from ${currentLocation.locationName} (${currentLocation.building}, ${currentLocation.floor}) - Flood waters rising rapidly, immediate assistance requested.`;
-          calculatedConfidence = 92;
-        } else {
-          transcript = `NDRF Tactical Squad Alpha: Acknowledging distress beacon in Sector B. Rescue units deployed.`;
-          calculatedConfidence = 96;
-        }
-      }
+      let calculatedConfidence = confidence || 0;
+      // If truly no speech was detected (STT unavailable), keep empty — don't fake it
 
       setLastTranscript(transcript);
       setLastConfidence(calculatedConfidence || 88);
@@ -573,7 +564,15 @@ export default function WalkieTalkie({
       stopTransmission();
     }, 5000);
 
-    // Speech recognition starts below — transcript is LIVE from your voice
+    // START SPEECH RECOGNITION IMMEDIATELY — before getUserMedia so it has max time
+    setLiveTranscript("🎤 Listening...");
+    startSpeechRecognition();
+    // Clear the placeholder once real results start coming
+    setTimeout(() => {
+      if (transcriptAccumRef.current === "" || transcriptAccumRef.current === "🎤 Listening...") {
+        setLiveTranscript("");
+      }
+    }, 1500);
 
     // 1. Cross-Platform getUserMedia without rigid constraints
     let stream: MediaStream | null = null;
@@ -597,33 +596,9 @@ export default function WalkieTalkie({
     }
 
     if (!stream) {
-      // No microphone available — run a simulation with synthetic audio + demo transcript
       setIsSupported(true);
       setStatusText("SIM TX");
-
-      // Start speech recognition if available
-      startSpeechRecognition();
-
-      // Auto-finalize after the countdown timer fires (5s max) or when stop is pressed
-      // We inject a realistic demo transcript so the UI shows something useful
-      const simTranscript =
-        role === "citizen"
-          ? "Help us please, flood water is rising rapidly. We are on Floor 3 of Building B-17."
-          : "NDRF Squad Alpha en route to Sector B. ETA 4 minutes. Stay on this channel.";
-
-      // Use a 2.8s simulation period; reveal transcript progressively for realism
-      let simChars = 0;
-      const simInterval = setInterval(() => {
-        simChars = Math.min(simChars + 12, simTranscript.length);
-        const partial = simTranscript.slice(0, simChars);
-        transcriptAccumRef.current = partial;
-        setLiveTranscript(partial);
-        if (simChars >= simTranscript.length) clearInterval(simInterval);
-      }, 150);
-
-      // Store interval so we can clear it on stop
-      (window as any).__simTranscriptInterval = simInterval;
-
+      // Speech recognition already started above — no fake text
       return;
     }
 
@@ -668,7 +643,7 @@ export default function WalkieTalkie({
     };
 
     recorder.start(200);
-    startSpeechRecognition();
+    // Note: startSpeechRecognition already called above before getUserMedia
   };
 
   // STOP TRANSMISSION
