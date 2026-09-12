@@ -562,12 +562,12 @@ export async function POST(req: NextRequest) {
             const errText = await groqRes.text();
             console.warn(`[Chat API] Groq model ${model} failed (${groqRes.status}):`, errText);
           }
-        } catch (groqErr: any) {
-          console.warn(`[Chat API] Groq attempt ${model} error:`, groqErr?.message || groqErr);
+          } catch (groqErr: any) {
+            console.warn(`[Chat API] Groq attempt ${model} error:`, groqErr?.message || groqErr);
+          }
         }
       }
     }
-  }
 
     // -------------------------------------------------------------
     // Tier 2: Try Google Gemini AI (Secondary Backup)
