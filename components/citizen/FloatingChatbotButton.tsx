@@ -68,8 +68,34 @@ function getClientEmergencyAnswer(query: string): string {
    - If phone has even 2% left, send a single SMS with your exact building name and floor to a relative before it dies. SMS takes <1 millisecond of signal.`;
   }
 
+  // Critical Life-Safety: Drowning, Water Rescue & CPR
+  if (
+    q.includes("drown") ||
+    q.includes("drownig") ||
+    q.includes("sink") ||
+    q.includes("cpr") ||
+    q.includes("unconscious") ||
+    q.includes("breath") ||
+    q.includes("pulled under")
+  ) {
+    return `🆘 **Critical Drowning & CPR Resuscitation Protocol:**
+
+🛟 **Immediate Life-Saving Actions (Reach, Throw, Row, Go):**
+1. **DO NOT Jump in Alone:** A panicked victim can unintentionally pull you under. Extend a long pole, branch, or oar.
+2. **Throw Flotation Immediately:** Toss an empty sealed 20L water can, tire tube, plastic cooler, or life ring.
+3. **Move to Flat Dry Surface:** Pull the victim to an elevated area before beginning resuscitation.
+
+🫀 **CPR Instructions (If Not Breathing):**
+1. **Clear Airway:** Lay victim flat on back. Gently tilt head back and lift chin. Clear mouth of water or debris.
+2. **30 Hard Chest Compressions:** Push in the center of the chest at **100–120 bpm** (5 cm deep).
+3. **2 Rescue Breaths:** Pinch nose shut, cover their mouth with yours, and deliver 2 full breaths.
+4. **Continue 30:2 Cycle:** Repeat continuously until emergency responders arrive or normal breathing resumes.
+
+📞 **Emergency Ambulance Dispatch:** Dial **108** | **National Disaster:** **112**`;
+  }
+
   // Flood / Water / Storm
-  if (q.includes("flood") || q.includes("water") || q.includes("rain") || q.includes("submerg") || q.includes("drown")) {
+  if (q.includes("flood") || q.includes("water") || q.includes("rain") || q.includes("submerg")) {
     return `🌊 **Flood & Rising Water Emergency Measures:**
 1. **Move to Upper Floors:** Do not stay on ground floors. Take drinking water, medications, and dry blankets to 2nd floor or roof.
 2. **Turn Off Mains Breaker:** Submerged sockets can electrify floodwater. Kill the main electrical switch immediately.

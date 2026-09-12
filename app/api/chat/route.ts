@@ -465,7 +465,14 @@ export async function POST(req: NextRequest) {
     // Guaranteed active keys (uses environment variable with robust backup so Vercel deployment never fails)
     const defaultGroq = ["gsk", "_CQeMgIvMIULL", "kxDuDM4RWGdyb3FYxpMP4xzSCKUErv8MHA9OeR6b"].join("");
     const defaultGemini = ["AQ.", "Ab8RN6KF_J5pSoqpEaucA7cEdeKLc", "_I8FK8lN9-JmFZDz7iJYg"].join("");
-    const groqKey = (process.env.GROQ_API_KEY || defaultGroq).trim();
+    const groqCandidateKeys = Array.from(
+      new Set(
+        [
+          process.env.GROQ_API_KEY?.trim(),
+          defaultGroq,
+        ].filter((k): k is string => Boolean(k && k.startsWith("gsk_")))
+      )
+    );
     const geminiKey = (process.env.GEMINI_API_KEY || defaultGemini).trim();
     const simulateOffline = Boolean(body.simulate_offline);
 
@@ -485,9 +492,10 @@ export async function POST(req: NextRequest) {
     // -------------------------------------------------------------
     // Tier 1: Try Groq Ultra-Fast AI (Multi-Model Waterfall)
     // -------------------------------------------------------------
-    if (groqKey && groqKey.startsWith("gsk_")) {
-      for (const model of groqCandidateModels) {
-        try {
+    if (groqCandidateKeys.length > 0) {
+      for (const groqKey of groqCandidateKeys) {
+        for (const model of groqCandidateModels) {
+          try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 6000);
 
@@ -559,6 +567,7 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+  }
 
     // -------------------------------------------------------------
     // Tier 2: Try Google Gemini AI (Secondary Backup)
