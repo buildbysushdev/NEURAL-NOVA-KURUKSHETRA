@@ -639,36 +639,36 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    async function checkAuthAndRole() {
+    function checkAuthAndRole() {
       try {
-        let routeRole: UserRole | null = null;
-        if (pathname?.includes("/authority")) routeRole = "authority";
+        let routeRole: UserRole = "authority";
+        if (pathname?.includes("/citizen")) routeRole = "citizen";
         else if (pathname?.includes("/rescue")) routeRole = "rescue";
-        else if (pathname?.includes("/citizen")) routeRole = "citizen";
+        else if (pathname?.includes("/authority")) routeRole = "authority";
+        else {
+          routeRole =
+            (localStorage.getItem("kurukshetra_active_role") as UserRole) ||
+            (localStorage.getItem("kurukshetra_role") as UserRole) ||
+            "authority";
+        }
 
-        const savedRole =
-          routeRole ||
-          (localStorage.getItem("kurukshetra_active_role") as UserRole) ||
-          (localStorage.getItem("kurukshetra_role") as UserRole) ||
-          "authority";
-
-        const savedEmail =
-          localStorage.getItem("kurukshetra_active_email") ||
-          (savedRole === "citizen"
+        const emailForRole =
+          routeRole === "citizen"
             ? "citizen@kurukshetra.gov.in"
-            : savedRole === "rescue"
+            : routeRole === "rescue"
             ? "rescue@kurukshetra.gov.in"
-            : "commander@kurukshetra.gov.in");
+            : "commander@kurukshetra.gov.in";
 
-        setUserRole(savedRole);
-        setUserEmail(savedEmail);
-        localStorage.setItem("kurukshetra_active_role", savedRole);
-        localStorage.setItem("kurukshetra_active_email", savedEmail);
+        setUserRole(routeRole);
+        setUserEmail(emailForRole);
+        localStorage.setItem("kurukshetra_active_role", routeRole);
+        localStorage.setItem("kurukshetra_active_email", emailForRole);
+        localStorage.setItem("kurukshetra_role", routeRole);
+        document.cookie = `kurukshetra_role=${routeRole}; path=/; max-age=86400`;
         setLoading(false);
 
         if (pathname === "/dashboard" || pathname === "/dashboard/") {
-          router.push(`/dashboard/${savedRole}`);
-          return;
+          router.replace(`/dashboard/${routeRole}`);
         }
       } catch (err) {
         setUserRole("authority");
@@ -693,15 +693,13 @@ export default function DashboardLayout({
     }
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      if (isConfigured && supabase) await supabase.auth.signOut();
-    } catch {}
+  const handleLogout = () => {
+    // Portal Transfer / Reset to Landing Gateway without requiring credentials
     localStorage.removeItem("kurukshetra_active_role");
     localStorage.removeItem("kurukshetra_active_email");
     localStorage.removeItem("kurukshetra_role");
     document.cookie = "kurukshetra_role=; path=/; max-age=0";
-    router.push("/login");
+    router.push("/");
   };
 
   const handleRoleSwitch = (targetRole: UserRole) => {
@@ -722,16 +720,9 @@ export default function DashboardLayout({
     router.push(`/dashboard/${targetRole}`);
   };
 
-  // Loading state
+  // Immediate rendering (no blocking on login verification)
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0B0F19] flex flex-col items-center justify-center text-slate-100">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400 mb-3" strokeWidth={1.75} />
-        <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
-          Verifying Session...
-        </p>
-      </div>
-    );
+    return null;
   }
 
   // ── CITIZEN: completely separate shell ────────────────────────────────────
