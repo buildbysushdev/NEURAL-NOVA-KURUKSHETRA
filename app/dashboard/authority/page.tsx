@@ -45,6 +45,7 @@ import {
   BellRing,
   CheckCircle2,
 } from "lucide-react";
+
 import ZoneDetailPanel from "@/components/authority/ZoneDetailPanel";
 import { HistoricalChecklistPanel } from "@/components/authority/HistoricalChecklistPanel";
 import { CAPDispatchPanel } from "@/components/authority/CAPDispatchPanel";
@@ -60,6 +61,8 @@ import { MesmerizingSimulationModal } from "@/components/authority/MesmerizingSi
 import { FeatureInfoTooltip } from "@/components/ui/FeatureInfoTooltip";
 import { TacticalWorkflowSimulator } from "@/components/authority/TacticalWorkflowSimulator";
 import AutoDemoPlayer from "@/components/demo/AutoDemoPlayer";
+import { LiveZonePriorityPanel } from "@/components/authority/LiveZonePriorityPanel";
+
 
 // Dynamic client-only Tactical India Command Map with shape-matching skeleton loading
 const TacticalIndiaMap = dynamic(
@@ -177,8 +180,9 @@ export default function AuthorityDashboardPage() {
   // Tactical Right Column Tab Selector (Simulator, Copilot, Alerts, Orchestration, Checklist, Zone, Audit, Dispatch)
   const [selectedZone, setSelectedZone] = useState<TacticalZone | null>(null);
   const [activeRightTab, setActiveRightTab] = useState<
-    "simulator" | "copilot" | "alerts" | "orchestration" | "checklist" | "zone" | "audit" | "dispatch"
+    "simulator" | "copilot" | "alerts" | "orchestration" | "checklist" | "zone" | "audit" | "dispatch" | "priority"
   >("simulator");
+
 
   const tacticalZones: TacticalZone[] = React.useMemo(() => {
     return incidents.map((inc) => ({
@@ -807,6 +811,20 @@ export default function AuthorityDashboardPage() {
 
             <button
               type="button"
+              onClick={() => setActiveRightTab("priority")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                activeRightTab === "priority"
+                  ? "bg-violet-500/20 border border-violet-500/50 text-violet-200 shadow-sm font-semibold ring-1 ring-violet-400/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-violet-400" />
+              <span>Priority Engine</span>
+              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-violet-500/20 text-violet-300 rounded-md">NEW</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveRightTab("copilot")}
               className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeRightTab === "copilot"
@@ -901,7 +919,9 @@ export default function AuthorityDashboardPage() {
           </div>
 
           {/* Right Column Content Panel */}
-          {activeRightTab === "simulator" ? (
+          {activeRightTab === "priority" ? (
+            <LiveZonePriorityPanel />
+          ) : activeRightTab === "simulator" ? (
             <TacticalWorkflowSimulator />
           ) : activeRightTab === "copilot" ? (
             <AICopilotPanel />
@@ -933,6 +953,17 @@ export default function AuthorityDashboardPage() {
       </div>
 
 
+
+      {/* ── FULL-WIDTH 5-ZONE PRIORITY ENGINE (always visible below map) ── */}
+      <div id="priority-section" className="rounded-2xl border border-violet-500/20 bg-violet-950/10 p-1">
+        <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+          <TrendingUp className="w-4 h-4 text-violet-400" />
+          <h3 className="text-sm font-bold text-slate-200">5-Zone Priority & Reallocation Demo</h3>
+          <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-500/20 text-violet-300 rounded-md border border-violet-500/30">EXPECTED DEMO</span>
+          <span className="text-[10px] text-slate-400">— Severity triage · supply redirect · escalation reallocation</span>
+        </div>
+        <LiveZonePriorityPanel />
+      </div>
 
       {/* Bottom: Resource Inventory Table in Glass Container */}
       <div id="inventory-section" className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-md">

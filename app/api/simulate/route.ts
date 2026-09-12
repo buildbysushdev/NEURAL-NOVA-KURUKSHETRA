@@ -15,52 +15,124 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const scenario = body.scenario || 'blue-flood';
 
+    // ── 5-ZONE INCIDENT SEEDS ────────────────────────────────────────────
     const incidentSeed =
       scenario === 'red-inferno'
         ? [
             {
               type: 'fire',
-              description: 'Industrial blaze with toxic plume near hospital corridor',
+              description: 'Industrial chemical fire with toxic BTEX plume spreading NE — immediate evacuation',
               location_lat: 13.05,
               location_lng: 80.25,
-              location_name: 'SIDCO Industrial Zone',
-              severity_score: 9,
+              location_name: 'SIDCO Industrial Zone (Zone A)',
+              severity_score: 10,
               status: 'open',
               needed_resources: ['fire_tender', 'hazmat', 'medical'],
+              supply_stock: 30, // units available at nearest depot
             },
             {
               type: 'fire',
-              description: 'Secondary transformer fire risk near metro access',
+              description: 'Secondary chemical plant ignition risk — critical pressure building in Tank 7',
+              location_lat: 13.062,
+              location_lng: 80.248,
+              location_name: 'Chemical Plant B (Zone B)',
+              severity_score: 9,
+              status: 'open',
+              needed_resources: ['hazmat', 'fire_tender'],
+              supply_stock: 45,
+            },
+            {
+              type: 'toxic_exposure',
+              description: 'Downwind residential block — 840 civilians with CO₂ exposure, mobile hospitals needed',
               location_lat: 13.0827,
               location_lng: 80.2707,
-              location_name: 'Central Metro',
+              location_name: 'Downwind Residential (Zone C)',
+              severity_score: 8,
+              status: 'open',
+              needed_resources: ['medical', 'ambulance'],
+              supply_stock: 120,
+            },
+            {
+              type: 'evacuation',
+              description: 'St. Mary Hospital evacuation — 85 ICU patients on ventilators need emergency transfer',
+              location_lat: 13.071,
+              location_lng: 80.26,
+              location_name: 'St. Mary Hospital (Zone D)',
               severity_score: 7,
               status: 'open',
-              needed_resources: ['fire_tender', 'medical'],
+              needed_resources: ['ambulance', 'medical', 'generator'],
+              supply_stock: 80,
+            },
+            {
+              type: 'road_blockage',
+              description: 'Debris from blast scattered across NH-32 — blocking all emergency vehicle access',
+              location_lat: 13.045,
+              location_lng: 80.255,
+              location_name: 'NH-32 Access Corridor (Zone E)',
+              severity_score: 5,
+              status: 'open',
+              needed_resources: ['machinery', 'police'],
+              supply_stock: 200,
             },
           ]
         : [
             {
-              type: 'flood',
-              description: 'Storm surge 2.4m breached seawall, residents stranded',
-              location_lat: 13.0544,
-              location_lng: 80.2818,
-              location_name: 'Marina Waterfront Sector B',
-              severity_score: 9,
-              status: 'open',
-              needed_resources: ['boats', 'water', 'medical'],
-            },
-            {
               type: 'structural_collapse',
-              description: 'Port warehouse roof collapse, workers trapped',
+              description: 'Port warehouse roof collapsed — multiple workers trapped under debris, golden hour critical',
               location_lat: 13.1025,
               location_lng: 80.2985,
-              location_name: 'North Harbor',
+              location_name: 'North Harbor (Zone A)',
               severity_score: 10,
               status: 'open',
               needed_resources: ['heavy_machinery', 'medical', 'tent'],
+              supply_stock: 40,
+            },
+            {
+              type: 'flood',
+              description: 'Storm surge 2.4m — seawall breached, 1,420 residents stranded on upper floors',
+              location_lat: 13.0544,
+              location_lng: 80.2818,
+              location_name: 'Marina Waterfront (Zone B)',
+              severity_score: 9,
+              status: 'open',
+              needed_resources: ['boats', 'water', 'medical'],
+              supply_stock: 45,
+            },
+            {
+              type: 'fire',
+              description: 'Substation flood short-circuit — transformer fire spreading to adjacent blocks',
+              location_lat: 13.0827,
+              location_lng: 80.2707,
+              location_name: 'Central Metro (Zone C)',
+              severity_score: 7,
+              status: 'open',
+              needed_resources: ['fire_tender', 'medical'],
+              supply_stock: 120,
+            },
+            {
+              type: 'flood',
+              description: 'Rising canal water — debris blocking discharge route, 340 homes at risk',
+              location_lat: 12.9815,
+              location_lng: 80.218,
+              location_name: 'Velachery Canal (Zone D)',
+              severity_score: 5,
+              status: 'open',
+              needed_resources: ['machinery', 'boats'],
+              supply_stock: 180,
+            },
+            {
+              type: 'medical_emergency',
+              description: 'Mass casualty staging area — 65 injured civilians requiring immediate triage',
+              location_lat: 13.033,
+              location_lng: 80.27,
+              location_name: 'Mylapore Relief Camp (Zone E)',
+              severity_score: 6,
+              status: 'open',
+              needed_resources: ['medical', 'tent', 'water'],
+              supply_stock: 200,
             },
           ];
+
 
     // Generate valid UUIDs for all rows
     const incidentRows: any[] = incidentSeed.map((item) => ({
@@ -90,29 +162,48 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2) Allocations (so Rescue has tasks)
-    const allocationRows: any[] = insertedIncidents.map((inc: any, idx: number) => ({
-      id: crypto.randomUUID(),
-      incident_id: inc.id,
-      quantity_allocated: idx === 0 ? 4 : 2,
-      status: 'approved', // ready for rescue squad
-      ai_reasoning:
-        scenario === 'red-inferno'
-          ? 'Fire/medical package prioritized due to toxic plume trajectory'
-          : 'Boat + medical package prioritized due to water depth and trapped residents',
-      eta_minutes: 12 + idx * 3,
-      created_at: new Date().toISOString(),
-      incident: {
-        id: inc.id,
-        type: inc.type,
-        description: inc.description,
-        location_lat: inc.location_lat,
-        location_lng: inc.location_lng,
-        severity_score: inc.severity_score,
-        status: inc.status || 'open',
-        location_name: incidentSeed[idx]?.location_name || 'Assigned Sector',
-      },
-    }));
+    // 2) Priority-ordered allocations with supply redirect logic
+    // Zones are sorted by severity (highest first) — this IS the AI prioritization step
+    const sortedSeed = [...incidentSeed].sort((a, b) => b.severity_score - a.severity_score);
+    const REQUIRED_UNITS = [80, 60, 40, 30, 20]; // resources needed per zone in priority order
+    const REDIRECT_THRESHOLD = 50; // redirect if depot stock < this
+
+    const allocationRows: any[] = insertedIncidents.map((inc: any, idx: number) => {
+      const seedItem = incidentSeed.find((s) => inc.description.includes(s.location_name.split(' (')[0])) || incidentSeed[idx];
+      const priorityRank = sortedSeed.findIndex((s) => s.location_name === seedItem?.location_name) + 1;
+      const required = REQUIRED_UNITS[Math.min(priorityRank - 1, 4)];
+      const stock = seedItem?.supply_stock || 100;
+      const isRedirected = stock < REDIRECT_THRESHOLD;
+      const redirectNote = isRedirected
+        ? ` [SUPPLY REDIRECT: ${seedItem?.location_name} depot (${stock} units) below threshold — rerouted to nearest alternative depot (saves ~35 min)]`
+        : '';
+
+      return {
+        id: crypto.randomUUID(),
+        incident_id: inc.id,
+        quantity_allocated: required,
+        priority_rank: priorityRank,
+        status: 'approved',
+        supply_redirected: isRedirected,
+        ai_reasoning:
+          scenario === 'red-inferno'
+            ? `[P${priorityRank}] Fire/HAZMAT package — severity ${seedItem?.severity_score}/10. ${isRedirected ? 'REDIRECT active: primary depot exhausted.' : 'Direct dispatch from primary depot.'}${redirectNote}`
+            : `[P${priorityRank}] Rescue package — severity ${seedItem?.severity_score}/10. ${isRedirected ? 'REDIRECT active: primary depot exhausted.' : 'Direct dispatch from primary depot.'}${redirectNote}`,
+        eta_minutes: 8 + priorityRank * 4,
+        created_at: new Date().toISOString(),
+        incident: {
+          id: inc.id,
+          type: inc.type,
+          description: inc.description,
+          location_lat: inc.location_lat,
+          location_lng: inc.location_lng,
+          severity_score: inc.severity_score,
+          status: inc.status || 'open',
+          location_name: seedItem?.location_name || 'Assigned Sector',
+        },
+      };
+    });
+
 
     if (sb) {
       try {
