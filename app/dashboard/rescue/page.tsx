@@ -363,6 +363,7 @@ export default function RescueDashboardPage() {
     return () => {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("kurukshetra:incident_reported", customListener);
+      window.removeEventListener("kurukshetra:dispatch_created", customListener);
       window.removeEventListener("kurukshetra:voice_transmitted", handleVoiceTransmitted);
       if (broadcastChannel && supabase) supabase.removeChannel(broadcastChannel);
       unsubscribe();
