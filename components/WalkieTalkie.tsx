@@ -586,9 +586,33 @@ export default function WalkieTalkie({
     }
 
     if (!stream) {
+      // No microphone available — run a simulation with synthetic audio + demo transcript
       setIsSupported(true);
       setStatusText("SIM TX");
+
+      // Start speech recognition if available
       startSpeechRecognition();
+
+      // Auto-finalize after the countdown timer fires (5s max) or when stop is pressed
+      // We inject a realistic demo transcript so the UI shows something useful
+      const simTranscript =
+        role === "citizen"
+          ? "Help us please, flood water is rising rapidly. We are on Floor 3 of Building B-17."
+          : "NDRF Squad Alpha en route to Sector B. ETA 4 minutes. Stay on this channel.";
+
+      // Use a 2.8s simulation period; reveal transcript progressively for realism
+      let simChars = 0;
+      const simInterval = setInterval(() => {
+        simChars = Math.min(simChars + 12, simTranscript.length);
+        const partial = simTranscript.slice(0, simChars);
+        transcriptAccumRef.current = partial;
+        setLiveTranscript(partial);
+        if (simChars >= simTranscript.length) clearInterval(simInterval);
+      }, 150);
+
+      // Store interval so we can clear it on stop
+      (window as any).__simTranscriptInterval = simInterval;
+
       return;
     }
 
@@ -648,6 +672,12 @@ export default function WalkieTalkie({
       maxSecTimer.current = null;
       recTickRef.current = null;
 
+      // Clear sim transcript interval if running (no-mic fallback)
+      if (typeof window !== "undefined" && (window as any).__simTranscriptInterval) {
+        clearInterval((window as any).__simTranscriptInterval);
+        (window as any).__simTranscriptInterval = null;
+      }
+
       playBeep(650, 0.14, "square");
       setIsTransmitting(false);
       stopSpeechRecognition();
@@ -658,11 +688,15 @@ export default function WalkieTalkie({
           mediaRecorderRef.current.stop();
         } catch {}
       } else {
+        // No-mic sim path: wait a brief moment for speech recognition to finalize
         const durationMs = Math.max(Date.now() - startTimeRef.current, 1000);
-        const t = transcriptAccumRef.current.trim() || "";
         const fallbackUrl = createTacticalRadioWav(durationMs / 1000);
         setLastAudioUrl(fallbackUrl);
-        finalizeTransmission(fallbackUrl, durationMs, t, lastConfidence);
+        // Give speech rec 400ms to flush final results before using accumulated
+        setTimeout(() => {
+          const t = transcriptAccumRef.current.trim() || "";
+          finalizeTransmission(fallbackUrl, durationMs, t, lastConfidence);
+        }, 400);
       }
     },
     [isTransmitting, lastConfidence, finalizeTransmission, stopSpeechRecognition]

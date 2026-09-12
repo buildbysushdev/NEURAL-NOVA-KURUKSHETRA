@@ -84,33 +84,52 @@ export default function CitizenDemoActor() {
 
       // ── STEP 6: Scroll DOWN to reveal the WalkieTalkie component ─────────────
       await wait(300);
-      const walkieSection =
-        (document.querySelector('[data-demo="walkie-ptt"]') as HTMLElement) ||
-        (document.querySelector('button[class*="ptt"]') as HTMLElement) ||
-        Array.from(document.querySelectorAll('button')).find(b =>
-          /hold to talk|push.*talk|transmit/i.test(b.textContent || '')
-        );
 
-      if (walkieSection) {
-        scrollToElement(walkieSection);
-        await wait(600);
-        // Simulate PTT press (don't actually record — just show it visually)
-        walkieSection.style.outline = '3px solid #f59e0b';
-        walkieSection.style.boxShadow = '0 0 0 8px rgba(245,158,11,0.3)';
-        walkieSection.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-        await wait(2000);
-        walkieSection.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-        walkieSection.style.outline = '';
-        walkieSection.style.boxShadow = '';
-        await wait(800);
-      } else {
-        const targets = document.querySelectorAll('section, [class*="walkie"], [class*="radio"]');
-        if (targets.length > 0) {
-          scrollToElement(targets[targets.length - 1] as HTMLElement);
-        } else {
-          scrollPageTo(600, 'smooth');
-        }
+      // ── STEP 6a: First try clicking a preset emergency chip (most reliable) ──
+      const presetChip =
+        Array.from(document.querySelectorAll('button')).find(b =>
+          /flood rising|trapped.*boat|medical emergency|elderly.*children/i.test(b.textContent || '')
+        ) as HTMLElement;
+
+      if (presetChip) {
+        scrollToElement(presetChip);
+        await wait(400);
+        presetChip.style.outline = '3px solid #f59e0b';
+        presetChip.style.boxShadow = '0 0 0 8px rgba(245,158,11,0.3)';
+        await wait(300);
+        presetChip.click();
+        presetChip.style.outline = '';
+        presetChip.style.boxShadow = '';
         await wait(1500);
+      } else {
+        // ── STEP 6b: Fall back to PTT button simulation ─────────────────────────
+        const walkieSection =
+          (document.querySelector('[data-demo="walkie-ptt"]') as HTMLElement) ||
+          Array.from(document.querySelectorAll('button')).find(b =>
+            /hold to talk|tap to talk|push.*talk|transmit/i.test(b.textContent || '')
+          ) as HTMLElement;
+
+        if (walkieSection) {
+          scrollToElement(walkieSection);
+          await wait(600);
+          walkieSection.style.outline = '3px solid #f59e0b';
+          walkieSection.style.boxShadow = '0 0 0 8px rgba(245,158,11,0.3)';
+          // Use mousedown/mouseup — what WalkieTalkie actually listens for
+          walkieSection.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+          await wait(2500);
+          walkieSection.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+          walkieSection.style.outline = '';
+          walkieSection.style.boxShadow = '';
+          await wait(1200);
+        } else {
+          const targets = document.querySelectorAll('section, [class*="walkie"], [class*="radio"]');
+          if (targets.length > 0) {
+            scrollToElement(targets[targets.length - 1] as HTMLElement);
+          } else {
+            scrollPageTo(600, 'smooth');
+          }
+          await wait(1500);
+        }
       }
 
       if (unmounted) return;
